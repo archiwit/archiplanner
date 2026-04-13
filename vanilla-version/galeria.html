@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Galería | ArchiPlanner - Momentos Inolvidables</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+    <!-- Main Style -->
+    <link rel="stylesheet" href="css/style.css">
+    <script src="js/main.js" defer></script>
+</head>
+<body>
+    
+    <!-- Navigation -->
+    <header class="header sticky">
+        <div class="container nav-wrapper">
+            <a href="index.html" class="logo">Archi<span>Planner</span></a>
+            <button class="nav-toggle" aria-label="Abrir menú">
+                <span class="bar"></span>
+            </button>
+            <nav class="nav">
+                <ul>
+                    <li><a href="index.html">Inicio</a></li>
+                    <li><a href="servicios.html">Servicios</a></li>
+                    <li><a href="galeria.html" class="active">Galería</a></li>
+                    <li><a href="nosotros.html">Nosotros</a></li>
+                    <li><a href="contacto.html" class="cta-nav">Cotizar</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <main>
+        <!-- Page Header -->
+        <section class="page-header section-padding">
+            <div class="container">
+                <div class="header-content scroll-reveal">
+                    <span class="tag">Nuestro Trabajo</span>
+                    <h1>Galería de <br><span>Experiencias</span></h1>
+                    <p>Una curaduría visual de los hitos que hemos tenido el honor de planificar.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Gallery Filters -->
+        <section class="gallery-filters-section container scroll-reveal">
+            <div class="filters">
+                <button class="filter-btn active" data-filter="all">Todos</button>
+                <button class="filter-btn" data-filter="bodas">Bodas</button>
+                <button class="filter-btn" data-filter="xv">XV Años</button>
+                <button class="filter-btn" data-filter="social">Sociales</button>
+                <button class="filter-btn" data-filter="corp">Corporativos</button>
+            </div>
+        </section>
+
+        <!-- Gallery Grid -->
+        <section class="gallery-section section-padding">
+            <div class="container">
+                <div class="gallery-grid masonry">
+                    <!-- Gallery Items -->
+                    <div class="gallery-item scroll-reveal bodas">
+                        <img src="https://images.unsplash.com/photo-1511795409834-ef04bbd61622?q=80&w=2069&auto=format&fit=crop" alt="Boda de lujo">
+                        <div class="gallery-overlay">
+                            <p>Boda Hacienda San Juan</p>
+                        </div>
+                    </div>
+                    <div class="gallery-item scroll-reveal xv">
+                        <img src="https://images.unsplash.com/photo-1544074216-0e96f131a61c?q=80&w=1974&auto=format&fit=crop" alt="XV años editorial">
+                        <div class="gallery-overlay">
+                            <p>XV Años Crystal Night</p>
+                        </div>
+                    </div>
+                    <div class="gallery-item scroll-reveal bodas">
+                        <img src="https://images.unsplash.com/photo-1519741497674-611481863552?q=80&w=2070&auto=format&fit=crop" alt="Boda civil">
+                        <div class="gallery-overlay">
+                            <p>Boda Civil Boutique</p>
+                        </div>
+                    </div>
+                    <div class="gallery-item scroll-reveal social">
+                        <img src="https://images.unsplash.com/photo-1513276336113-d73010764b4c?q=80&w=1976&auto=format&fit=crop" alt="Baby shower">
+                        <div class="gallery-overlay">
+                            <p>Baby Shower Soft Sand</p>
+                        </div>
+                    </div>
+                    <div class="gallery-item scroll-reveal corp">
+                        <img src="https://images.unsplash.com/photo-1505373877841-8d25f7d46678?q=80&w=2012&auto=format&fit=crop" alt="Evento corporativo">
+                        <div class="gallery-overlay">
+                            <p>Gala Anual Corporativa</p>
+                        </div>
+                    </div>
+                    <div class="gallery-item scroll-reveal bodas">
+                        <img src="https://images.unsplash.com/photo-1469334031218-e382a71b716b?q=80&w=2070&auto=format&fit=crop" alt="Detalle boda">
+                        <div class="gallery-overlay">
+                            <p>Detalles Florales Boda</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer section-padding bg-graphite-dark">
+        <div class="container footer-grid">
+            <div class="footer-brand">
+                <a href="#" class="logo">Archi<span>Planner</span></a>
+                <p>Curadores de momentos inolvidables. Diseño y planificación integral de eventos de lujo.</p>
+            </div>
+            <div class="footer-links">
+                <h4>Explora</h4>
+                <ul>
+                    <li><a href="servicios.html">Servicios</a></li>
+                    <li><a href="galeria.html">Galería</a></li>
+                    <li><a href="nosotros.html">Nosotros</a></li>
+                    <li><a href="contacto.html">Cotizar</a></li>
+                </ul>
+            </div>
+            <div class="footer-contact">
+                <h4>Contacto</h4>
+                <p>hola@archiplanner.com</p>
+                <p>+1 234 567 890</p>
+            </div>
+        </div>
+        <div class="container footer-bottom">
+            <p>&copy; 2026 ArchiPlanner. Todos los derechos reservados.</p>
+        </div>
+    </footer>
+
+</body>
+</html>

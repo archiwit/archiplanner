@@ -1,0 +1,28 @@
+Field	Type	Null	Key	Default	Extra
+conf_id	int(11)	YES	MUL	1	
+id	int(11)	NO	PRI	NULL	auto_increment
+num	varchar(20)	NO	UNI	NULL	
+cli_id	int(11)	NO	MUL	NULL	
+u_id	int(11)	NO	MUL	NULL	
+fcoti	date	NO	MUL	NULL	
+fevent	date	YES		NULL	
+num_adultos	int(11)	YES		0	
+num_ninos	int(11)	YES		0	
+hora_inicio	time	YES		NULL	
+hora_fin	time	YES		NULL	
+lugar	varchar(255)	YES		NULL	
+loc_id	int(11)	YES	MUL	NULL	
+tematica	varchar(255)	YES		NULL	
+tipo_evento	varchar(100)	YES		NULL	
+paleta_colores	text	YES		NULL	
+subt	decimal(12,2)	YES		0.00	
+nota	decimal(12,2)	YES		0.00	
+iva	decimal(12,2)	YES		0.00	
+aplica_iva	tinyint(1)	YES		0	
+mostrar_precios	tinyint(1)	YES		1	
+total	decimal(12,2)	YES		0.00	
+total_tipo	enum('calculado','manual')	YES		calculado	
+monto_final	decimal(12,2)	YES		0.00	
+estado	enum('borrador','enviada','aprobada','rechazada','facturada')	YES	MUL	borrador	
+notas	text	YES		NULL	
+fcrea	timestamp	NO		current_timestamp()	

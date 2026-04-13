@@ -1,0 +1,25 @@
+Field	Type	Null	Key	Default	Extra
+id	int(11)	NO	PRI	NULL	auto_increment
+nombre_empresa	varchar(100)	YES		ArchiPlanner	
+ceo	varchar(100)	YES		'Luis Archila'	
+email_contacto	varchar(100)	YES		hola@archiplanner.com	
+telefono	varchar(20)	YES		+57 300 000 0000	
+city	varchar(100)	YES		Bucaramanga, Colombia	
+ig_url	varchar(255)	YES		https://instagram.com/archiplanner	
+fb_url	varchar(255)	YES		https://facebook.com/archiplanner	
+tt_url	varchar(255)	YES		'https://tiktok.com'	
+pn_url	varchar(255)	YES		https://pinterest.com/archiplanner	
+li_url	varchar(255)	YES		'https://linkedin.com'	
+x_url	varchar(255)	YES		'https://x.com'	
+web_url	varchar(255)	YES		'https://archiplanner.com'	
+logo_path	varchar(255)	YES		NULL	
+u_fmod	timestamp	NO		current_timestamp()	on update current_timestamp()
+es_activa	tinyint(1)	YES		0	
+logo_cuadrado_path	varchar(255)	YES		NULL	
+logo_horizontal_path	varchar(255)	YES		NULL	
+color_primario	varchar(7)	YES		#FF8484	
+color_secundario	varchar(7)	YES		#2C2C2C	
+color_terciario	varchar(7)	YES		#5fdcc7	
+color_fondo	varchar(7)	YES		#121212	
+intro_cotizacion	text	YES		NULL	
+politicas_cotizacion	text	YES		NULL	

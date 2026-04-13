@@ -1,0 +1,280 @@
+/* Estilos Premium para el Contrato Legal - ArchiPlanner V2 */
+@import url('https://fonts.googleapis.com/css2?family=Mrs+Saint+Delafield&family=Roboto:wght@300;400;700&display=swap');
+
+.admin-contract-container {
+    background: var(--bg-color);
+    /* Fondo gris claro para resaltar la hoja blanca */
+    min-height: 100vh;
+    padding: 60px 20px;
+}
+
+.contract-sheet {
+    background: #fff;
+    width: 21.59cm;
+    min-height: 27.94cm;
+    margin: 20px auto;
+    padding: 2.5cm 1.5cm;
+    /* Aumentado top/bottom padding */
+    box-shadow: 0 15px 50px rgba(0, 0, 0, 0.1);
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.premium-roboto {
+    font-family: 'Roboto', sans-serif;
+    color: #1a1a1a;
+}
+
+/* Header V3 */
+.contract-header-v3 {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    /* Centrado vertical para reducir altura */
+    margin-bottom: 20px;
+    border-bottom: 1px solid #111;
+    padding-bottom: 8px;
+}
+
+.header-brand-text {
+    font-family: 'Mrs Saint Delafield', cursive;
+    font-size: 45px;
+    /* Reducido de 42px */
+    color: #111;
+}
+
+.header-brand-logo img {
+    height: 100px;
+    max-height: 60px;
+    width: auto;
+    object-fit: contain;
+    filter: brightness(0);
+    -webkit-filter: brightness(0);
+}
+
+/* Body V3 */
+.contract-body-v3 {
+    padding: 0 10px;
+}
+
+.main-title {
+    text-align: center;
+    font-size: 16px;
+    font-weight: 700;
+    margin-bottom: 25px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    text-decoration: underline;
+}
+
+.legal-intro p,
+.legal-clauses-v3 p,
+.legal-closure p {
+    font-size: 11pt;
+    line-height: 1.6;
+    text-align: justify;
+    margin-bottom: 18px;
+}
+
+.dynamic-field {
+    font-weight: 700;
+    text-decoration: underline;
+}
+
+/* Tabla Estilo Premium con Filas Alternas */
+.contract-items-table-v3 {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 20px 0;
+    font-size: 10pt;
+    border: none;
+}
+
+.contract-items-table-v3 th {
+    background: #f5f5f5;
+    color: #111;
+    padding: 12px 10px;
+    text-transform: uppercase;
+    font-weight: 700;
+    border-bottom: 2px solid #111;
+    text-align: left;
+}
+
+.contract-items-table-v3 td {
+    padding: 10px 12px;
+    border-bottom: 1px solid #eee;
+    color: #333;
+}
+
+.contract-items-table-v3 tr:nth-child(even) {
+    background-color: #fafafa;
+}
+
+.contract-items-table-v3 tr:last-child td {
+    border-bottom: 1px solid #111;
+}
+
+.text-center {
+    text-align: center;
+}
+
+/* Bloque de Firmas V3 */
+.signatures-block-v3 {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 50px;
+}
+
+.signature-box {
+    width: 42%;
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.sign-line {
+    border-top: 2px solid #000;
+    margin-bottom: 12px;
+}
+
+.sign-name {
+    font-weight: 700;
+    font-size: 11pt;
+    margin: 0;
+    margin-bottom: -5px;
+    text-transform: uppercase;
+}
+
+.sign-id,
+.sign-role {
+    font-size: 9pt;
+    color: #444;
+    margin: 2px 0;
+    margin-bottom: -5px;
+}
+
+.sign-role {
+    font-weight: 700;
+    margin-top: 5px;
+    color: #000;
+}
+
+/* Footer V3 */
+.contract-footer-v3 {
+    position: absolute;
+    bottom: 15px;
+    left: 1.5cm;
+    right: 1.5cm;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-top: 1px solid #eee;
+    padding-top: 10px;
+}
+
+.footer-dots-group {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    color: #ccc;
+    margin-top: -10px;
+}
+
+.footer-company-info {
+    text-align: right;
+    font-size: 9pt;
+    color: #666;
+}
+
+.web-url {
+    font-weight: 700;
+    color: #111;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+}
+
+.footer-item {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    margin-bottom: 4px;
+    gap: 5px;
+}
+
+.contact-details {
+    display: flex;
+    flex-direction: column;
+}
+
+.contact-details .footer-item {
+    margin-left: 0;
+}
+
+/* Minimalist Buttons Style */
+.btn-minimal {
+    padding: 8px 16px !important;
+    font-size: 12px !important;
+    gap: 8px !important;
+    border-radius: 6px !important;
+    height: auto !important;
+}
+
+.contract-actions {
+    max-width: 21.59cm;
+    margin: 0 auto 15px;
+    display: flex;
+    justify-content: flex-end;
+    /* Align right for more minimal look */
+    gap: 12px;
+}
+
+.btn-back {
+    background: #fff;
+    color: #333;
+}
+
+.btn-print {
+    background: #d4af37;
+    color: #fff;
+}
+
+.btn-print:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(212, 175, 55, 0.3);
+}
+
+/* Print Overrides */
+@media print {
+    body {
+        background: #fff !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+
+    .no-print {
+        display: none !important;
+    }
+
+    .admin-contract-container {
+        padding: 0;
+        background: none;
+    }
+
+    .contract-sheet {
+        box-shadow: none;
+        margin: 0;
+        padding: 2.5cm 1.5cm !important;
+        /* Mantener márgenes en impresión */
+        width: 100% !important;
+        min-height: auto;
+    }
+
+    .contract-footer-v3 {
+        position: fixed !important;
+        bottom: 15px !important;
+        left: 1.5cm !important;
+        right: 1.5cm !important;
+    }
+}
