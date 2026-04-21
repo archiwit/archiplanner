@@ -24,6 +24,8 @@ const storage = multer.diskStorage({
             dir = 'uploads/stories';
         } else if (url.includes('galeria') || url.includes('gallery') || url.includes('secciones')) {
             dir = 'uploads/gallery';
+        } else if (url.includes('encuesta')) {
+            dir = 'uploads/surveys';
         }
         
         if (!fs.existsSync(dir)){
@@ -43,16 +45,22 @@ const storage = multer.diskStorage({
         else if (url.includes('servicio') || url.includes('servicios')) prefix = 'serv-';
         else if (url.includes('historias')) prefix = 'story-';
         else if (url.includes('galeria') || url.includes('gallery') || url.includes('secciones')) prefix = 'hero-';
+        else if (url.includes('encuesta')) prefix = 'survey-';
         
         cb(null, prefix + uniqueSuffix + path.extname(file.originalname));
     }
 });
 
 const fileFilter = (req, file, cb) => {
-    if (file.mimetype.startsWith('image/') || file.mimetype.startsWith('video/')) {
+    if (
+        file.mimetype.startsWith('image/') || 
+        file.mimetype.startsWith('video/') || 
+        file.mimetype.startsWith('audio/') || 
+        file.mimetype === 'application/pdf'
+    ) {
         cb(null, true);
     } else {
-        cb(new Error('Solo se permiten imágenes o videos'), false);
+        cb(new Error('Solo se permiten imágenes, videos, audios o documentos PDF'), false);
     }
 };
 

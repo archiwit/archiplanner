@@ -58,8 +58,65 @@ exports.aprobarPago = async (req, res) => {
                 [cotizacion_id]
             );
 
+            // 4. Sincronizar estado del cliente a 'contratado'
+            const [cotiData] = await connection.query('SELECT cli_id FROM cotizaciones WHERE id = ?', [cotizacion_id]);
+            if (cotiData.length > 0) {
+                await connection.query('UPDATE clientes SET estado = "contratado" WHERE id = ?', [cotiData[0].cli_id]);
+            }
+
             await connection.commit();
-            res.json({ success: true, message: 'Pago aprobado y cotización marcada como Contratada' });
+
+            // --- FLUJO DE AUTOMATIZACIÓN POS-APROBACIÓN ---
+            try {
+                const ReceiptService = require('../services/ReceiptService');
+                const notificationService = require('../services/notificationService');
+                const WhatsAppService = require('../services/WhatsAppService');
+
+                // 1. Generar el PDF del recibo
+                const pdfPath = await ReceiptService.generateReceiptPDF(id);
+                const filename = `Recibo_Pago_${id}.pdf`;
+
+                // 2. Obtener datos completos del cliente para notificar
+                const [clientData] = await pool.query(`
+                    SELECT cl.*, p.monto as pago_monto 
+                    FROM clientes cl 
+                    JOIN cotizaciones c ON cl.id = c.cli_id
+                    JOIN pagos p ON c.id = p.cot_id
+                    WHERE p.id = ?
+                `, [id]);
+
+                if (clientData.length > 0) {
+                    const cliente = clientData[0];
+                    const publicUrl = `/uploads/recibos/${require('path').basename(pdfPath)}`;
+
+                    // 3. Enviar Email con Adjunto
+                    await notificationService.sendClientEmail({
+                        to: cliente.correo,
+                        subject: 'Comprobante de Pago Aprobado - ArchiPlanner',
+                        html: `
+                            <h2>¡Hola ${cliente.nombre}!</h2>
+                            <p>Te confirmamos que hemos recibido y aprobado tu pago por <strong>$${Number(cliente.pago_monto).toLocaleString()}</strong>.</p>
+                            <p>Adjunto a este correo encontrarás el comprobante oficial en formato PDF.</p>
+                            <p>Estamos emocionados de seguir trabajando en tu evento.</p>
+                        `,
+                        attachments: [{
+                            filename: filename,
+                            path: pdfPath
+                        }]
+                    });
+
+                    // 4. Enviar WhatsApp (Si está configurado)
+                    await WhatsAppService.notifyPaymentApproved(cliente, cliente.pago_monto, publicUrl);
+                }
+            } catch (autoErr) {
+                console.error('[Automation] Error disparando notificaciones:', autoErr.message);
+                // No fallamos la respuesta principal si la notificación falla
+            }
+
+            res.json({ 
+                success: true, 
+                message: 'Pago aprobado y notificaciones enviadas.' 
+            });
         } catch (error) {
             await connection.rollback();
             throw error;
