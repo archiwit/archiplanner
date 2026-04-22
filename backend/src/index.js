@@ -524,9 +524,9 @@ app.put('/api/config', upload.fields([{ name: 'logo_cuadrado', maxCount: 1 }, { 
         let lhp = req.body.logo_horizontal_path || activeConfig[0].logo_horizontal_path;
         let lbp = req.body.logo_black_path || activeConfig[0].logo_black_path;
         if (req.files) {
-            if (req.files.logo_cuadrado) lcp = `/uploads/config/${req.files.logo_cuadrado[0].filename}`;
-            if (req.files.logo_horizontal) lhp = `/uploads/config/${req.files.logo_horizontal[0].filename}`;
-            if (req.files.logo_black) lbp = `/uploads/config/${req.files.logo_black[0].filename}`;
+            if (req.files.logo_cuadrado) lcp = `config/${req.files.logo_cuadrado[0].filename}`;
+            if (req.files.logo_horizontal) lhp = `config/${req.files.logo_horizontal[0].filename}`;
+            if (req.files.logo_black) lbp = `config/${req.files.logo_black[0].filename}`;
         }
         await db.query(`UPDATE configuracion SET nombre_empresa=?, email_contacto=?, telefono=?, city=?, ig_url=?, fb_url=?, pn_url=?, pi_url=?, logo_cuadrado_path=?, logo_horizontal_path=?, logo_black_path=?, color_primario=?, color_secundario=?, color_terciario=?, color_fondo=?, ceo=?, tt_url=?, li_url=?, x_url=?, web_url=?, nav_config=?, footer_config=?, ig_svg=?, fb_svg=?, tt_svg=?, li_svg=?, x_svg=?, ws_svg=?, pi_svg=?, icon_contact_svg=?, icon_footer_svg=? WHERE id=?`, [nombre_empresa, email_contacto, telefono, city, ig_url, fb_url, pn_url, pi_url, lcp, lhp, lbp, color_primario, color_secundario, color_terciario, color_fondo, ceo, tt_url, li_url, x_url, web_url, nav_config, footer_config, ig_svg, fb_svg, tt_svg, li_svg, x_svg, ws_svg, pi_svg, icon_contact_svg, icon_footer_svg, configId]);
         res.json({ success: true });
@@ -547,9 +547,9 @@ app.post('/api/configuraciones', upload.fields([{ name: 'logo_cuadrado', maxCoun
     const { nombre_empresa, email_contacto, telefono, city, ig_url, fb_url, pn_url, pi_url, color_primario, color_secundario, color_terciario, color_fondo, intro_cotizacion, politicas_cotizacion, ceo, tt_url, li_url, x_url, web_url, cedula, ciudad_expedicion, nav_config, footer_config, ig_svg, fb_svg, tt_svg, li_svg, x_svg, ws_svg, pi_svg, icon_contact_svg, icon_footer_svg } = req.body;
     let lcp = null, lhp = null, lbp = null;
     if (req.files) {
-        if (req.files.logo_cuadrado) lcp = `/uploads/config/${req.files.logo_cuadrado[0].filename}`;
-        if (req.files.logo_horizontal) lhp = `/uploads/config/${req.files.logo_horizontal[0].filename}`;
-        if (req.files.logo_black) lbp = `/uploads/config/${req.files.logo_black[0].filename}`;
+        if (req.files.logo_cuadrado) lcp = `config/${req.files.logo_cuadrado[0].filename}`;
+        if (req.files.logo_horizontal) lhp = `config/${req.files.logo_horizontal[0].filename}`;
+        if (req.files.logo_black) lbp = `config/${req.files.logo_black[0].filename}`;
     }
     try {
         const [result] = await db.query(`INSERT INTO configuracion (nombre_empresa, email_contacto, telefono, city, ig_url, fb_url, pn_url, pi_url, logo_cuadrado_path, logo_horizontal_path, logo_black_path, color_primario, color_secundario, color_terciario, color_fondo, intro_cotizacion, politicas_cotizacion, ceo, tt_url, li_url, x_url, web_url, cedula, ciudad_expedicion, nav_config, footer_config, ig_svg, fb_svg, tt_svg, li_svg, x_svg, ws_svg, pi_svg, icon_contact_svg, icon_footer_svg) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`, [nombre_empresa, email_contacto, telefono, city, ig_url, fb_url, pn_url, pi_url, lcp, lhp, lbp, color_primario, color_secundario, color_terciario, color_fondo, intro_cotizacion, politicas_cotizacion, ceo, tt_url, li_url, x_url, web_url, cedula, ciudad_expedicion, nav_config, footer_config, ig_svg, fb_svg, tt_svg, li_svg, x_svg, ws_svg, pi_svg, icon_contact_svg, icon_footer_svg]);
@@ -572,9 +572,9 @@ app.put('/api/configuraciones/:id', upload.fields([{ name: 'logo_cuadrado', maxC
     let logo_black_path = req.body.logo_black_path;
 
     if (req.files) {
-        if (req.files.logo_cuadrado) logo_cuadrado_path = `/uploads/config/${req.files.logo_cuadrado[0].filename}`;
-        if (req.files.logo_horizontal) logo_horizontal_path = `/uploads/config/${req.files.logo_horizontal[0].filename}`;
-        if (req.files.logo_black) logo_black_path = `/uploads/config/${req.files.logo_black[0].filename}`;
+        if (req.files.logo_cuadrado) logo_cuadrado_path = `config/${req.files.logo_cuadrado[0].filename}`;
+        if (req.files.logo_horizontal) logo_horizontal_path = `config/${req.files.logo_horizontal[0].filename}`;
+        if (req.files.logo_black) logo_black_path = `config/${req.files.logo_black[0].filename}`;
     }
     
     try {
