@@ -93,12 +93,13 @@ NODE_ENV=production
 
         console.log("Backend uploaded successfully!");
 
-        // --- 3. Upload Fusion Migration Script ---
-        console.log("Uploading Fusion Migration Script...");
+        // --- 3. Upload Fusion Migration Scripts ---
+        console.log("Uploading Migration Scripts...");
         await client.uploadFrom(path.resolve(__dirname, "BASE_DE_DATOS_V4_FUSION.sql"), "/BASE_DE_DATOS_V4_FUSION.sql");
+        await client.uploadFrom(path.resolve(__dirname, "backend/scripts/migration_v6.sql"), "/migration_v6.sql");
 
         console.log("DEPLOYMENT COMPLETE! Check archiplanner.com.co");
-        console.log("IMPORTANT: Now run BASE_DE_DATOS_V4_FUSION.sql in your phpMyAdmin.");
+        console.log("IMPORTANT: Now run migration_v6.sql in your phpMyAdmin.");
 
     } catch (err) {
         console.error("Deployment failed:", err);
