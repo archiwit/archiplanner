@@ -59,15 +59,28 @@
   </div>
   <div id="root"></div>
   <script>
-    window.addEventListener('load', function() {
-      const loader = document.getElementById('archi-initial-loader');
-      if (loader) {
-        loader.style.opacity = '0';
-        loader.style.visibility = 'hidden';
-        document.body.style.overflow = 'auto';
-        setTimeout(() => loader.remove(), 600);
+    (function() {
+      function hideLoader() {
+        const loader = document.getElementById('archi-initial-loader');
+        if (loader) {
+          loader.style.opacity = '0';
+          loader.style.visibility = 'hidden';
+          document.body.style.overflow = 'auto';
+          setTimeout(() => loader.remove(), 600);
+        }
       }
-    });
+      
+      // Asegurar que el loader se vea al menos 1 segundo para evitar parpadeos
+      const startTime = Date.now();
+      window.addEventListener('load', function() {
+        const elapsed = Date.now() - startTime;
+        const remaining = Math.max(0, 1000 - elapsed);
+        setTimeout(hideLoader, remaining);
+      });
+
+      // Fallback si 'load' tarda demasiado (10s)
+      setTimeout(hideLoader, 10000);
+    })();
   </script>
   <script>console.log('Index.html: Script inline ejecutado');</script>
   <script type="module" src="/src/main.jsx"></script>
