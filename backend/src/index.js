@@ -1276,38 +1276,39 @@ app.post('/api/cotizaciones', async (req, res) => {
 
         const [result] = await connection.query(`
             INSERT INTO cotizaciones 
-            (conf_id, num, num_arriendo, clase, cli_id, u_id, fcoti, fevent, fevent_fin, num_adultos, num_ninos, hora_inicio, hora_fin, lugar, loc_id, tematica, tipo_evento, paleta_colores, subt, iva, aplica_iva, mostrar_precios, total, total_tipo, monto_final, estado, notas, notas_entrega, notas_devolucion)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            (conf_id, num, num_arriendo, clase, cli_id, u_id, fcoti, fevent, fevent_fin, num_adultos, num_ninos, hora_inicio, hora_fin, lugar, loc_id, tematica, tipo_evento, paleta_colores, subt, iva, aplica_iva, mostrar_precios, total, total_tipo, monto_final, estado, notas, notas_entrega, notas_devolucion, empresa_id)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `, [
-            parseInt(req.body.conf_id) || 1, 
-            req.body.num, 
+            parseInt(conf_id) || 1, 
+            num, 
             req.body.num_arriendo || null,
             req.body.clase || 'evento',
-            parseInt(req.body.cli_id) || 0, 
+            parseInt(cli_id) || 0, 
             final_u_id, 
-            req.body.fcoti, 
-            req.body.fevent || null, 
-            req.body.fevent_fin || req.body.fevent || null, 
-            parseInt(req.body.num_adultos) || 0, 
-            parseInt(req.body.num_ninos) || 0, 
-            req.body.hora_inicio || null, 
-            req.body.hora_fin || null, 
-            req.body.lugar || '', 
-            req.body.loc_id ? parseInt(req.body.loc_id) : null, 
-            req.body.tematica || '', 
-            req.body.tipo_evento || '', 
-            req.body.paleta_colores || '', 
-            parseFloat(req.body.subt) || 0, 
-            parseFloat(req.body.iva) || 0, 
-            req.body.aplica_iva ? 1 : 0, 
-            req.body.mostrar_precios ? 1 : 0, 
-            parseFloat(req.body.total) || 0, 
-            req.body.total_tipo || 'calculado', 
-            parseFloat(req.body.monto_final) || 0, 
-            req.body.estado || 'borrador', 
-            req.body.notas || '',
-            req.body.notas_entrega || '',
-            req.body.notas_devolucion || ''
+            fcoti, 
+            fevent || null, 
+            fevent_fin || fevent || null, 
+            parseInt(num_adultos) || 0, 
+            parseInt(num_ninos) || 0, 
+            hora_inicio || null, 
+            hora_fin || null, 
+            lugar || '', 
+            loc_id ? parseInt(loc_id) : null, 
+            tematica || '', 
+            tipo_evento || '', 
+            paleta_colores || '', 
+            parseFloat(subt) || 0, 
+            parseFloat(iva) || 0, 
+            aplica_iva ? 1 : 0, 
+            mostrar_precios ? 1 : 0, 
+            parseFloat(total) || 0, 
+            total_tipo || 'calculado', 
+            parseFloat(monto_final) || 0, 
+            estado || 'borrador', 
+            notas || '',
+            notas_entrega || '',
+            notas_devolucion || '',
+            parseInt(empresa_id) || null
         ]);
         
         const cot_id = result.insertId;
@@ -1383,7 +1384,7 @@ app.put('/api/cotizaciones/:id', async (req, res) => {
             conf_id=?, num=?, num_arriendo=?, clase=?, cli_id=?, u_id=?, fcoti=?, fevent=?, fevent_fin=?, num_adultos=?, num_ninos=?, 
             hora_inicio=?, hora_fin=?, lugar=?, loc_id=?, tematica=?, tipo_evento=?, 
             paleta_colores=?, subt=?, iva=?, aplica_iva=?, mostrar_precios=?, total=?, total_tipo=?, monto_final=?, 
-            estado=?, notas=?, notas_entrega=?, notas_devolucion=?
+            estado=?, notas=?, notas_entrega=?, notas_devolucion=?, empresa_id=?
             WHERE id=?
         `, [
             parseInt(req.body.conf_id) || 1, 
@@ -1415,6 +1416,7 @@ app.put('/api/cotizaciones/:id', async (req, res) => {
             req.body.notas || '',
             req.body.notas_entrega || '',
             req.body.notas_devolucion || '',
+            parseInt(req.body.empresa_id) || null,
             req.params.id
         ]);
 

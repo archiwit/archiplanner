@@ -27,7 +27,7 @@ const uploadGallery = multer({
 router.get('/', async (req, res) => {
     try {
         const [rows] = await db.query('SELECT id, nombre, slug, descripcion, created_at, created_by, is_visible, estado, is_homepage, seo_title, seo_description, seo_keywords FROM web_paginas_v4 ORDER BY created_at DESC');
-        res.json(rows);
+        res.json(Array.isArray(rows) ? rows : []);
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
@@ -56,7 +56,7 @@ router.get('/media', async (req, res) => {
         params.push(parseInt(limit), parseInt(offset));
 
         const [rows] = await db.query(query, params);
-        res.json(rows);
+        res.json(Array.isArray(rows) ? rows : []);
     } catch (err) {
         res.status(500).json({ error: err.message });
     }

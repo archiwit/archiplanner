@@ -48,9 +48,11 @@ const EventBrief = ({ cotId }) => {
             ]);
 
             // 3. Cargar Elementos de cada Layout para consolidar materiales
+            const layoutsArray = Array.isArray(layoutsRes) ? layoutsRes : [];
             const layoutsWithElements = await Promise.all(
-                layoutsRes.map(async (l) => {
-                    const elements = await layoutService.getElements(l.id);
+                layoutsArray.map(async (l) => {
+                    const elementsRaw = await layoutService.getElements(l.id);
+                    const elements = Array.isArray(elementsRaw) ? elementsRaw : [];
                     return { ...l, elements };
                 })
             );
@@ -62,31 +64,35 @@ const EventBrief = ({ cotId }) => {
                 if (l.materiales_globales) {
                     try {
                         const globalMats = JSON.parse(l.materiales_globales);
-                        globalMats.forEach(m => {
-                            const key = m.nombre.toLowerCase().trim();
-                            if (!materialsMap[key]) materialsMap[key] = { nombre: m.nombre, cantidad: 0, unidad: m.unidad || 'und' };
-                            materialsMap[key].cantidad += parseFloat(m.cantidad || 0);
-                        });
+                        if (Array.isArray(globalMats)) {
+                            globalMats.forEach(m => {
+                                const key = m.nombre?.toLowerCase().trim() || 'desconocido';
+                                if (!materialsMap[key]) materialsMap[key] = { nombre: m.nombre, cantidad: 0, unidad: m.unidad || 'und' };
+                                materialsMap[key].cantidad += parseFloat(m.cantidad || 0);
+                            });
+                        }
                     } catch (e) { console.warn("Error parsing global materials", e); }
                 }
 
                 // Sumar elementos interactivos puestos en el plano
-                l.elements.forEach(el => {
-                    const key = el.tipo.toLowerCase().trim();
-                    if (!materialsMap[key]) materialsMap[key] = { nombre: el.tipo, cantidad: 0, unidad: 'und' };
-                    materialsMap[key].cantidad += 1;
-                    // Si tiene puestos asociados (ej: mesas), sumarlos
-                    if (el.puestos > 0) {
-                        const pKey = 'Puestos / Invitados';
-                        if (!materialsMap[pKey]) materialsMap[pKey] = { nombre: 'Puestos Totales', cantidad: 0, unidad: 'puestos' };
-                        materialsMap[pKey].cantidad += el.puestos;
-                    }
-                });
+                if (Array.isArray(l.elements)) {
+                    l.elements.forEach(el => {
+                        const key = el.tipo?.toLowerCase().trim() || 'item';
+                        if (!materialsMap[key]) materialsMap[key] = { nombre: el.tipo, cantidad: 0, unidad: 'und' };
+                        materialsMap[key].cantidad += 1;
+                        // Si tiene puestos asociados (ej: mesas), sumarlos
+                        if (el.puestos > 0) {
+                            const pKey = 'Puestos / Invitados';
+                            if (!materialsMap[pKey]) materialsMap[pKey] = { nombre: 'Puestos Totales', cantidad: 0, unidad: 'puestos' };
+                            materialsMap[pKey].cantidad += el.puestos;
+                        }
+                    });
+                }
             });
 
             // 5. Extraer Proveedores únicos de la cotización
             const providersMap = new Map();
-            if (eventRes.detalles) {
+            if (eventRes && Array.isArray(eventRes.detalles)) {
                 eventRes.detalles.forEach(d => {
                     if (d.nombre_proveedor) {
                         providersMap.set(d.nombre_proveedor, {
@@ -100,8 +106,8 @@ const EventBrief = ({ cotId }) => {
 
             setData({
                 event: eventRes,
-                itinerary: itRes.sort((a,b) => (a.hora || '').localeCompare(b.hora || '')),
-                keyItems: keyRes,
+                itinerary: Array.isArray(itRes) ? itRes.sort((a,b) => (a.hora || '').localeCompare(b.hora || '')) : [],
+                keyItems: Array.isArray(keyRes) ? keyRes : [],
                 layouts: layoutsWithElements,
                 materialsSummary: materialsMap,
                 providers: Array.from(providersMap.values())
@@ -175,12 +181,12 @@ const EventBrief = ({ cotId }) => {
                         <section className="brief-section">
                             <h3 className="section-title"><CheckSquare size={16} /> Protocolo y Puntos Clave</h3>
                             <ul className="technical-list">
-                                {keyItems.map(item => (
+                                {(Array.isArray(keyItems) ? keyItems : []).map(item => (
                                     <li key={item.id}>
                                         <strong>{item.titulo}:</strong> {item.valor || 'Pendiente'}
                                     </li>
                                 ))}
-                                {keyItems.length === 0 && <li className="empty">No hay puntos clave registrados.</li>}
+                                {(!Array.isArray(keyItems) || keyItems.length === 0) && <li className="empty">No hay puntos clave registrados.</li>}
                             </ul>
                         </section>
 
@@ -188,13 +194,13 @@ const EventBrief = ({ cotId }) => {
                         <section className="brief-section">
                             <h3 className="section-title"><Truck size={16} /> Proveedores Externos</h3>
                             <div className="providers-grid">
-                                {providers.map((p, i) => (
+                                {(Array.isArray(providers) ? providers : []).map((p, i) => (
                                     <div key={i} className="provider-card">
                                         <strong>{p.nombre}</strong>
-                                        <p>{[...new Set(p.servicios)].join(', ')}</p>
+                                        <p>{Array.isArray(p.servicios) ? [...new Set(p.servicios)].join(', ') : 'Sin servicios'}</p>
                                     </div>
                                 ))}
-                                {providers.length === 0 && <p className="empty">No hay proveedores asignados en la cotización.</p>}
+                                {(!Array.isArray(providers) || providers.length === 0) && <p className="empty">No hay proveedores asignados en la cotización.</p>}
                             </div>
                         </section>
                     </div>
@@ -204,7 +210,7 @@ const EventBrief = ({ cotId }) => {
                         <section className="brief-section">
                             <h3 className="section-title"><MapPin size={16} /> Montaje y Áreas (360)</h3>
                             <div className="layouts-technical">
-                                {layouts.map(l => (
+                                {(Array.isArray(layouts) ? layouts : []).map(l => (
                                     <div key={l.id} className="layout-tech-card">
                                         <div className="layout-tech-header">
                                             <h4>{l.nombre}</h4>
@@ -217,11 +223,11 @@ const EventBrief = ({ cotId }) => {
                                             </div>
                                         )}
                                         <div className="layout-elements-mini">
-                                            <strong>Elementos:</strong> {l.elements.length} objetos en plano.
+                                            <strong>Elementos:</strong> {Array.isArray(l.elements) ? l.elements.length : 0} objetos en plano.
                                         </div>
                                     </div>
                                 ))}
-                                {layouts.length === 0 && <p className="empty">Sin áreas diseñadas en el mapa 360.</p>}
+                                {(!Array.isArray(layouts) || layouts.length === 0) && <p className="empty">Sin áreas diseñadas en el mapa 360.</p>}
                             </div>
                         </section>
 
@@ -257,7 +263,7 @@ const EventBrief = ({ cotId }) => {
                             </tr>
                         </thead>
                         <tbody>
-                            {itinerary.map(item => (
+                            {(Array.isArray(itinerary) ? itinerary : []).map(item => (
                                 <tr key={item.id}>
                                     <td className="t-time">{item.hora?.slice(0, 5)}</td>
                                     <td className="t-desc">
@@ -267,7 +273,7 @@ const EventBrief = ({ cotId }) => {
                                     <td className="t-resp">{item.responsable || '--'}</td>
                                 </tr>
                             ))}
-                            {itinerary.length === 0 && (
+                            {(!Array.isArray(itinerary) || itinerary.length === 0) && (
                                 <tr>
                                     <td colSpan="3" style={{ textAlign: 'center', padding: '30px', opacity: 0.5 }}>
                                         No se ha creado el itinerario para este evento.

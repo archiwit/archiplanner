@@ -21,7 +21,7 @@ const NotificationBell = () => {
             if (!userId) return;
 
             const data = await alertasService.getAll(userId, userRol);
-            setAlerts(data || []);
+            setAlerts(Array.isArray(data) ? data : []);
             const count = await alertasService.getUnreadCount(userId, userRol);
             setUnreadCount(count || 0);
         } catch (err) {
@@ -96,10 +96,10 @@ const NotificationBell = () => {
                         )}
                     </div>
                     <div className="alerts-list">
-                        {alerts.length === 0 ? (
+                        {Array.isArray(alerts) && alerts.length === 0 ? (
                             <div className="empty-alerts">No hay notificaciones</div>
                         ) : (
-                            alerts.map(alert => (
+                            Array.isArray(alerts) && alerts.map(alert => (
                                 <div key={alert.id} className={`alert-item ${alert.leida ? 'read' : 'unread'}`}>
                                     <div className="alert-icon">
                                         {getIcon(alert.tipo)}

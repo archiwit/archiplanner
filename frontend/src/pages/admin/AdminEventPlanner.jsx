@@ -231,12 +231,24 @@ const AdminEventPlanner = () => {
     const [inspirations, setInspirations] = useState([]);
     const [keyItems, setKeyItems] = useState([]);
     const [meetings, setMeetings] = useState([]);
+    const [companies, setCompanies] = useState([]);
+    const [selectedCompany, setSelectedCompany] = useState(null);
     const [isDesignerFs, setIsDesignerFs] = useState(false);
 
     const location = useLocation();
 
     useEffect(() => {
         fetchEvents();
+    }, []);
+
+    useEffect(() => {
+        const fetchBaseData = async () => {
+            try {
+                const comps = await configService.getCompanies();
+                setCompanies(Array.isArray(comps) ? comps : []);
+            } catch (err) { console.error("Error loading companies:", err); }
+        };
+        fetchBaseData();
     }, []);
 
     useEffect(() => {
@@ -257,7 +269,8 @@ const AdminEventPlanner = () => {
             const data = await cotizacionService.getAll();
             // FILTRADO DE SEGURIDAD: Los clientes solo ven sus propios eventos
             if (user?.rol === 'cliente') {
-                const filtered = data.filter(cot => {
+                const dataArray = Array.isArray(data) ? data : [];
+                const filtered = dataArray.filter(cot => {
                     const clientName = cot.cliente_nombre?.toLowerCase() || '';
                     const userNick = user.nick?.toLowerCase() || '';
                     const userName = user.nombre?.toLowerCase() || '';
@@ -269,15 +282,22 @@ const AdminEventPlanner = () => {
                     handleEventSelect(filtered[0]);
                 }
             } else {
-                setCotizaciones(data);
+                setCotizaciones(Array.isArray(data) ? data : []);
             }
         } catch (err) {
             console.error("Error fetching events (cotizaciones):", err);
+            setCotizaciones([]);
         }
     };
 
     const handleEventSelect = (event) => {
         setSelectedEvent(event);
+        if (event.empresa_id) {
+            const comp = companies.find(c => c.id === event.empresa_id);
+            setSelectedCompany(comp || null);
+        } else {
+            setSelectedCompany(null);
+        }
         fetchAllData(event.id);
     };
 
@@ -292,12 +312,14 @@ const AdminEventPlanner = () => {
                 actividadService.getAll({ cot_id: cotId })
             ]);
 
-            if (itRes.status === 'fulfilled') setItinerary(itRes.value);
-            if (inspRes.status === 'fulfilled') setInspirations(inspRes.value);
-            if (keyRes.status === 'fulfilled') setKeyItems(keyRes.value);
+            if (itRes.status === 'fulfilled') setItinerary(Array.isArray(itRes.value) ? itRes.value : []);
+            if (inspRes.status === 'fulfilled') setInspirations(Array.isArray(inspRes.value) ? inspRes.value : []);
+            if (keyRes.status === 'fulfilled') setKeyItems(Array.isArray(keyRes.value) ? keyRes.value : []);
+            
             if (meetRes.status === 'fulfilled') {
-                const meetingTypes = ['reunion', 'cita', 'visita', 'llamada', 'otro'];
-                const meetings = (meetRes.value || []).filter(a => 
+                const meetingTypes = ['reunion', 'cita', 'visita', 'llamada', 'evento', 'otro'];
+                const dataArray = Array.isArray(meetRes.value) ? meetRes.value : [];
+                const meetings = dataArray.filter(a => 
                     a.tipo && meetingTypes.includes(a.tipo.toLowerCase())
                 );
                 setMeetings(meetings);
@@ -691,7 +713,7 @@ const AdminEventPlanner = () => {
 
             {!selectedEvent ? (
                 <div className="client-selector-grid">
-                    {cotizaciones
+                    {(Array.isArray(cotizaciones) ? cotizaciones : [])
                         .filter(cot => {
                             if (user?.rol === 'admin') return true;
                             // Si es cliente, solo ve eventos donde coincida su nombre o ID
@@ -720,11 +742,48 @@ const AdminEventPlanner = () => {
                         <aside className="event-planner-sidebar glass-panel">
                             <div className="selected-client-header">
                                 <button className="btn-back-planner" onClick={() => setSelectedEvent(null)}>← Volver</button>
+                                {selectedCompany && (
+                                    <div className="planner-company-branding">
+                                        <img 
+                                            src={selectedCompany.logo?.startsWith('http') ? selectedCompany.logo : `${API_URL.replace('/api','')}${selectedCompany.logo}`} 
+                                            alt={selectedCompany.nombre}
+                                            className="planner-mini-logo"
+                                            onError={(e) => e.target.style.display = 'none'}
+                                        />
+                                    </div>
+                                )}
                                 <div className="client-info-stack">
                                     <strong>{selectedEvent.titulo}</strong>
                                     <span>{selectedEvent.cliente_nombre} {selectedEvent.cliente_apellido}</span>
                                 </div>
                             </div>
+
+                            {user?.rol === 'admin' && (
+                                <div className="company-selection-mini">
+                                    <select 
+                                        className="dense-input-mini"
+                                        value={selectedEvent.empresa_id || ''}
+                                        onChange={async (e) => {
+                                            const newId = e.target.value;
+                                            try {
+                                                await cotizacionService.update(selectedEvent.id, { ...selectedEvent, empresa_id: newId });
+                                                const updatedEvent = { ...selectedEvent, empresa_id: newId };
+                                                setSelectedEvent(updatedEvent);
+                                                const comp = companies.find(c => String(c.id) === String(newId));
+                                                setSelectedCompany(comp || null);
+                                                fetchEvents(); // Refresh main list
+                                            } catch (err) {
+                                                Swal.fire('Error', 'No se pudo guardar el cambio de empresa', 'error');
+                                            }
+                                        }}
+                                    >
+                                        <option value="">Seleccionar Empresa (Branding)</option>
+                                        {companies.map(c => (
+                                            <option key={c.id} value={c.id}>{c.nombre}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                            )}
 
                             <nav className="planner-tabs">
                                 <button className={activeTab === 'itinerary' ? 'active' : ''} onClick={() => setActiveTab('itinerary')}>
@@ -772,7 +831,7 @@ const AdminEventPlanner = () => {
                                             </div>
                                         </div>
                                         <div className="itinerary-list">
-                                            {itinerary.map((item, idx) => (
+                                            {(Array.isArray(itinerary) ? itinerary : []).map((item, idx) => (
                                                 <div key={item.id} className="itinerary-item-admin">
                                                     <div className="iti-icon-box">
                                                         {renderItiIcon(item.icono)}
@@ -806,7 +865,7 @@ const AdminEventPlanner = () => {
                                             </label>
                                         </div>
                                         <div className="moodboard-grid">
-                                            {inspirations.map(insp => (
+                                            {(Array.isArray(inspirations) ? inspirations : []).map(insp => (
                                                 <div key={insp.id} className="mood-card">
                                                     <img src={insp.foto_path} alt={insp.titulo} />
                                                     {user?.rol !== 'cliente' && (
@@ -846,9 +905,9 @@ const AdminEventPlanner = () => {
                                             <h3>Historial de Reuniones y Acuerdos</h3>
                                         </div>
                                         <div className="meetings-list">
-                                            {meetings.length === 0 ? (
+                                            {(!Array.isArray(meetings) || meetings.length === 0) ? (
                                                 <p className="no-data">No hay reuniones registradas para este evento.</p>
-                                            ) : meetings.map(meet => (
+                                            ) : (Array.isArray(meetings) ? meetings : []).map(meet => (
                                                 <div key={meet.id} className="meeting-log-card glass-panel">
                                                     <div className="meet-card-header">
                                                         <div className="meet-card-side">
@@ -868,7 +927,7 @@ const AdminEventPlanner = () => {
                                                     </div>
                                                     
                                                     <div className="meet-card-body">
-                                                        {meet.fotos?.length > 0 && (
+                                                        {Array.isArray(meet.fotos) && meet.fotos.length > 0 && (
                                                             <div className="meet-gallery">
                                                                 {meet.fotos.map((f, i) => (
                                                                     <img key={i} src={f.foto_path} alt="Evidencia" className="meet-thumb" />

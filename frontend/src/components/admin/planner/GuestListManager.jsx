@@ -172,20 +172,21 @@ const GuestListManager = ({ cotId, eventType = 'Otro' }) => {
         }
     };
 
+    const guestsArray = Array.isArray(guests) ? guests : [];
     const stats = {
-        total: guests.reduce((acc, g) => acc + (Number(g.adultos) + Number(g.niños)), 0),
-        adultos: guests.reduce((acc, g) => acc + Number(g.adultos), 0),
-        niños: guests.reduce((acc, g) => acc + Number(g.niños), 0),
-        confirmados: guests.filter(g => g.estado === 'Confirmado').length,
-        pendientes: guests.filter(g => g.estado === 'Pendiente').length,
-        mesasCount: new Set(guests.filter(g => g.mesa_id).map(g => g.mesa_id)).size,
-        mesasDistribution: guests.reduce((acc, g) => {
+        total: guestsArray.reduce((acc, g) => acc + (Number(g.adultos) + Number(g.niños)), 0),
+        adultos: guestsArray.reduce((acc, g) => acc + Number(g.adultos), 0),
+        niños: guestsArray.reduce((acc, g) => acc + Number(g.niños), 0),
+        confirmados: guestsArray.filter(g => g.estado === 'Confirmado').length,
+        pendientes: guestsArray.filter(g => g.estado === 'Pendiente').length,
+        mesasCount: new Set(guestsArray.filter(g => g.mesa_id).map(g => g.mesa_id)).size,
+        mesasDistribution: guestsArray.reduce((acc, g) => {
             if (g.mesa_id) acc[g.mesa_id] = (acc[g.mesa_id] || 0) + (Number(g.adultos) + Number(g.niños));
             return acc;
         }, {})
     };
 
-    const filteredGuests = guests.filter(g => {
+    const filteredGuests = guestsArray.filter(g => {
         const matchesTab = filter === 'Todos' || g.grupo === filter;
         const matchesSearch = (g.nombre || '').toLowerCase().includes((search || '').toLowerCase());
         return matchesTab && matchesSearch;

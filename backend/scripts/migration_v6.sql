@@ -2,8 +2,6 @@
 -- Use this script to update your production database on Hostinger.
 -- This script is NON-DESTRUCTIVE and will only add missing columns.
 
-USE archiplanner; -- Ensure you use the correct database name on your hosting
-
 -- 1. Update Cotizaciones Table
 ALTER TABLE cotizaciones 
     ADD COLUMN IF NOT EXISTS conf_id INT(11) DEFAULT 1 AFTER id,

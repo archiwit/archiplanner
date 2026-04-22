@@ -62,13 +62,28 @@ const AdminDashboard = () => {
                     api.get(`/dashboard/stats${queryParams}`),
                     api.get(`/dashboard/charts${queryParams}`)
                 ]);
+                
+                // Blindaje de datos estadísticos
+                const saferCharts = {
+                    ingresos: Array.isArray(cRes.data?.ingresos) ? cRes.data.ingresos : [],
+                    gastos: Array.isArray(cRes.data?.gastos) ? cRes.data.gastos : [],
+                    distribucion: Array.isArray(cRes.data?.distribucion) ? cRes.data.distribucion : [],
+                    team: Array.isArray(cRes.data?.team) ? cRes.data.team : [],
+                    actividad: Array.isArray(cRes.data?.actividad) ? cRes.data.actividad : []
+                };
+
                 if (isAsesorArriendos) {
                     const aRes = await api.get('/cotizaciones?clase=arriendo');
-                    setArriendosDetalle(aRes.data);
+                    setArriendosDetalle(Array.isArray(aRes.data) ? aRes.data : []);
                 }
 
-                setStats(sRes.data);
-                setCharts(cRes.data);
+                setStats(sRes.data || { 
+                    clientes: 0, cotizaciones: 0, facturacion: 0, servicios: 0, 
+                    pendientes: 0, proveedores: 0,
+                    egresos: { total: 0, actual: 0, anterior: 0 },
+                    utilidad: { total: 0, actual: 0, anterior: 0 }
+                });
+                setCharts(saferCharts);
             } catch (err) {
                 console.error('Error fetching dashboard data:', err);
             } finally {

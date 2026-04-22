@@ -51,8 +51,8 @@ async function deploy() {
         // Upload backend uploads directory to root /uploads
         const backendUploads = path.resolve(__dirname, "backend/uploads");
         if (fs.existsSync(backendUploads)) {
-            console.log("Uploading backend/uploads to /uploads...");
-            await client.uploadFromDir(backendUploads, "uploads");
+            console.info("📤 Subiendo carpeta de archivos (uploads)...");
+        await client.uploadFromDir(backendUploads, "api/uploads");
         }
         
         console.log("Frontend uploaded successfully!");

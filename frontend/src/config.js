@@ -3,11 +3,11 @@ const isProd = import.meta.env.PROD;
 const PORT = 5001;
 
 export const API_BASE_URL = isProd 
-    ? 'https://archiplanner-api.onrender.com/api' 
+    ? 'https://archiplanner.com.co/api' 
     : `http://127.0.0.1:${PORT}/api`;
 
 export const UPLOADS_URL = isProd 
-    ? 'https://archiplanner.com.co' 
+    ? 'https://archiplanner.com.co/api' 
     : 'http://127.0.0.1:5001';
 
 /**

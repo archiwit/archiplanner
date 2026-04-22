@@ -20,8 +20,8 @@ const Gallery = () => {
                     api.get('/galeria/eventos'),
                     api.get('/galeria/categorias')
                 ]);
-                setEventos(eRes.data);
-                setCategorias(cRes.data);
+                setEventos(Array.isArray(eRes.data) ? eRes.data : []);
+                setCategorias(Array.isArray(cRes.data) ? cRes.data : []);
             } catch (err) {
                 console.error('Error fetching gallery:', err);
             } finally {
@@ -31,9 +31,10 @@ const Gallery = () => {
         fetchData();
     }, []);
 
+    const eventosArray = Array.isArray(eventos) ? eventos : [];
     const filteredItems = filter === 'all' 
-        ? eventos.filter(e => e.activo)
-        : eventos.filter(e => e.activo && String(e.categoria_id) === String(filter));
+        ? eventosArray.filter(e => e.activo)
+        : eventosArray.filter(e => e.activo && String(e.categoria_id) === String(filter));
 
     if (loading) return <div className="page-loader">Curando experiencias...</div>;
 

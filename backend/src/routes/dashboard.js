@@ -182,11 +182,11 @@ router.get('/charts', async (req, res) => {
         `, u_id ? [u_id, u_id] : []);
 
         res.json({
-            ingresos,
-            gastos,
-            distribucion,
-            team: teamPerformance,
-            actividad
+            ingresos: Array.isArray(ingresos) ? ingresos : [],
+            gastos: Array.isArray(gastos) ? gastos : [],
+            distribucion: Array.isArray(distribucion) ? distribucion : [],
+            team: Array.isArray(teamPerformance) ? teamPerformance : [],
+            actividad: Array.isArray(actividad) ? actividad : []
         });
     } catch (err) {
         console.error(err);

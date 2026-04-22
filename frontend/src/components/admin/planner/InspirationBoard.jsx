@@ -98,9 +98,10 @@ const InspirationBoard = ({ cotId, userRole = 'cliente' }) => {
         }
     };
 
-    const zonesPresent = ['Todas', ...new Set(items.map(i => i.zona).filter(z => z))];
+    const itemsArray = Array.isArray(items) ? items : [];
+    const zonesPresent = ['Todas', ...new Set(itemsArray.map(i => i.zona).filter(z => z))];
 
-    const filteredItems = items.filter(i => filterZone === 'Todas' || i.zona === filterZone);
+    const filteredItems = itemsArray.filter(i => filterZone === 'Todas' || i.zona === filterZone);
 
     if (loading) return <div className="p-10 text-center opacity-50">Cargando inspiración...</div>;
 
