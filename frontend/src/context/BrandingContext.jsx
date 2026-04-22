@@ -7,15 +7,20 @@ export const BrandingProvider = ({ children }) => {
     const [config, setConfig] = useState(null);
     const [loading, setLoading] = useState(true);
 
-    const fetchConfig = async () => {
+    const fetchConfig = async (retries = 3) => {
         try {
             const res = await api.get('/config');
             setConfig(res.data);
             applyBranding(res.data);
+            setLoading(false);
         } catch (err) {
             console.error('Error fetching branding config:', err);
-        } finally {
-            setLoading(false);
+            if (retries > 0) {
+                console.log(`Retrying branding fetch... (${retries} attempts left)`);
+                setTimeout(() => fetchConfig(retries - 1), 2000);
+            } else {
+                setLoading(false);
+            }
         }
     };
 
@@ -43,7 +48,7 @@ export const BrandingProvider = ({ children }) => {
     }, []);
 
     return (
-        <BrandingContext.Provider value={{ config, loading, refreshBranding: fetchConfig }}>
+        <BrandingContext.Provider value={{ config, loading, refreshBranding: () => fetchConfig() }}>
             {children}
         </BrandingContext.Provider>
     );
