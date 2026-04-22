@@ -8,7 +8,7 @@ export const API_BASE_URL = isLocal
 
 export const UPLOADS_URL = isLocal 
     ? `http://127.0.0.1:${PORT}`
-    : 'https://archiplanner.com.co';
+    : 'https://archiplanner-api.onrender.com';
 
 /**
  * Intelligent helper to format upload paths, avoiding double /uploads

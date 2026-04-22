@@ -1,7 +1,9 @@
 import React from 'react';
 import { Outlet, Navigate, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import { useBranding } from '../../context/BrandingContext';
 import Sidebar from './Sidebar';
+import PremiumLoader from '../common/PremiumLoader';
 import pushService from '../../services/pushService';
 import { Menu } from 'lucide-react';
 
@@ -56,7 +58,8 @@ const AdminLayout = () => {
 
     const isMobile = window.innerWidth < 768;
 
-    if (loading) return <div className="loading">Cargando administrador...</div>;
+    const { loading: brandingLoading } = useBranding();
+    if (loading || brandingLoading) return <PremiumLoader />;
     
     // Strict session check to avoid ghost sessions
     if (!token || !user) {

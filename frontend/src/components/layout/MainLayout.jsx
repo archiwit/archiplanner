@@ -1,23 +1,17 @@
 import { Outlet } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import { useBranding } from '../../context/BrandingContext';
 import Navbar from './Navbar';
 import Footer from './Footer';
+import PremiumLoader from '../common/PremiumLoader';
 
 const MainLayout = () => {
-    const { loading } = useAuth();
+    const { loading: authLoading } = useAuth();
+    const { loading: brandingLoading } = useBranding();
 
-    if (loading) return (
-        <div className="loading-screen" style={{ 
-            height: '100vh', 
-            display: 'flex', 
-            alignItems: 'center', 
-            justifyContent: 'center',
-            background: 'var(--color-bg)',
-            color: 'var(--color-primary)'
-        }}>
-            <div className="logo" style={{fontSize: '32px'}}>Archi<span>Planner</span></div>
-        </div>
-    );
+    const loading = authLoading || brandingLoading;
+
+    if (loading) return <PremiumLoader />;
 
     return (
         <div className="main-layout">
