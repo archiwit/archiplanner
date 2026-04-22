@@ -17,6 +17,7 @@ import ServicesCorporateV4 from '../components/ui/ServicesCorporateV4';
 import FounderCtaV4 from '../components/ui/FounderCtaV4';
 import ContactSectionV4 from '../components/ui/ContactSectionV4';
 import DynamicForm from '../components/ui/DynamicForm/DynamicForm';
+import PremiumLoader from '../components/common/PremiumLoader';
 
 // Helper Components for Public View
 const InstagramFeed = ({ title = '@ARCHI.PLANNER' }) => (
@@ -47,7 +48,7 @@ const PublicPageViewV4 = ({ slugOverride }) => {
         const fetchPage = async () => {
             try {
                 // Fetch site stories for hero components
-                const targetSlug = slugOverride || slug || 'bienvenido';
+                const targetSlug = slugOverride || slug || 'homepage_v4';
 
                 // Parallel fetch for content and dynamic data
                 // Parallel fetch for content and branding (critical)
@@ -536,29 +537,7 @@ const PublicPageViewV4 = ({ slugOverride }) => {
         }
     };
 
-    if (loading) return (
-        <div className="public-loader premium-loader-v4">
-            <div className="loader-orbit-container">
-                <div className="loader-orbit-ring ring-1"></div>
-                <div className="loader-orbit-ring ring-2"></div>
-                <div className="loader-logo-wrapper">
-                    {systemConfig?.logo_path ? (
-                        <img src={`${UPLOADS_URL}${systemConfig.logo_path}`} alt="ArchiPlanner" className="loader-logo-premium" />
-                    ) : (
-                        <div className="loader-logo-fallback">A</div>
-                    )}
-                </div>
-            </div>
-            
-            <div className="loader-content-fade">
-                <p className="loader-brand-label">ArchiPlanner <span className="editorial-mark">®</span></p>
-                <div className="loader-progress-minimal">
-                    <div className="loader-progress-inner"></div>
-                </div>
-                <p className="loader-status-text">Curando tu experiencia editorial...</p>
-            </div>
-        </div>
-    );
+    if (loading) return <PremiumLoader />;
 
     if (error) return (
         <div className="public-error-page">
@@ -625,39 +604,8 @@ const PublicPageViewV4 = ({ slugOverride }) => {
                     font-family: var(--font-premium); 
                 }
                 .premium-loader-v4 { 
-                    display: flex; flex-direction: column; align-items: center; justify-content: center; 
-                    height: 100vh; background: #0a0a0a; position: fixed; top: 0; left: 0; width: 100%; z-index: 99999;
-                    font-family: var(--font-premium);
+                    display: none;
                 }
-                .loader-orbit-container { position: relative; width: 150px; height: 150px; margin-bottom: 50px; display: flex; align-items: center; justify-content: center; }
-                .loader-orbit-ring { 
-                    position: absolute; border-radius: 50%; border: 1px solid rgba(212, 175, 55, 0.1);
-                    animation: orbitRotate 10s linear infinite; 
-                }
-                .ring-1 { width: 100%; height: 100%; border-top-color: var(--color-primary); animation-duration: 3s; }
-                .ring-2 { width: 80%; height: 80%; border-bottom-color: var(--color-primary); animation-duration: 2s; animation-direction: reverse; }
-                
-                .loader-logo-wrapper { 
-                    width: 70px; height: 70px; display: flex; align-items: center; justify-content: center;
-                    background: rgba(255,255,255,0.02); border-radius: 50%; backdrop-filter: blur(10px);
-                    box-shadow: 0 0 30px rgba(0,0,0,0.5); z-index: 5;
-                }
-                .loader-logo-premium { width: 45px; height: 45px; object-fit: contain; filter: drop-shadow(0 0 10px rgba(212, 175, 55, 0.3)); animation: logoPulse 2s ease-in-out infinite; }
-                .loader-logo-fallback { font-size: 24px; font-weight: 700; color: var(--color-primary); }
-
-                .loader-content-fade { text-align: center; animation: contentFadeIn 1s ease-out; }
-                .loader-brand-label { font-size: 14px; letter-spacing: 5px; text-transform: uppercase; color: #fff; font-weight: 700; margin-bottom: 20px; }
-                .editorial-mark { color: var(--color-primary); font-size: 10px; vertical-align: super; }
-                
-                .loader-progress-minimal { width: 120px; height: 1px; background: rgba(255,255,255,0.05); margin: 0 auto 20px; border-radius: 2px; overflow: hidden; }
-                .loader-progress-inner { width: 40%; height: 100%; background: var(--color-primary); animation: progressMove 2s cubic-bezier(0.65, 0, 0.35, 1) infinite; }
-                
-                .loader-status-text { font-size: 10px; letter-spacing: 2px; color: rgba(255,255,255,0.4); text-transform: uppercase; font-weight: 400; }
-
-                @keyframes orbitRotate { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-                @keyframes logoPulse { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.05); opacity: 0.8; } }
-                @keyframes progressMove { 0% { transform: translateX(-100%); width: 10%; } 50% { width: 40%; } 100% { transform: translateX(300%); width: 10%; } }
-                @keyframes contentFadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
                 .public-error-page { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; text-align: center; background: #000; color: white; }
                 .public-error-page h1 { font-size: 120px; margin: 0; color: var(--color-primary); font-weight: 800; }
                 .btn-v4 { padding: 14px 34px; border: none; font-weight: 700; font-size: 16px; cursor: pointer; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); text-transform: uppercase; letter-spacing: 1px; }

@@ -4,6 +4,7 @@ const db = require('../db');
 const upload = require('../middleware/upload');
 const fs = require('fs');
 const path = require('path');
+const { deleteFiles } = require('../utils/fileManager');
 
 // Helper para asegurar estructura de tabla
 const ensureGallerySchema = async () => {
@@ -51,6 +52,10 @@ router.put('/ctas/:id', upload.single('imagen'), async (req, res) => {
     let imagen = imagen_path;
 
     if (req.file) {
+        try {
+            const [oldCta] = await db.query('SELECT imagen FROM web_ctas WHERE id = ?', [req.params.id]);
+            if (oldCta.length > 0 && oldCta[0].imagen) deleteFiles(oldCta[0].imagen);
+        } catch (e) { console.error('Error deleting old CTA image:', e); }
         imagen = `/uploads/services/${req.file.filename}`;
     }
 
@@ -222,6 +227,10 @@ router.put('/historias/:id', upload.single('video'), async (req, res) => {
     let url = url_path;
 
     if (req.file) {
+        try {
+            const [oldStory] = await db.query('SELECT url FROM web_historias WHERE id = ?', [req.params.id]);
+            if (oldStory.length > 0 && oldStory[0].url) deleteFiles(oldStory[0].url);
+        } catch (e) { console.error('Error deleting old story video:', e); }
         url = `/uploads/stories/${req.file.filename}`;
     }
 

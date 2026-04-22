@@ -1,14 +1,14 @@
 // Configuración global de URLs
-const isProd = import.meta.env.PROD;
+const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
 const PORT = 5001;
 
-export const API_BASE_URL = isProd 
-    ? 'https://archiplanner-api.onrender.com/api' 
-    : `http://127.0.0.1:${PORT}/api`;
+export const API_BASE_URL = isLocal 
+    ? `http://127.0.0.1:${PORT}/api`
+    : 'https://archiplanner-api.onrender.com/api';
 
-export const UPLOADS_URL = isProd 
-    ? 'https://archiplanner.com.co' 
-    : 'http://127.0.0.1:5001';
+export const UPLOADS_URL = isLocal 
+    ? `http://127.0.0.1:${PORT}`
+    : 'https://archiplanner.com.co';
 
 /**
  * Intelligent helper to format upload paths, avoiding double /uploads

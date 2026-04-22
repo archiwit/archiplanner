@@ -4,6 +4,7 @@ const path = require('path');
 const fs = require('fs');
 require('dotenv').config();
 const db = require('./db');
+const { deleteFiles } = require('./utils/fileManager');
 const upload = require('./middleware/upload');
 const serviciosRoutes = require('./routes/servicios');
 const cmsWebRoutes = require('./routes/cms_web');
@@ -520,13 +521,24 @@ app.put('/api/config', upload.fields([{ name: 'logo_cuadrado', maxCount: 1 }, { 
         const [activeConfig] = await db.query('SELECT id, logo_cuadrado_path, logo_horizontal_path, logo_black_path FROM configuracion WHERE es_activa = 1 LIMIT 1');
         const configId = activeConfig.length > 0 ? activeConfig[0].id : null;
         if (!configId) return res.status(404).json({ error: 'No hay configuración activa' });
+        
         let lcp = req.body.logo_cuadrado_path || activeConfig[0].logo_cuadrado_path;
         let lhp = req.body.logo_horizontal_path || activeConfig[0].logo_horizontal_path;
         let lbp = req.body.logo_black_path || activeConfig[0].logo_black_path;
+        
         if (req.files) {
-            if (req.files.logo_cuadrado) lcp = `config/${req.files.logo_cuadrado[0].filename}`;
-            if (req.files.logo_horizontal) lhp = `config/${req.files.logo_horizontal[0].filename}`;
-            if (req.files.logo_black) lbp = `config/${req.files.logo_black[0].filename}`;
+            if (req.files.logo_cuadrado) {
+                deleteFiles(activeConfig[0].logo_cuadrado_path);
+                lcp = `config/${req.files.logo_cuadrado[0].filename}`;
+            }
+            if (req.files.logo_horizontal) {
+                deleteFiles(activeConfig[0].logo_horizontal_path);
+                lhp = `config/${req.files.logo_horizontal[0].filename}`;
+            }
+            if (req.files.logo_black) {
+                deleteFiles(activeConfig[0].logo_black_path);
+                lbp = `config/${req.files.logo_black[0].filename}`;
+            }
         }
         await db.query(`UPDATE configuracion SET nombre_empresa=?, email_contacto=?, telefono=?, city=?, ig_url=?, fb_url=?, pn_url=?, pi_url=?, logo_cuadrado_path=?, logo_horizontal_path=?, logo_black_path=?, color_primario=?, color_secundario=?, color_terciario=?, color_fondo=?, ceo=?, tt_url=?, li_url=?, x_url=?, web_url=?, nav_config=?, footer_config=?, ig_svg=?, fb_svg=?, tt_svg=?, li_svg=?, x_svg=?, ws_svg=?, pi_svg=?, icon_contact_svg=?, icon_footer_svg=? WHERE id=?`, [nombre_empresa, email_contacto, telefono, city, ig_url, fb_url, pn_url, pi_url, lcp, lhp, lbp, color_primario, color_secundario, color_terciario, color_fondo, ceo, tt_url, li_url, x_url, web_url, nav_config, footer_config, ig_svg, fb_svg, tt_svg, li_svg, x_svg, ws_svg, pi_svg, icon_contact_svg, icon_footer_svg, configId]);
         res.json({ success: true });
@@ -687,6 +699,12 @@ app.put('/api/articulos/:id', upload.single('foto'), async (req, res) => {
     let foto = req.body.foto_path || req.body.foto;
     if (foto === 'undefined' || foto === 'null') foto = null;
     if (req.file) {
+        // Delete previous photo
+        try {
+            const [oldArt] = await db.query('SELECT foto FROM articulos WHERE id = ?', [req.params.id]);
+            if (oldArt.length > 0 && oldArt[0].foto) deleteFiles(oldArt[0].foto);
+        } catch (e) { console.error('Error deleting old article photo:', e); }
+
         foto = `/uploads/items/${req.file.filename}`;
     }
 
@@ -754,6 +772,10 @@ app.put('/api/usuarios/:id', upload.single('foto'), async (req, res) => {
     let foto = req.body.foto_path || req.body.foto;
     if (foto === 'undefined' || foto === 'null') foto = null;
     if (req.file) {
+        try {
+            const [oldUser] = await db.query('SELECT foto FROM usuarios WHERE id = ?', [req.params.id]);
+            if (oldUser.length > 0 && oldUser[0].foto) deleteFiles(oldUser[0].foto);
+        } catch (e) { console.error('Error deleting old user photo:', e); }
         foto = `/uploads/users/${req.file.filename}`;
     }
     
@@ -782,6 +804,10 @@ app.put('/api/usuarios/:id/perfil', upload.single('foto'), async (req, res) => {
     let foto = req.body.foto_path || req.body.foto;
     if (foto === 'undefined' || foto === 'null') foto = null;
     if (req.file) {
+        try {
+            const [oldUser] = await db.query('SELECT foto FROM usuarios WHERE id = ?', [req.params.id]);
+            if (oldUser.length > 0 && oldUser[0].foto) deleteFiles(oldUser[0].foto);
+        } catch (e) { console.error('Error deleting old user photo:', e); }
         foto = `/uploads/users/${req.file.filename}`;
     }
     
@@ -802,7 +828,6 @@ app.put('/api/usuarios/:id/perfil', upload.single('foto'), async (req, res) => {
         res.status(500).json({ error: err.message });
     }
 });
-// Safe endpoint for clients editing their own profile
 app.put('/api/clientes/:id/perfil', upload.single('foto'), async (req, res) => {
     const { 
         nombre, apellido, nick, clave, correo, telefono,
@@ -812,6 +837,10 @@ app.put('/api/clientes/:id/perfil', upload.single('foto'), async (req, res) => {
     let foto = req.body.foto_path || req.body.foto;
     if (foto === 'undefined' || foto === 'null') foto = null;
     if (req.file) {
+        try {
+            const [oldCli] = await db.query('SELECT foto FROM clientes WHERE id = ?', [req.params.id]);
+            if (oldCli.length > 0 && oldCli[0].foto) deleteFiles(oldCli[0].foto);
+        } catch (e) { console.error('Error deleting old client photo:', e); }
         foto = `/uploads/clientes/${req.file.filename}`;
     }
     
@@ -951,6 +980,10 @@ app.put('/api/clientes/:id', upload.single('foto'), async (req, res) => {
     let foto = req.body.foto_path || req.body.foto;
     if (foto === 'undefined' || foto === 'null') foto = null;
     if (req.file) {
+        try {
+            const [oldCli] = await db.query('SELECT foto FROM clientes WHERE id = ?', [req.params.id]);
+            if (oldCli.length > 0 && oldCli[0].foto) deleteFiles(oldCli[0].foto);
+        } catch (e) { console.error('Error deleting old client photo:', e); }
         foto = `/uploads/clientes/${req.file.filename}`;
     }
 
@@ -1049,6 +1082,10 @@ app.put('/api/proveedores/:id', upload.single('foto'), async (req, res) => {
     let foto = req.body.foto_path || req.body.foto;
     if (foto === 'undefined' || foto === 'null') foto = null;
     if (req.file) {
+        try {
+            const [oldPro] = await db.query('SELECT foto FROM proveedores WHERE id = ?', [req.params.id]);
+            if (oldPro.length > 0 && oldPro[0].foto) deleteFiles(oldPro[0].foto);
+        } catch (e) { console.error('Error deleting old provider photo:', e); }
         foto = `/uploads/providers/${req.file.filename}`;
     }
 

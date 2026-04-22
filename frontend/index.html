@@ -23,7 +23,42 @@
 </head>
 
 <body>
-  <div id="root"></div>
+  <div id="root">
+    <div style="position: fixed; inset: 0; background: #0c0c0d; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 99999; font-family: 'Inter', sans-serif;">
+      <!-- Premium Static Logo -->
+      <div style="width: 140px; height: 140px; margin-bottom: 25px; position: relative;">
+        <svg viewBox="0 0 1080 1080" xmlns="http://www.w3.org/2000/svg" style="width: 100%; height: 100%;">
+          <g style="animation: fadeInUp 1s ease-out forwards;">
+            <!-- Tuxedo Background Dots -->
+            <circle cx="539.42" cy="419.06" r="25.85" fill="#f8f8f8" opacity="0.8"/>
+            <circle cx="539.42" cy="297.89" r="29.08" fill="#f8f8f8" opacity="0.8"/>
+            <circle cx="539.42" cy="540.23" r="22.62" fill="#f8f8f8" opacity="0.8"/>
+            
+            <!-- Logo Main Body (Tuxedo) -->
+            <path d="M773.32,319.32c-64.15-40.07-130.65-76.03-199.01-107.59,3.27-1.51,6.5-2.99,9.64-4.43,65.19,33.38,128.47,70.81,189.38,112.01Z" fill="#f8f8f8"/>
+            <path d="M306.68,319.32c64.15-40.07,130.65-76.03,199.01-107.59-3.27-1.51-6.5-2.99-9.64-4.43-65.19,33.38-128.47,70.81-189.38,112.01Z" fill="#f8f8f8"/>
+            <path d="M423.17,782.11v188.69c0,4.27,3.46,7.73,7.73,7.73s7.73-3.46,7.73-7.73v-188.69c0-4.27-3.46-7.73-7.73-7.73s-7.73,3.46-7.73,7.73Z" fill="#e44c49"/>
+            <path d="M656.83,782.11v188.69c0,4.27-3.46,7.73-7.73,7.73s-7.73-3.46-7.73-7.73v-188.69c0-4.27,3.46-7.73,7.73-7.73s7.73,3.46,7.73,7.73Z" fill="#e44c49"/>
+            
+            <!-- Tuxedo Lapels -->
+            <path d="M192.4,435.53l347.02,346.58,348.18-346.58c0,111.43-16.71,219.06-47.5,319.46-65.31,213.06-218.01,324.47-300.68,324.47s-235.38-111.41-300.68-324.47c-30.79-100.41-46.34-208.03-46.34-319.46Z" fill="#e44c49"/>
+          </g>
+        </svg>
+      </div>
+      
+      <!-- Greeting Text -->
+      <div style="text-align: center; animation: fadeIn 1.5s ease-out forwards;">
+        <h1 style="color: #fff; font-size: 20px; font-weight: 200; letter-spacing: 6px; margin: 0; text-transform: uppercase;">ArchiPlanner</h1>
+        <p style="color: rgba(255,255,255,0.4); font-size: 10px; letter-spacing: 3px; text-transform: uppercase; margin-top: 10px;">Elevando tu experiencia</p>
+      </div>
+
+      <style>
+        @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        body { overflow: hidden; }
+      </style>
+    </div>
+  </div>
   <script>console.log('Index.html: Script inline ejecutado');</script>
   <script type="module" src="/src/main.jsx"></script>
 </body>
