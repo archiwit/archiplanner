@@ -2,13 +2,17 @@
 const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
 const PORT = 5001;
 
+const isProduction = window.location.hostname.includes('archiplanner.com.co');
+
 export const API_BASE_URL = isLocal 
     ? `http://127.0.0.1:${PORT}/api`
     : 'https://archiplanner-api.onrender.com/api';
 
-export const UPLOADS_URL = isLocal 
-    ? `http://127.0.0.1:${PORT}`
-    : 'https://archiplanner-api.onrender.com';
+export const UPLOADS_URL = (isProduction || !isLocal)
+    ? 'https://archiplanner-api.onrender.com'
+    : `http://127.0.0.1:${PORT}`;
+
+console.log('ArchiPlanner Config V5.4 - Domain:', window.location.hostname, 'Uploads:', UPLOADS_URL);
 
 /**
  * Intelligent helper to format upload paths, avoiding double /uploads
