@@ -25,6 +25,7 @@ const DynamicForm = ({
   tabs = []
 }) => {
   const [activeTab, setActiveTab] = useState(tabs.length > 0 ? tabs[0].id : null);
+  const [focusedField, setFocusedField] = useState(null);
 
   // Inicializamos el estado basado en si hay initialValues
   const [formData, setFormData] = useState(() => {
@@ -70,6 +71,7 @@ const DynamicForm = ({
     const handleImageClick = () => {
       document.getElementById(`file-${name}`).click();
     };
+    const isFloating = focusedField === name || (formData[name] && formData[name].toString().length > 0) || type === 'date' || type === 'time' || type === 'select';
 
     switch (type) {
       case 'color':
@@ -93,55 +95,102 @@ const DynamicForm = ({
         );
       case 'textarea':
         return (
-          <textarea
-            id={name}
-            name={name}
-            value={formData[name] || ''}
-            onChange={handleChange}
-            className="dense-input"
-            rows={rest.rows || 3}
-            {...rest}
-          />
+          <div className={`form-field ${isFloating ? 'is-floating' : ''}`}>
+            <textarea
+              id={name}
+              name={name}
+              value={formData[name] || ''}
+              onChange={handleChange}
+              onFocus={() => setFocusedField(name)}
+              onBlur={() => setFocusedField(null)}
+              className="dense-input"
+              rows={rest.rows || 3}
+              {...rest}
+            />
+            {label && <label htmlFor={name}>{label} {rest.required && '*'}</label>}
+          </div>
         );
       case 'select':
         return (
-          <select
-            id={name}
-            name={name}
-            value={formData[name] || ''}
-            onChange={handleChange}
-            className="dense-input"
-            {...rest}
-          >
-            <option value="" disabled>Selecciona una opción</option>
-            {options && options.map((opt, i) => (
-              <option key={i} value={opt.value}>{opt.label}</option>
-            ))}
-          </select>
+          <div className={`form-field is-floating`}>
+            <select
+              id={name}
+              name={name}
+              value={formData[name] || ''}
+              onChange={handleChange}
+              onFocus={() => setFocusedField(name)}
+              onBlur={() => setFocusedField(null)}
+              className="dense-input"
+              {...rest}
+            >
+              <option value="" disabled>Selecciona una opción</option>
+              {options && options.map((opt, i) => (
+                <option key={i} value={opt.value}>{opt.label}</option>
+              ))}
+            </select>
+            {label && <label htmlFor={name}>{label} {rest.required && '*'}</label>}
+          </div>
         );
       case 'file':
         return (
-          <input
-            type="file"
-            id={name}
-            name={name}
-            onChange={handleChange}
-            className="dynamic-form-file"
-            {...rest}
-          />
+          <div className="form-field">
+            <input
+              type="file"
+              id={name}
+              name={name}
+              onChange={handleChange}
+              className="dynamic-form-file"
+              {...rest}
+            />
+            {label && <label htmlFor={name}>{label} {rest.required && '*'}</label>}
+          </div>
         );
       default:
         // text, email, password, number, etc.
+        const [showPass, setShowPass] = useState(false);
+        const isPassword = type === 'password';
+
         return (
-          <input
-            type={type || 'text'}
-            id={name}
-            name={name}
-            value={type !== 'file' ? (formData[name] || '') : undefined}
-            onChange={handleChange}
-            className="dense-input"
-            {...rest}
-          />
+          <div className={`form-field ${isFloating ? 'is-floating' : ''}`}>
+            <div className="input-wrapper-relative" style={{ position: 'relative' }}>
+              <input
+                type={isPassword ? (showPass ? 'text' : 'password') : (type || 'text')}
+                id={name}
+                name={name}
+                value={type !== 'file' ? (formData[name] || '') : undefined}
+                onChange={handleChange}
+                onFocus={() => setFocusedField(name)}
+                onBlur={() => setFocusedField(null)}
+                className="dense-input"
+                {...rest}
+              />
+              {isPassword && (
+                <button
+                  type="button"
+                  className="password-toggle-btn"
+                  onClick={() => setShowPass(!showPass)}
+                  style={{
+                    position: 'absolute',
+                    right: '12px',
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    background: 'none',
+                    border: 'none',
+                    color: 'rgba(255,255,255,0.4)',
+                    cursor: 'pointer',
+                    padding: '5px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    zIndex: 20
+                  }}
+                >
+                  {showPass ? '👁️' : '🔒'}
+                </button>
+              )}
+            </div>
+            {label && <label htmlFor={name}>{label} {rest.required && '*'}</label>}
+          </div>
         );
     }
   };
@@ -184,23 +233,19 @@ const DynamicForm = ({
             return (
               <div
                 key={field.name}
-                className={`form-field ${field.type === 'file' || field.type === 'image' ? 'file-group' : ''}`}
+                className={`df-field-container ${field.type === 'file' || field.type === 'image' ? 'file-group' : ''}`}
                 style={{ gridColumn: `span ${gridSpan}` }}
               >
                 {renderField({ placeholder: ' ', ...field })}
-                {field.type !== 'image' && field.type !== 'color' && (
-                  <label htmlFor={field.name}>
-                    {field.label} {field.required && <span className="text-red-500">*</span>}
-                  </label>
-                )}
               </div>
             );
           })}
 
-        <div className="dynamic-form-actions" style={{ gridColumn: 'span 6', marginTop: '12px' }}>
+        <div className="df-field-container" style={{ gridColumn: 'span 6', marginTop: '12px' }}>
           <AdminButton
             type="submit"
             isLoading={isLoading}
+            width="100%"
           >
             {submitText}
           </AdminButton>

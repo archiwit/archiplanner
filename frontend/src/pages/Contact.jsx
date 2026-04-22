@@ -11,7 +11,7 @@ import './style/ContactV4.css';
 const Contact = () => {
     const { companyConfig } = useAuth();
     const { content, loading } = useWebContent('contacto');
-    
+
     // Pass loading as dependency to re-trigger observer when content is ready
     useScrollReveal([loading]);
 
@@ -80,7 +80,7 @@ const Contact = () => {
             {/* OVERLAP CARD CONTAINER */}
             <div className="contact-v4-container">
                 <div className="contact-v4-card scroll-reveal">
-                    
+
                     {/* LEFT COLUMN: CONTACT INFO */}
                     <div className="contact-v4-info">
                         <div className="info-v4-header">
@@ -151,16 +151,17 @@ const Contact = () => {
                                 { name: 'name', label: 'Nombre Completo', type: 'text', placeholder: ' ', required: true },
                                 { name: 'email', label: 'Correo Electrónico', type: 'email', placeholder: ' ', required: true },
                                 { name: 'telefono', label: 'Teléfono Móvil', type: 'text', placeholder: ' ', required: false },
-                                { 
-                                    name: 'event', 
-                                    label: 'Tipo de Evento', 
-                                    type: 'select', 
+                                {
+                                    name: 'event',
+                                    label: 'Tipo de Evento',
+                                    type: 'select',
                                     required: true,
                                     options: [
                                         { value: 'Boda', label: 'Boda' },
                                         { value: 'XV Años', label: 'XV Años' },
                                         { value: 'Corporativo', label: 'Corporativo' },
                                         { value: 'Social', label: 'Social' },
+                                        { value: 'ja', label: 'jajajaja' },
                                         { value: 'Otro', label: 'Otro Hito Especial' }
                                     ]
                                 },

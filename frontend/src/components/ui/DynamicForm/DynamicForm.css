@@ -1,3 +1,4 @@
+/* DynamicForm.css - Cleaned up to use global V4 styles */
 .dynamic-form-container {
   width: 100%;
   max-width: 900px;
@@ -59,37 +60,28 @@
   background: rgba(255, 132, 132, 0.05);
 }
 
-/* Standard High Density Spacing */
-.form-field {
-    margin-bottom: 2px;
-}
-
 .dynamic-form.grid-layout {
   display: grid;
   grid-template-columns: repeat(6, 1fr);
-  gap: 12px;
+  gap: 10px 12px;
   align-items: start;
 }
 
 @media (max-width: 768px) {
   .dynamic-form.grid-layout {
-    grid-template-columns: 1fr;
+    grid-template-columns: 1fr !important;
   }
-}
-
-/* Para campos de archivo y custom renders, mantenemos el label estático arriba */
-.dynamic-form-group.file-group {
-  margin-top: 1rem;
-}
-
-.dynamic-form-group.file-group .dynamic-form-label {
-  position: relative;
-  top: 0;
-  left: 0;
-  margin-bottom: 0.5rem;
-  color: #e5e5e5;
-  font-size: 0.95rem;
-  background: transparent;
+  .df-field-container {
+    grid-column: span 6 !important;
+    width: 100% !important;
+  }
+  /* Ensure the modal content doesn't force a horizontal scroll */
+  .modal-content.modal-wide {
+    width: 95% !important;
+    max-width: 95% !important;
+    padding: 15px !important;
+    margin: 10px auto !important;
+  }
 }
 
 .dynamic-form-textarea {
@@ -120,70 +112,18 @@
 
 /* Action section */
 .dynamic-form-actions {
-  margin-top: 2rem;
+  margin-top: 1rem;
   display: flex;
-  justify-content: flex-end;
-}
-
-.dynamic-form-submit {
-  padding: 0.875rem 2rem;
-  border-radius: 8px;
-  background: linear-gradient(135deg, var(--color-primary) 0%, #ff6b6b 100%);
-  color: #121212;
-  border: none;
-  font-size: 1rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 15px rgba(255, 132, 132, 0.2);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-}
-
-.dynamic-form-submit:hover:not(:disabled) {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 25px rgba(255, 132, 132, 0.4);
-  filter: brightness(1.1);
-}
-
-.dynamic-form-submit:active:not(:disabled) {
-  transform: translateY(0);
-}
-
-.dynamic-form-submit:disabled {
-  opacity: 0.7;
-  cursor: not-allowed;
-  background: #444;
-  box-shadow: none;
-}
-
-.dynamic-form-submit-loading {
-  display: inline-block;
-  width: 1rem;
-  height: 1rem;
-  border: 2px solid rgba(255, 255, 255, 0.3);
-  border-radius: 50%;
-  border-top-color: white;
-  animation: spin 1s ease-in-out infinite;
+  width: 100%;
 }
 
 @keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
+  to { transform: rotate(360deg); }
 }
 
 @keyframes slideIn {
-  from {
-    opacity: 0;
-    transform: translateY(-10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 /* Image Click-to-Upload Styles */
@@ -214,10 +154,6 @@
   transition: transform 0.5s ease;
 }
 
-.dynamic-form-image-container:hover .dynamic-form-image-preview {
-  transform: scale(1.05);
-}
-
 .dynamic-form-image-placeholder {
   display: flex;
   flex-direction: column;
@@ -225,11 +161,6 @@
   gap: 10px;
   color: #666;
   font-size: 0.9rem;
-}
-
-.placeholder-icon {
-  font-size: 2rem;
-  opacity: 0.5;
 }
 
 .image-field-label {

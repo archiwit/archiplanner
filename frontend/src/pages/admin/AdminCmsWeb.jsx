@@ -6,7 +6,7 @@ import {
     Type, Image as ImageIcon, Code, Quote, Briefcase,
     Layout, ArrowUp, ArrowDown, ExternalLink, Filter
 } from 'lucide-react';
-import { API_BASE_URL, UPLOADS_URL } from '../../config';
+import { API_BASE_URL, getUploadUrl } from '../../config';
 import AdminBlockEditor from './AdminBlockEditor';
 
 const AdminCmsWeb = () => {
@@ -54,7 +54,7 @@ const AdminCmsWeb = () => {
             enlace: cta ? cta.enlace : '',
             imagen_path: cta ? cta.imagen : ''
         });
-        setPreviewImage(cta?.imagen ? `${UPLOADS_URL}${cta.imagen}` : null);
+        setPreviewImage(cta?.imagen ? getUploadUrl(cta.imagen) : null);
         setShowModal(true);
     };
 
@@ -160,8 +160,8 @@ const AdminCmsWeb = () => {
                         <div className="glass-panel" style={{ padding: '20px' }}>
                             <div className="tab-header-actions" style={{ marginBottom: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                 <h3 className="section-title-sm">Galería Editorial de Historias</h3>
-                                <button className="btn-admin-primary" onClick={() => handleOpenStoryModal()}>
-                                    <Plus size={16} /> Agregar Historia
+                                <button className="btn-admin-primary" onClick={() => handleOpenStoryModal()} title="Agregar Historia">
+                                    <Plus size={16} /> <span className="mobile-hidden">Agregar Historia</span>
                                 </button>
                             </div>
                             
@@ -194,8 +194,8 @@ const AdminCmsWeb = () => {
                         <div className="glass-panel" style={{ padding: '20px' }}>
                             <div className="tab-header-actions" style={{ marginBottom: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                 <h3 className="section-title-sm">Llamados a la Acción Globales</h3>
-                                <button className="btn-admin-primary" onClick={() => handleOpenCtaModal()}>
-                                    <Plus size={16} /> Nuevo CTA
+                                <button className="btn-admin-primary" onClick={() => handleOpenCtaModal()} title="Nuevo CTA">
+                                    <Plus size={16} /> <span className="mobile-hidden">Nuevo CTA</span>
                                 </button>
                             </div>
                             

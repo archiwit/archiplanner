@@ -4,6 +4,7 @@ import api from '../../services/api';
 import { Printer, ArrowLeft, FileText, Globe, Phone, Mail, MapPin } from 'lucide-react';
 import { numeroALetras } from '../../services/numberToWords';
 import { UPLOADS_URL } from '../../config';
+import { parseDateSafe } from '../../utils/dateUtils';
 import '../style/QuotationContract.css';
 
 const AdminContrato = () => {
@@ -87,21 +88,26 @@ const AdminContrato = () => {
         return `${h.toString().padStart(2, '0')}:${m} ${ampm}`;
     };
 
+    const mesesEsp = [
+        'ENERO', 'FEBRERO', 'MARZO', 'ABRIL', 'MAYO', 'JUNIO',
+        'JULIO', 'AGOSTO', 'SEPTIEMBRE', 'OCTUBRE', 'NOVIEMBRE', 'DICIEMBRE'
+    ];
+
     // Procesamiento de fechas inicio
-    const fechaE = new Date(data.fevent);
-    const diaE = fechaE.getDate().toString().padStart(2, '0');
-    const mesE = fechaE.toLocaleString('es-ES', { month: 'long' }).toUpperCase();
-    const añoE = fechaE.getFullYear();
+    const fechaE = parseDateSafe(data.fevent);
+    const diaE = fechaE ? fechaE.getDate().toString().padStart(2, '0') : '--';
+    const mesE = fechaE ? mesesEsp[fechaE.getMonth()] : '----------';
+    const añoE = fechaE ? fechaE.getFullYear() : '----';
 
     // Procesamiento de fechas fin
-    const fechaF = data.fevent_fin ? new Date(data.fevent_fin) : fechaE;
-    const diaF = fechaF.getDate().toString().padStart(2, '0');
-    const mesF = fechaF.toLocaleString('es-ES', { month: 'long' }).toUpperCase();
-    const añoF = fechaF.getFullYear();
+    const fechaF = data.fevent_fin ? parseDateSafe(data.fevent_fin) : fechaE;
+    const diaF = fechaF ? fechaF.getDate().toString().padStart(2, '0') : diaE;
+    const mesF = fechaF ? mesesEsp[fechaF.getMonth()] : mesE;
+    const añoF = fechaF ? fechaF.getFullYear() : añoE;
 
     const hoy = new Date();
     const diaH = hoy.getDate().toString().padStart(2, '0');
-    const mesH = hoy.toLocaleString('es-ES', { month: 'long' }).toUpperCase();
+    const mesH = mesesEsp[hoy.getMonth()];
     const añoH = hoy.getFullYear();
 
     const getDeposito = () => {
@@ -253,11 +259,13 @@ const AdminContrato = () => {
                     <div className="header-brand-logo">
                         <img
                             src={
-                                config?.logo_horizontal_path
-                                    ? `${UPLOADS_URL}${config.logo_horizontal_path}`
-                                    : (config?.logo_cuadrado_path
-                                        ? `${UPLOADS_URL}${config.logo_cuadrado_path}`
-                                        : `${window.location.origin}/images/cotizacion/ArchiPlanner-Logo.svg`)
+                                config?.logo_black_path
+                                    ? getUploadUrl(config.logo_black_path)
+                                    : (config?.logo_horizontal_path
+                                        ? getUploadUrl(config.logo_horizontal_path)
+                                        : (config?.logo_cuadrado_path
+                                            ? getUploadUrl(config.logo_cuadrado_path)
+                                            : `${window.location.origin}/images/cotizacion/ArchiPlanner-Logo.svg`))
                             }
                             alt="Logo"
                         />

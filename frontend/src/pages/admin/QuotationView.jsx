@@ -1,9 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import api from '../../services/api';
+import Swal from 'sweetalert2';
+import 'sweetalert2/dist/sweetalert2.min.css';
 import { useAuth } from '../../context/AuthContext';
-import { UPLOADS_URL } from '../../config';
-import { User, Calendar, Clock, Users, Palette, Droplets, Tag, FileText, Printer, ArrowLeft, Mail, MapPin, Phone, MessageCircle, Download, X, Plus } from 'lucide-react';
+import { getUploadUrl } from '../../config';
+import { parseDateSafe, formatDateSafe } from '../../utils/dateUtils';
+import { User, Calendar, Clock, Users, Palette, Droplets, Tag, FileText, Printer, ArrowLeft, Mail, MapPin, Phone, MessageCircle, Download, X, Plus, Briefcase, History, Edit3, Star } from 'lucide-react';
+import { motion } from 'framer-motion';
+import QuotationHistoryPanel from '../../components/admin/QuotationHistoryPanel';
 import '../style/QuotationView.css';
 
 const QuotationView = ({ isPrintView = false }) => {
@@ -14,10 +19,16 @@ const QuotationView = ({ isPrintView = false }) => {
     const [freshConfig, setFreshConfig] = useState(null);
     const [loading, setLoading] = useState(true);
     const [plantillaAdicionales, setPlantillaAdicionales] = useState([]);
+    const [showHistory, setShowHistory] = useState(false);
+
+    const isArriendo = data?.clase === 'arriendo';
+    const { cliente, detalles, num } = data || {};
 
     useEffect(() => {
         if (isPrintView && data) {
-            const date = new Date(data.fevent);
+            const date = parseDateSafe(data.fevent);
+            if (!date) return;
+
             const yy = date.getFullYear().toString().slice(-2);
             const mm = (date.getMonth() + 1).toString().padStart(2, '0');
             const dd = date.getDate().toString().padStart(2, '0');
@@ -27,9 +38,10 @@ const QuotationView = ({ isPrintView = false }) => {
                 'Quinceaños': 'XV', 'Boda': 'Boda', 'Baby shower': 'BabyShower',
                 'Aniversario': 'Aniversario', 'Corporativo': 'Corpo', 'Cumpleaños': 'Cumple'
             };
-            const tipoStr = shortTypes[data.tipo_evento_nombre] || data.tipo_evento_nombre || 'Evento';
-            const clienteStr = data.cliente_nombre || 'Cliente';
-            const fileName = `${dateStr} • ${tipoStr} • ${clienteStr}`;
+            const tipoStr = isArriendo ? 'Arriendo' : (shortTypes[data.tipo_evento_nombre] || data.tipo_evento_nombre || 'Evento');
+            const numStr = isArriendo ? (data.num_arriendo || data.num) : data.num;
+            const clienteStr = cliente?.nombre || data.cliente_nombre || 'Cliente';
+            const fileName = `${dateStr} • ${tipoStr} • ${numStr} • ${clienteStr}`;
 
             const originalTitle = document.title;
             document.title = fileName;
@@ -82,7 +94,6 @@ const QuotationView = ({ isPrintView = false }) => {
     if (loading) return <div className="quotation-loading">Cargando...</div>;
     if (!data) return <div className="quotation-empty">Cotización no encontrada.</div>;
 
-    const { cliente, detalles, num } = data || {};
     const config = freshConfig || data.configuracion;
 
     const groupedDetalles = (detalles || []).reduce((acc, item) => {
@@ -131,7 +142,8 @@ const QuotationView = ({ isPrintView = false }) => {
     );
 
     const formatDate = (dateStr) => {
-        return new Date(dateStr).toLocaleDateString('es-CO', {
+        if (!dateStr) return "N/A";
+        return formatDateSafe(dateStr, {
             weekday: 'short',
             year: 'numeric',
             month: 'long',
@@ -140,10 +152,12 @@ const QuotationView = ({ isPrintView = false }) => {
     };
 
     const formatTime = (timeStr) => {
-        if (!timeStr) return "00:00";
+        if (!timeStr || typeof timeStr !== 'string') return "00:00";
         // Si ya viene formateada o es un formato extraño, intentar parsear
         try {
-            const [hours, minutes] = timeStr.split(':');
+            const parts = timeStr.split(':');
+            if (parts.length < 2) return timeStr;
+            const [hours, minutes] = parts;
             let h = parseInt(hours);
             const m = minutes || "00";
             const ampm = h >= 12 ? 'PM' : 'AM';
@@ -170,20 +184,35 @@ const QuotationView = ({ isPrintView = false }) => {
         'Corporativo': 'Corporativo',
         'Cumpleaños': 'Cumpleaños',
     };
-    const tituloEvento = data ? (nombresEvento[data.tipo_evento] || data.tipo_evento) : 'Evento';
+    const tituloEvento = isArriendo ? 'Detalle de Arriendo' : (data ? (nombresEvento[data.tipo_evento] || data.tipo_evento) : 'Evento');
 
     const handleDownloadPDF = () => {
         const printUrl = `/print-quotation/${id}`;
         window.open(printUrl, '_blank');
     };
 
-    const handleWhatsAppShare = () => {
-        const phone = data.cliente_telefono?.replace(/\D/g, '');
+    const handleWhatsAppShare = async () => {
+        const phone = cliente?.telefono?.replace(/\D/g, '');
         if (!phone) {
-            alert("No hay teléfono registrado para este cliente.");
+            Swal.fire({
+                title: 'Atención',
+                text: "No hay teléfono registrado para este cliente.",
+                icon: 'warning',
+                confirmButtonColor: 'var(--color-primary, #ff8484)'
+            });
             return;
         }
-        const message = `Hola ${data?.cliente_nombre || 'Cliente'}, adjunto la cotización para tu evento de ${data?.tipo_evento_nombre || 'Evento'} el día ${data?.fevent ? new Date(data.fevent).toLocaleDateString() : ''}. Quedamos atentos a tus comentarios.`;
+
+        // --- AUTOMATIZACIÓN DE ESTATUS ---
+        try {
+            if (cliente?.id) {
+                await api.put(`/clientes/${cliente.id}/status`, { estado: 'Cotizando' });
+            }
+        } catch (err) {
+            console.error('Error auto-updating status:', err);
+        }
+
+        const message = `Hola ${cliente?.nombre || data?.cliente_nombre || 'Cliente'}, adjunto la cotización para tu evento de ${data?.tipo_evento_nombre || 'Evento'} el día ${formatDateSafe(data?.fevent)}. Quedamos atentos a tus comentarios.`;
         const waUrl = `https://wa.me/57${phone}?text=${encodeURIComponent(message)}`;
         window.open(waUrl, '_blank');
     };
@@ -191,23 +220,61 @@ const QuotationView = ({ isPrintView = false }) => {
     return (
         <div className="quotation-view" style={brandStyles}>
             {!isPrintView && (
-                <div className="quotation-actions no-print">
-                    <div className="toolbar-group">
-                        <button className="btn btn-back" onClick={() => navigate('/admin/cotizaciones')}>
-                            <ArrowLeft size={16} /> Volver
-                        </button>
-                    </div>
+                <div className="quotation-actions">
+                    <div className="actions-cluster">
+                        {/* Primarios */}
+                        <div className="action-circle-group">
+                            <button className="circle-btn back" onClick={() => navigate('/admin/cotizaciones')} title="Volver">
+                                <ArrowLeft size={20} />
+                            </button>
+                            <button className="circle-btn edit" onClick={() => navigate(isArriendo ? `/admin/arriendos/editar/${id}` : `/admin/cotizaciones/editar/${id}`)} title="Editar">
+                                <Edit3 size={20} />
+                            </button>
+                        </div>
 
-                    <div className="toolbar-group">
-                        <button className="btn btn-print" onClick={handleWhatsAppShare} title="Compartir por WhatsApp">
-                            <MessageCircle size={16} /> WhatsApp
-                        </button>
-                        <button className="btn btn-print" onClick={handleDownloadPDF} title="Guardar como PDF">
-                            <Printer size={16} /> PDF
-                        </button>
-                        <button className="btn btn-print" onClick={() => window.open(`/admin/cotizaciones/${id}/contrato`, '_blank')}>
-                            <FileText size={16} /> Contrato Legal
-                        </button>
+                        {/* Secundarios Expandibles */}
+                        <motion.div 
+                            className="expandable-actions"
+                            initial={false}
+                            animate={{ width: 'auto' }}
+                        >
+                            <button className="action-icon-btn whatsapp" onClick={handleWhatsAppShare} title="Compartir WhatsApp">
+                                <MessageCircle size={18} />
+                                <span>WhatsApp</span>
+                            </button>
+                            
+                            <button className="action-icon-btn survey" onClick={() => {
+                                const link = `${window.location.origin}/evaluacion/${id}`;
+                                navigator.clipboard.writeText(link);
+                                Swal.fire({
+                                    title: 'Link Copiado',
+                                    text: 'El enlace de la encuesta ha sido copiado al portapapeles.',
+                                    icon: 'success',
+                                    timer: 2000,
+                                    showConfirmButton: false,
+                                    toast: true,
+                                    position: 'top-end'
+                                });
+                            }} title="Copiar Link de Encuesta">
+                                <Star size={18} />
+                                <span>Encuesta</span>
+                            </button>
+
+                            <button className="action-icon-btn planner" onClick={() => navigate(`/admin/planeador`)} title="Planeador 360">
+                                <Briefcase size={18} />
+                                <span>360</span>
+                            </button>
+
+                            <button className="action-icon-btn pdf" onClick={handleDownloadPDF} title="Descargar PDF">
+                                <Download size={18} />
+                                <span>PDF</span>
+                            </button>
+
+                            <button className="action-icon-btn contrato" onClick={() => window.open(`/admin/cotizaciones/${id}/contrato`, '_blank')} title="Contrato Legal">
+                                <FileText size={18} />
+                                <span>Contrato</span>
+                            </button>
+                        </motion.div>
                     </div>
                 </div>
             )}
@@ -257,110 +324,116 @@ const QuotationView = ({ isPrintView = false }) => {
                 }
                 `}
             </style>
-            <div className="quotation-page page1">
-                <div className="portCont_Corpo">
-                    {config?.logo_cuadrado_path && (
-                        <img className='port_logo' src={`${UPLOADS_URL}${config.logo_cuadrado_path}`} alt="Logo empresa" />
-                    )}
-                    <h2>
-                        {config?.ceo || 'Luis Archila'}
-                    </h2>
-                    <p style={{ letterSpacing: '2px', textTransform: 'uppercase', fontSize: '10px', opacity: 0.8 }}>
-                        Wedding & Event Planner
-                    </p>
-                </div>
-
-                <div className="portCont_Info">
-                    <header className="portInfCoti">
-                        <h1>
-                            <span>{tituloEvento}</span>
-                        </h1>
-                        <div className="infoBtnCoti">
-                            <span style={{ color: 'var(--color-primary)' }}>Cotización Oficial</span>
-                        </div>
-                        <p className="font-oswald font-light text-2xl sm:text-3xl text-white/80 tracking-tight">{cliente?.nombre} {cliente?.apellido}</p>
-                    </header>
-
-                    <h4>#TeamLuxePlanner</h4>
-                    <p>Tu visión, nuestra magia ✨</p>
-                </div>
-            </div>
-
-            {/* Hoja carta 2 • Sobre Nosotros*/}
-            <div className="quotation-page nosotros">
-                <div className="nosContIni">
-                    <img src="/images/cotizacion/cot_bgInfo.jpg" alt="" className="nosImgEvetn" />
-                    <div className="contDiv">
-                        <div className="titleArea flex items-start gap-3 mb-4">
-                            <span className="dot"></span>
-                            <h2 className="titlenos">Sobre Nosotros</h2>
-                        </div>
-                        <p className="nosInfo">
-                            Somos expertos en la organización de eventos con más de 25 años de experiencia, especialistas como Wedding y Event Planner, creando y coordinando todo tipo de eventos, tanto sociales como corporativos a nivel local y nacional. Nos caracteriza un acompañamiento humano y profesional, en el que nos involucramos cuidadosamente en cada detalle para comprender sus sueños y expectativas, transformándolos en experiencias únicas, elegantes y memorables, cuidando cada detalle con responsabilidad, creatividad y pasión. Con el objetivo fiel de dejar siempre en su excelencia.
+            {!isArriendo && (
+                <div className="quotation-page page1">
+                    <div className="portCont_Corpo">
+                        {config?.logo_cuadrado_path && (
+                            <img className='port_logo' src={getUploadUrl(config.logo_cuadrado_path)} alt="Logo empresa" />
+                        )}
+                        <h2>
+                            {config?.ceo || 'Luis Archila'}
+                        </h2>
+                        <p style={{ letterSpacing: '2px', textTransform: 'uppercase', fontSize: '10px', opacity: 0.8 }}>
+                            Wedding & Event Planner
                         </p>
                     </div>
-                </div>
 
-                <div className="services-grid">
-                    <div className="service-card scroll-reveal active" data-delay="150">
-                        <div className="card-img">
-                            <img alt="Bodas de Ensueño" src="/images/home/bodas.png" />
-                        </div>
-                        <div className="card-body">
-                            <span className="tag">Planificación</span>
-                            <h3>Bodas de Ensueño</h3>
-                            <p>Planificación integral con un enfoque romántico y arquitectónico.</p>
-                        </div>
-                    </div>
-                    <div className="service-card scroll-reveal active" data-delay="150">
-                        <div className="card-img">
-                            <img alt="XV Años" src="/images/home/quince.png" />
-                        </div>
-                        <div className="card-body">
-                            <span className="tag">Celebración</span>
-                            <h3>XV Años</h3>
-                            <p>Celebramos tu esencia con estilo, tendencia y sofisticación.</p>
-                        </div>
-                    </div>
-                    <div className="service-card scroll-reveal active" data-delay="150">
-                        <div className="card-img">
-                            <img alt="Eventos Corporativos" src="/images/home/corporativos.png" />
-                        </div>
-                        <div className="card-body">
-                            <span className="tag">Estrategia</span>
-                            <h3>Eventos Corporativos</h3>
-                            <p>Galas, lanzamientos y encuentros de alto impacto para tu marca.</p>
-                        </div>
+                    <div className="portCont_Info">
+                        <header className="portInfCoti">
+                            <h1>
+                                <span>{tituloEvento}</span>
+                            </h1>
+                            <div className="infoBtnCoti">
+                                <span style={{ color: '#ffffff' }}>{isArriendo ? 'Factura de Arriendo' : 'Cotización Oficial'}</span>
+                            </div>
+                            <p className="font-oswald font-light text-2xl sm:text-3xl text-white/80 tracking-tight">{cliente?.nombre} {cliente?.apellido}</p>
+                        </header>
+
+                        <h4>#TeamLuxePlanner</h4>
+                        <p>Tu visión, nuestra magia ✨</p>
                     </div>
                 </div>
+            )}
 
-                <div className="experiencia">
-                    <div className="expeInfo">
-                        <p>+25</p>
-                        <h2>años de <br /> experiencia</h2>
+            {/* Hoja carta 2 • Sobre Nosotros (OCULTO EN ARRIENDOS) */}
+            {!isArriendo && (
+                <div className="quotation-page nosotros">
+                    <div className="nosContIni">
+                        <img src="/images/cotizacion/cot_bgInfo.jpg" alt="" className="nosImgEvetn" />
+                        <div className="contDiv">
+                            <div className="titleArea flex items-start gap-3 mb-4">
+                                <span className="dot"></span>
+                                <h2 className="titlenos">Sobre Nosotros</h2>
+                            </div>
+                            <p className="nosInfo">
+                                Somos expertos en la organización de eventos con más de 25 años de experiencia, especialistas como Wedding y Event Planner, creando y coordinando todo tipo de eventos, tanto sociales como corporativos a nivel local y nacional. Nos caracteriza un acompañamiento humano y profesional, en el que nos involucramos cuidadosamente en cada detalle para comprender sus sueños y expectativas, transformándolos en experiencias únicas, elegantes y memorables, cuidando cada detalle con responsabilidad, creatividad y pasión. Con el objetivo fiel de dejar siempre en su excelencia.
+                            </p>
+                        </div>
                     </div>
-                    <div className="expeInfo">
-                        <p>+100</p>
-                        <h2>eventos <br /> realizados</h2>
+
+                    <div className="services-grid">
+                        <div className="service-card scroll-reveal active" data-delay="150">
+                            <div className="card-img">
+                                <img alt="Bodas de Ensueño" src="/images/home/bodas.png" />
+                            </div>
+                            <div className="card-body">
+                                <span className="tag">Planificación</span>
+                                <h3>Bodas de Ensueño</h3>
+                                <p>Planificación integral con un enfoque romántico y arquitectónico.</p>
+                            </div>
+                        </div>
+                        <div className="service-card scroll-reveal active" data-delay="150">
+                            <div className="card-img">
+                                <img alt="XV Años" src="/images/home/quince.png" />
+                            </div>
+                            <div className="card-body">
+                                <span className="tag">Celebración</span>
+                                <h3>XV Años</h3>
+                                <p>Celebramos tu esencia con estilo, tendencia y sofisticación.</p>
+                            </div>
+                        </div>
+                        <div className="service-card scroll-reveal active" data-delay="150">
+                            <div className="card-img">
+                                <img alt="Eventos Corporativos" src="/images/home/corporativos.png" />
+                            </div>
+                            <div className="card-body">
+                                <span className="tag">Estrategia</span>
+                                <h3>Eventos Corporativos</h3>
+                                <p>Galas, lanzamientos y encuentros de alto impacto para tu marca.</p>
+                            </div>
+                        </div>
                     </div>
-                    <div className="expeInfo">
-                        <p>+500</p>
-                        <h2>ideas únicas <br /> &nbsp; </h2>
+
+                    <div className="experiencia">
+                        <div className="expeInfo">
+                            <p>+25</p>
+                            <h2>años de <br /> experiencia</h2>
+                        </div>
+                        <div className="expeInfo">
+                            <p>+100</p>
+                            <h2>eventos <br /> realizados</h2>
+                        </div>
+                        <div className="expeInfo">
+                            <p>+500</p>
+                            <h2>ideas únicas <br /> &nbsp; </h2>
+                        </div>
+                        <div className="expeInfo">
+                            <p>98%</p>
+                            <h2>recomendaciones <br /> &nbsp; </h2>
+                        </div>
                     </div>
-                    <div className="expeInfo">
-                        <p>98%</p>
-                        <h2>recomendaciones <br /> &nbsp; </h2>
+
+                    <div className="msjGancho">
+                        <img src="/images/cotizacion/msjGancho.svg" alt="" />
                     </div>
                 </div>
+            )}
 
-                <div className="msjGancho">
-                    <img src="/images/cotizacion/msjGancho.svg" alt="" />
+            {/* Hoja carta 3 • Collage (OCULTO EN ARRIENDOS) */}
+            {!isArriendo && (
+                <div className={`quotation-page ${data?.tipo_evento === "Boda" ? "img-boda" : "img-otro"}`}>
                 </div>
-            </div>
-
-            {/* Hoja carta 3 • Collage */}
-            <div className={`quotation-page ${data?.tipo_evento === "Boda" ? "img-boda" : "img-otro"}`}>
-            </div>
+            )}
 
             {/* Hoja carta 4 • Cotización */}
             <div className="quotation-page cotizacion">
@@ -405,55 +478,83 @@ const QuotationView = ({ isPrintView = false }) => {
                                                 <Calendar className="lucide w-4 h-4 text-neutral-500" />
                                                 <p><span>Fecha:</span> {formatDate(data.fevent)}</p>
                                             </div>
-                                            <div className="contInfoCoti__grid">
-                                                <Clock className="lucide w-4 h-4 text-neutral-500" />
-                                                <p><span>Horario:</span> {formatTime(data.hora_inicio)} | {formatTime(data.hora_fin)}</p>
-                                            </div>
-                                            <div className="contInfoCoti__grid">
-                                                <Users className="lucide w-4 h-4 text-neutral-500" />
-                                                <div className="fontInv">
-                                                    <p><span>Invitados:</span></p>
-                                                    <div className="contSpanNIn"><span className="spanNIn">A</span> {data.num_adultos || "0"}</div>
-                                                    <div className="contSpanNIn"><span className="spanNIn">N</span> {data.num_ninos || "0"}</div>
-                                                    <div className="contSpanNIn"><span className="spanNIn">T</span> {(data.num_adultos || 0) + (data.num_ninos || 0)}</div>
+                                            {!isArriendo && (
+                                                <div className="contInfoCoti__grid">
+                                                    <Clock className="lucide w-4 h-4 text-neutral-500" />
+                                                    <p><span>Horario:</span> {formatTime(data.hora_inicio)} | {formatTime(data.hora_fin)}</p>
                                                 </div>
-                                            </div>
-                                            <div className="contInfoCoti__grid">
-                                                <Palette className="lucide w-4 h-4 text-neutral-500" />
-                                                <p><span>Tematica:</span> {data.tematica}</p>
-                                            </div>
-                                            <div className="contInfoCoti__grid">
-                                                <Droplets className="lucide w-4 h-4 text-neutral-500" />
-                                                <p>
-                                                    <span>Paleta:</span>
-                                                    <div style={{ display: 'flex', gap: '6px', alignItems: 'center', marginTop: '4px' }}>
-                                                        {data.paleta_colores ? data.paleta_colores.split(',').map((c, i) => {
-                                                            const color = c.trim();
-                                                            if (!color.startsWith('#')) return null;
-                                                            return <span key={i} className="palette-circle" style={{ backgroundColor: color }}></span>;
-                                                        }) : <span className="text-xs text-neutral-400">Ver temática</span>}
+                                            )}
+                                            {!isArriendo && (
+                                                <div className="contInfoCoti__grid">
+                                                    <Users className="lucide w-4 h-4 text-neutral-500" />
+                                                    <div className="fontInv">
+                                                        <p><span>Invitados:</span></p>
+                                                        <div className="contSpanNIn"><span className="spanNIn">A</span> {data.num_adultos || "0"}</div>
+                                                        <div className="contSpanNIn"><span className="spanNIn">N</span> {data.num_ninos || "0"}</div>
+                                                        <div className="contSpanNIn"><span className="spanNIn">T</span> {(data.num_adultos || 0) + (data.num_ninos || 0)}</div>
                                                     </div>
-                                                </p>
-                                            </div>
+                                                </div>
+                                            )}
+                                            {!isArriendo && (
+                                                <div className="contInfoCoti__grid">
+                                                    <Palette className="lucide w-4 h-4 text-neutral-500" />
+                                                    <p><span>Tematica:</span> {data.tematica}</p>
+                                                </div>
+                                            )}
+                                            {!isArriendo && (
+                                                <div className="contInfoCoti__grid">
+                                                    <Droplets className="lucide w-4 h-4 text-neutral-500" />
+                                                    <p>
+                                                        <span>Paleta:</span>
+                                                        <div style={{ display: 'flex', gap: '6px', alignItems: 'center', marginTop: '4px' }}>
+                                                            {data.paleta_colores ? data.paleta_colores.split(',').map((c, i) => {
+                                                                const color = c.trim();
+                                                                if (!color.startsWith('#')) return null;
+                                                                return <span key={i} className="palette-circle" style={{ backgroundColor: color }}></span>;
+                                                            }) : <span className="text-xs text-neutral-400">Ver temática</span>}
+                                                        </div>
+                                                    </p>
+                                                </div>
+                                            )}
+                                            {isArriendo && (
+                                                <>
+                                                    <div className="contInfoCoti__grid">
+                                                        <Tag className="lucide w-4 h-4 text-neutral-500" />
+                                                        <p><span>Ref Arriendo:</span> {data.num_arriendo || 'N/A'}</p>
+                                                    </div>
+                                                    <div className="contInfoCoti__grid">
+                                                        <History className="lucide w-4 h-4 text-neutral-500" />
+                                                        <p><span>Vencimiento:</span> {formatDate(data.f_limite || data.fevent)}</p>
+                                                    </div>
+                                                </>
+                                            )}
                                         </div>
 
-                                        <div className="infoEmpre">
+                                         <div className="infoEmpre">
                                             <div className="redesItemCont">
                                                 <div className="redesItemCont">
                                                     <div className="redesItem">
                                                         <a href="https://www.instagram.com/archi.planner/" target="_blank" rel="noopener noreferrer">
-                                                            <img src={`${window.location.origin}/images/cotizacion/ArchiPlanner-Logo.svg`} alt="Logo empresa" />
+                                                            <img 
+                                                                src={config?.logo_black_path ? getUploadUrl(config.logo_black_path) : `${window.location.origin}/images/cotizacion/ArchiPlanner-Logo.svg`} 
+                                                                alt="Logo ArchiPlanner" 
+                                                                style={{ maxHeight: '45px', width: 'auto' }}
+                                                            />
                                                         </a>
                                                     </div>
                                                     <div className="redesItem">
                                                         <a href="https://www.instagram.com/annygarridop/" target="_blank" rel="noopener noreferrer">
-                                                            <img src={`${window.location.origin}/images/cotizacion/AnnyGarridoName.svg`} alt="Logo empresa" />
+                                                            <img 
+                                                                src={`${window.location.origin}/images/cotizacion/AnnyGarridoName.svg`} 
+                                                                alt="Logo Anny Garrido" 
+                                                                style={{ maxHeight: '45px', width: 'auto' }}
+                                                            />
                                                         </a>
                                                     </div>
                                                 </div>
                                             </div>
                                             <div>
-                                                <h3>Coti. #{num || id}</h3>
+                                                <h3>{isArriendo ? 'Arriendo' : 'Coti.'} #{isArriendo ? (data.num_arriendo || data.num || id) : (num || id)}</h3>
                                             </div>
                                         </div>
                                     </div>
@@ -504,6 +605,18 @@ const QuotationView = ({ isPrintView = false }) => {
 
                                     <div className="quotation-summary-area">
                                         <div className="terms-column">
+                                            {isArriendo && data.notas_entrega && (
+                                                <div className="rental-notes mb-4">
+                                                    <h4 className="terms-title">Notas de Entrega:</h4>
+                                                    <p className="text-xs opacity-70 italic">{data.notas_entrega}</p>
+                                                </div>
+                                            )}
+                                            {isArriendo && data.notas_devolucion && (
+                                                <div className="rental-notes mb-4">
+                                                    <h4 className="terms-title">Notas de Devolución:</h4>
+                                                    <p className="text-xs opacity-70 italic">{data.notas_devolucion}</p>
+                                                </div>
+                                            )}
                                             <h4 className="terms-title">Términos & Condiciones:</h4>
                                             <div className="terms-text">
                                                 {displayPolicies.map((line, i) => (
@@ -578,126 +691,137 @@ const QuotationView = ({ isPrintView = false }) => {
                 </div>
             </div>
 
-            {/* Hoja carta 5 • Adicionales*/}
-            <div className="quotation-page adicionales">
-                <div className="contDiv">
-                    <div className="adicionales-header">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-shopping-bag w-4 h-4 text-neutral-500">
-                            <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path>
-                            <path d="M3 6h18"></path>
-                            <path d="M16 10a4 4 0 0 1-8 0"></path>
-                        </svg>
-                        <h1>Adicionales</h1>
-                    </div>
+            {/* Hoja carta 5 • Adicionales (OCULTO EN ARRIENDOS) */}
+            {!isArriendo && (
+                <div className="quotation-page adicionales">
+                    <div className="contDiv">
+                        <div className="adicionales-header">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-shopping-bag w-4 h-4 text-neutral-500">
+                                <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path>
+                                <path d="M3 6h18"></path>
+                                <path d="M16 10a4 4 0 0 1-8 0"></path>
+                            </svg>
+                            <h1>Adicionales</h1>
+                        </div>
 
-                    <table className="quotation-table">
-                        <thead>
-                            <tr>
-                                <th className="text-left">Servicio</th>
-                                <th className="text-left">Descripción</th>
-                                <th className="text-center" style={{ width: '60px' }}>Cant.</th>
-                                <th className="text-right">Valor</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {filteredAdicionals.map((item, idx) => (
-                                <tr key={idx}>
-                                    <td className="text-left">{item.nombre}</td>
-                                    <td className="text-left">{item.nota || ""}</td>
-                                    <td className="text-center">{item.cantidad}</td>
-                                    <td className="text-right">$ {formatCurrency(item.precio_u || item.precio || 0)}</td>
+                        <table className="quotation-table">
+                            <thead>
+                                <tr>
+                                    <th className="text-left">Servicio</th>
+                                    <th className="text-left">Descripción</th>
+                                    <th className="text-center" style={{ width: '60px' }}>Cant.</th>
+                                    <th className="text-right">Valor</th>
                                 </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
+                            </thead>
+                            <tbody>
+                                {filteredAdicionals.map((item, idx) => (
+                                    <tr key={idx}>
+                                        <td className="text-left">{item.nombre}</td>
+                                        <td className="text-left">{item.nota || ""}</td>
+                                        <td className="text-center">{item.cantidad}</td>
+                                        <td className="text-right">$ {formatCurrency(item.precio_u || item.precio || 0)}</td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
 
-                {/* Footer manual para Adicionales */}
-                <div className="print-footer-container">
-                    {config && (
-                        <div className="quotation-footer">
-                            {config.city && (
-                                <div className="quotation-footer__item">
-                                    <MapPin />
-                                    <span>{config.city}</span>
+                    {/* Footer manual para Adicionales */}
+                    <div className="print-footer-container">
+                        {config && (
+                            <div className="quotation-footer">
+                                {config.city && (
+                                    <div className="quotation-footer__item">
+                                        <MapPin />
+                                        <span>{config.city}</span>
+                                    </div>
+                                )}
+                                <div className="footer-contact-group">
+                                    {config.telefono && (
+                                        <div className="quotation-footer__item">
+                                            <Phone />
+                                            <span>{config.telefono}</span>
+                                        </div>
+                                    )}
+                                    {config.email_contacto && (
+                                        <div className="quotation-footer__item">
+                                            <Mail />
+                                            <span>{config.email_contacto}</span>
+                                        </div>
+                                    )}
                                 </div>
-                            )}
-                            <div className="footer-contact-group">
-                                {config.telefono && (
-                                    <div className="quotation-footer__item">
-                                        <Phone />
-                                        <span>{config.telefono}</span>
-                                    </div>
-                                )}
-                                {config.email_contacto && (
-                                    <div className="quotation-footer__item">
-                                        <Mail />
-                                        <span>{config.email_contacto}</span>
-                                    </div>
-                                )}
+                            </div>
+                        )}
+                        <img className="quotation-branding-adorno" src="/images/cotizacion/cot_bgPag.png" alt="" />
+                    </div>
+
+                    <img className="bgEfect" src="/images/cotizacion/cot_bgEfect.png" alt="" />
+                </div>
+            )}
+
+            {/* Hoja carta 6 • Contacto (OCULTO EN ARRIENDOS) */}
+            {!isArriendo && (
+                <div className="quotation-page contactPage">
+                    <div className="contactCont">
+                        <div className="titleCont">
+                            <h2>Contacto</h2>
+                            <p>Trabajemos juntos</p>
+                        </div>
+                        <div className="contInfo">
+                            <div className="infoItem">
+                                <Phone />
+                                <div>
+                                    {config?.nombre_empresa === "ArchiPlanner AG" ? (
+                                        <>
+                                            <p>{config?.telefono}</p>
+                                            <p>315 7071830</p>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <p>315 7071830</p>
+                                            <p>{config?.telefono}</p>
+                                        </>
+                                    )}
+                                </div>
+                            </div>
+                            <div className="infoItem">
+                                <Mail />
+                                <p>{config?.email_contacto}</p>
+                            </div>
+                            <div className="infoItem">
+                                <MapPin />
+                                <p>{config?.city}</p>
                             </div>
                         </div>
-                    )}
-                    <img className="quotation-branding-adorno" src="/images/cotizacion/cot_bgPag.png" alt="" />
-                </div>
-
-                <img className="bgEfect" src="/images/cotizacion/cot_bgEfect.png" alt="" />
-            </div>
-
-            {/* Hoja carta 6 • Contacto*/}
-            <div className="quotation-page contactPage">
-                <div className="contactCont">
-                    <div className="titleCont">
-                        <h2>Contacto</h2>
-                        <p>Trabajemos juntos</p>
                     </div>
-                    <div className="contInfo">
-                        <div className="infoItem">
-                            <Phone />
-                            <div>
-                                {config?.nombre_empresa === "ArchiPlanner AG" ? (
-                                    <>
-                                        <p>{config?.telefono}</p>
-                                        <p>315 7071830</p>
-                                    </>
-                                ) : (
-                                    <>
-                                        <p>315 7071830</p>
-                                        <p>{config?.telefono}</p>
-                                    </>
-                                )}
+
+                    <div className="redesCont">
+                        <div className="redesItemCont">
+                            <div className="redesItem">
+                                <a href="https://www.instagram.com/archi.planner/" target="_blank" rel="noopener noreferrer">
+                                    <img src={`${window.location.origin}/images/cotizacion/ArchiPlanner-Logo.svg`} alt="Logo empresa" />
+                                </a>
+                            </div>
+                            <div className="redesItem">
+                                <a href="https://www.instagram.com/annygarridop/" target="_blank" rel="noopener noreferrer">
+                                    <img src={`${window.location.origin}/images/cotizacion/AnnyGarridoName.svg`} alt="Logo empresa" />
+                                </a>
                             </div>
                         </div>
-                        <div className="infoItem">
-                            <Mail />
-                            <p>{config?.email_contacto}</p>
-                        </div>
-                        <div className="infoItem">
-                            <MapPin />
-                            <p>{config?.city}</p>
-                        </div>
+                        <a href="https://www.instagram.com/explore/search/keyword/?q=%23teamluxeplanner" target="_blank" rel="noopener noreferrer">
+                            #TeamLuxePlanner
+                        </a>
+
                     </div>
                 </div>
+            )}
 
-                <div className="redesCont">
-                    <div className="redesItemCont">
-                        <div className="redesItem">
-                            <a href="https://www.instagram.com/archi.planner/" target="_blank" rel="noopener noreferrer">
-                                <img src={`${window.location.origin}/images/cotizacion/ArchiPlanner-Logo.svg`} alt="Logo empresa" />
-                            </a>
-                        </div>
-                        <div className="redesItem">
-                            <a href="https://www.instagram.com/annygarridop/" target="_blank" rel="noopener noreferrer">
-                                <img src={`${window.location.origin}/images/cotizacion/AnnyGarridoName.svg`} alt="Logo empresa" />
-                            </a>
-                        </div>
-                    </div>
-                    <a href="https://www.instagram.com/explore/search/keyword/?q=%23teamluxeplanner" target="_blank" rel="noopener noreferrer">
-                        #TeamLuxePlanner
-                    </a>
-
-                </div>
-            </div>
+            {showHistory && (
+                <QuotationHistoryPanel 
+                    quotationId={id} 
+                    onClose={() => setShowHistory(false)} 
+                />
+            )}
         </div>
     );
 };

@@ -1,0 +1,200 @@
+.notification-bell-container {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.bell-button {
+    background: transparent;
+    border: none;
+    color: var(--color-text-dim);
+    cursor: pointer;
+    position: relative;
+    padding: 8px;
+    border-radius: 50%;
+    transition: var(--transition-fast);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.bell-button:hover {
+    color: var(--color-primary);
+    background: rgba(255, 132, 132, 0.1);
+}
+
+.bell-button.has-unread {
+    color: var(--color-white);
+}
+
+.unread-badge {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    background: #ef4444;
+    color: white;
+    font-size: 10px;
+    font-weight: 700;
+    min-width: 16px;
+    height: 16px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid var(--color-bg);
+}
+
+.notification-dropdown {
+    position: fixed;
+    top: 60px; /* Ajustado para que aparezca debajo de la sección de usuario */
+    left: 20px;
+    width: 350px;
+    max-height: 500px;
+    background: rgba(26, 26, 26, 0.98);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 16px;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8);
+    backdrop-filter: blur(25px);
+    animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    z-index: 9999; /* El más alto para flotar sobre todo */
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+@keyframes slideUp {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.dropdown-header {
+    padding: 15px 20px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    display: flex;
+    justify-content: align;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.dropdown-header h3 {
+    font-size: 16px;
+    font-family: var(--font-sans);
+    font-weight: 600;
+    margin: 0;
+}
+
+.mark-all-btn {
+    background: transparent;
+    border: none;
+    color: var(--color-primary);
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+}
+
+.mark-all-btn:hover {
+    text-decoration: underline;
+}
+
+.alerts-list {
+    overflow-y: auto;
+    flex: 1;
+}
+
+.alert-item {
+    padding: 15px 20px;
+    display: flex;
+    gap: 15px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+    transition: background 0.2s ease;
+    cursor: default;
+    position: relative;
+    align-items: flex-start;
+}
+
+.alert-item:hover {
+    background: rgba(255, 255, 255, 0.02);
+}
+
+.alert-item.unread {
+    background: rgba(99, 102, 241, 0.05);
+}
+
+.alert-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.05);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.icon-blue { color: #3b82f6; }
+.icon-red { color: #ef4444; }
+.icon-yellow { color: #eab308; }
+.icon-purple { color: #a855f7; }
+
+.alert-content {
+    flex: 1;
+}
+
+.alert-title {
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 4px;
+    color: var(--color-white);
+}
+
+.alert-msg {
+    font-size: 13px;
+    color: var(--color-text-dim);
+    line-height: 1.4;
+    white-space: pre-line;
+}
+
+.alert-time {
+    font-size: 11px;
+    color: #666;
+    margin-top: 8px;
+}
+
+.mark-btn {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: var(--color-text-dim);
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: var(--transition-fast);
+}
+
+.mark-btn:hover {
+    color: var(--color-primary);
+    border-color: var(--color-primary);
+    background: rgba(255, 132, 132, 0.1);
+}
+
+.empty-alerts {
+    padding: 40px 20px;
+    text-align: center;
+    color: #666;
+    font-size: 14px;
+}
+
+/* Mobile Adjustments */
+@media (max-width: 768px) {
+    .notification-dropdown {
+        position: fixed;
+        top: 80px;
+        left: 20px;
+        right: 20px;
+        width: auto;
+        max-height: 80vh;
+    }
+}

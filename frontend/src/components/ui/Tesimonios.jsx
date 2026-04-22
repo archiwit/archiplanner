@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import "./style/Testimonio.css";
-import { API_BASE_URL, UPLOADS_URL } from '../../config';
+import { API_BASE_URL, getUploadUrl } from '../../config';
 
 export default function EditorialTestimonials() {
     const [testimonials, setTestimonials] = useState([]);
@@ -77,12 +77,8 @@ export default function EditorialTestimonials() {
         }
     }, [testimonials, loading, updateFeaturedCard]);
 
-    const getImageUrl = (path) => {
-        if (!path) return '';
-        if (path.startsWith('http')) return path;
-        if (path.startsWith('/uploads')) return `${UPLOADS_URL}${path}`;
-        return path;
-    };
+    const getImageUrlLocal = (path) => getUploadUrl(path);
+
 
     if (loading) return null;
     if (testimonials.length === 0) return null;
@@ -111,7 +107,7 @@ export default function EditorialTestimonials() {
                         >
                             <div className="editorial-card__image-wrap">
                                 <img
-                                    src={getImageUrl(item.image)}
+                                    src={getImageUrlLocal(item.image)}
                                     alt={item.name}
                                     className="editorial-card__image"
                                 />

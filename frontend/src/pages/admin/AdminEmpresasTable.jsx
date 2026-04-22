@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import api from '../../services/api';
 import DynamicTableManager from '../../components/ui/DynamicTableManager';
-import { UPLOADS_URL } from '../../config';
+import { UPLOADS_URL, getUploadUrl } from '../../config';
 import { useBranding } from '../../context/BrandingContext';
-import { CheckCircle, Circle, Palette, Layout, Square, ExternalLink, Plus } from 'lucide-react';
+import { CheckCircle, Circle, Palette, Layout, Square, ExternalLink, Plus, Share2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import Swal from 'sweetalert2';
 import { AdminInput, AdminImageUpload, AdminColorPicker } from '../../components/ui/AdminFormFields';
 
 const AdminEmpresasTable = () => {
@@ -34,7 +35,14 @@ const AdminEmpresasTable = () => {
             refreshBranding();
         } catch (err) {
             console.error("Error activando empresa:", err);
-            alert("No se pudo activar la empresa");
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: 'No se pudo activar la empresa.',
+                background: '#1a1a1a',
+                color: '#fff',
+                confirmButtonColor: 'var(--color-primary)'
+            });
         }
         setLoading(false);
     };
@@ -48,7 +56,7 @@ const AdminEmpresasTable = () => {
                 <div className="td-flex-img">
                     <div className="td-img" style={{ background: row.color_primario || 'var(--color-primary-dim)' }}>
                         {row.logo_cuadrado_path ? (
-                            <img src={`${UPLOADS_URL}${row.logo_cuadrado_path}`} alt="Logo" style={{width: '100%', height: '100%', objectFit: 'cover'}}/>
+                            <img src={getUploadUrl(row.logo_cuadrado_path)} alt="Logo" style={{width: '100%', height: '100%', objectFit: 'cover'}}/>
                         ) : (
                             <span style={{ fontWeight: 'bold', color: '#fff', textTransform: 'uppercase' }}>
                                 {row.nombre_empresa ? row.nombre_empresa[0] : 'E'}
@@ -141,6 +149,12 @@ const AdminEmpresasTable = () => {
                                 value={formData.logo_horizontal || formData.logo_horizontal_path} 
                                 onChange={handleFieldChange} 
                             />
+                            <AdminImageUpload 
+                                label="Logo Negro (Contratos)" 
+                                name="logo_black" 
+                                value={formData.logo_black || formData.logo_black_path} 
+                                onChange={handleFieldChange} 
+                            />
                             
                             <div className="glass-panel" style={{ padding: '16px', background: 'rgba(255,132,132,0.03)', border: '1px solid rgba(255,132,132,0.1)' }}>
                                 <span style={{ display: 'block', fontSize: '10px', fontWeight: '900', color: 'var(--color-primary)', marginBottom: '12px', textTransform: 'uppercase', letterSpacing: '1px' }}>Paleta de Identidad</span>
@@ -172,6 +186,7 @@ const AdminEmpresasTable = () => {
         { name: 'tt_url', label: 'TikTok', type: 'url', width: '20%' },
         { name: 'li_url', label: 'LinkedIn', type: 'url', width: '20%' },
         { name: 'x_url', label: 'X (Twitter)', type: 'url', width: '20%' },
+        { name: 'pi_url', label: 'Pinterest', type: 'url', width: '20%' },
         { name: 'politicas_cotizacion', label: 'Políticas de Cotización', type: 'textarea', fullWidth: true, rows: 3 },
         { name: 'intro_cotizacion', label: 'Introducción de Cotización', type: 'textarea', fullWidth: true, rows: 3 },
     ];
@@ -182,8 +197,8 @@ const AdminEmpresasTable = () => {
         // Campos a saltar de la iteración automática
         const skip = [
             'id', 'created_at', 'updated_at', 'es_activa', 
-            'logo_cuadrado', 'logo_horizontal', 
-            'logo_cuadrado_path', 'logo_horizontal_path', 
+            'logo_cuadrado', 'logo_horizontal', 'logo_black',
+            'logo_cuadrado_path', 'logo_horizontal_path', 'logo_black_path',
             'branding_setup'
         ];
 
@@ -207,6 +222,12 @@ const AdminEmpresasTable = () => {
             data.append('logo_horizontal_path', originalItem.logo_horizontal_path);
         }
 
+        if (formData.logo_black instanceof File) {
+            data.append('logo_black', formData.logo_black);
+        } else if (originalItem.logo_black_path) {
+            data.append('logo_black_path', originalItem.logo_black_path);
+        }
+
         return data;
     };
 
@@ -218,7 +239,14 @@ const AdminEmpresasTable = () => {
             await fetchEmpresas();
         } catch (err) {
             console.error(err);
-            alert('Error al crear la configuración.');
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: 'Error al crear la configuración.',
+                background: '#1a1a1a',
+                color: '#fff',
+                confirmButtonColor: 'var(--color-primary)'
+            });
         }
         setLoading(false);
     };
@@ -232,21 +260,65 @@ const AdminEmpresasTable = () => {
             if (originalItem.es_activa) refreshBranding();
         } catch (err) {
             console.error(err);
-            alert('Error al actualizar la configuración.');
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: 'Error al actualizar la configuración.',
+                background: '#1a1a1a',
+                color: '#fff',
+                confirmButtonColor: 'var(--color-primary)'
+            });
         }
         setLoading(false);
     };
 
     const handleDelete = async (item) => {
-        if (item.es_activa) return alert('No puedes eliminar la empresa activa');
-        const conf = window.confirm(`¿Seguro que deseas eliminar permanentemente a ${item.nombre_empresa}?`);
-        if (conf) {
+        if (item.es_activa) {
+            return Swal.fire({
+                icon: 'warning',
+                title: 'Acción no permitida',
+                text: 'No puedes eliminar la empresa activa.',
+                background: '#1a1a1a',
+                color: '#fff',
+                confirmButtonColor: 'var(--color-primary)'
+            });
+        }
+
+        const result = await Swal.fire({
+            title: '¿Estás seguro?',
+            text: `¿Seguro que deseas eliminar permanentemente a ${item.nombre_empresa}?`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: 'var(--color-primary)',
+            cancelButtonColor: '#333',
+            confirmButtonText: 'Sí, eliminar',
+            cancelButtonText: 'Cancelar',
+            background: '#1a1a1a',
+            color: '#fff'
+        });
+
+        if (result.isConfirmed) {
             try {
                 await api.delete(`/configuraciones/${item.id}`);
                 setEmpresas(empresas.filter(emp => emp.id !== item.id));
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Eliminado',
+                    text: 'La empresa ha sido eliminada correctamente.',
+                    background: '#1a1a1a',
+                    color: '#fff',
+                    confirmButtonColor: 'var(--color-primary)'
+                });
             } catch (err) {
                 console.error(err);
-                alert('No se pudo borrar.');
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'No se pudo eliminar la configuración.',
+                    background: '#1a1a1a',
+                    color: '#fff',
+                    confirmButtonColor: 'var(--color-primary)'
+                });
             }
         }
     };

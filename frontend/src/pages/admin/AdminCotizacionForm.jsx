@@ -4,14 +4,16 @@ import api from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 import Swal from 'sweetalert2';
 import {
-    Save, X, Plus, Trash2, Search, Package,
+    Save, X, Plus, FilePlus, Trash2, Search, Package,
     MapPin, Users, Calendar, Clock, History,
     Palette, Building2, Info, ChevronRight,
     Eye, EyeOff, FileText, Layout, ExternalLink, CreditCard,
-    GripVertical, ChevronDown, ChevronUp, CheckCircle2, Calculator,
-    Upload, PieChart, BarChart3 as BarChart, Activity, TrendingUp, TrendingDown, RefreshCw
+    GripVertical, ChevronDown, ChevronUp, ChevronLeft, CheckCircle2, Calculator,
+    Upload, PieChart, BarChart3 as BarChart, Activity, TrendingUp, TrendingDown, RefreshCw, User, Menu, Download,
+    Send, MessageCircle, Mail, HelpCircle, CheckCircle, Lock
 } from 'lucide-react';
 import SearchableDropdown from '../../components/common/SearchableDropdown';
+import { AdminInput } from '../../components/ui/AdminFormFields';
 import {
     DndContext,
     closestCenter,
@@ -31,6 +33,8 @@ import { CSS } from '@dnd-kit/utilities';
 import { UPLOADS_URL } from '../../config';
 import QuotationHistoryPanel from '../../components/admin/QuotationHistoryPanel';
 import { History as HistoryIcon } from 'lucide-react';
+import '../style/AdminCotizacionFormMobile.css';
+import { getUploadUrl } from '../../config';
 
 const smartFormat = (num) => {
     if (num === null || num === undefined || isNaN(num)) return '0';
@@ -117,7 +121,8 @@ const SortableItem = ({
     updateDetail, 
     removeDetail, 
     itemRefs, 
-    searchInputRef 
+    searchInputRef,
+    isMobile
 }) => {
     const {
         attributes,
@@ -133,20 +138,85 @@ const SortableItem = ({
         transition,
         zIndex: isDragging ? 1000 : 'auto',
         opacity: isDragging ? 0.5 : 1,
-        display: 'grid',
-        gridTemplateColumns: `30px 40px 1fr 80px ${showCosts ? '80px' : ''} 90px 110px 40px`,
-        alignItems: 'center',
-        gap: '12px',
+        display: isMobile ? 'flex' : 'grid',
+        flexDirection: isMobile ? 'column' : 'row',
+        gridTemplateColumns: isMobile ? 'none' : `30px 40px 1fr 80px ${showCosts ? '80px' : ''} 90px 110px 40px`,
+        alignItems: isMobile ? 'stretch' : 'center',
+        gap: isMobile ? '8px' : '12px',
         padding: '10px',
-        borderBottom: '1px solid rgba(255,255,255,0.03)'
+        borderBottom: '1px solid rgba(255,255,255,0.03)',
+        marginBottom: isMobile ? '20px' : '0',
+        background: isMobile ? 'rgba(255,255,255,0.02)' : 'transparent',
+        borderRadius: isMobile ? '12px' : '0',
+        border: isMobile ? '1px solid rgba(255,255,255,0.05)' : 'none'
     };
+
+    if (isMobile) {
+        return (
+            <div ref={setNodeRef} style={style} className="item-card-mobile">
+                {/* Row 1: Handle, Thumb, Name */}
+                <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                    <div {...attributes} {...listeners} style={{ cursor: 'grab', opacity: 0.3 }}>
+                        <GripVertical size={18} />
+                    </div>
+                    <img src={getUploadUrl(det.foto)} style={{ width: '40px', height: '40px', borderRadius: '8px', objectFit: 'cover' }} alt="" />
+                    <div style={{ flex: 1, fontSize: '14px', fontWeight: '700', color: '#fff' }}>{det.nombre}</div>
+                    <button type="button" className="action-btn delete" onClick={() => removeDetail(idx)} style={{ color: '#ff4444' }}>
+                        <Trash2 size={16} />
+                    </button>
+                </div>
+
+                {/* Row 2: Notes */}
+                <div style={{ marginTop: '5px' }}>
+                    <input
+                        type="text"
+                        placeholder="Notas / Observaciones..."
+                        value={det.notas || ''}
+                        onChange={(e) => updateDetail(idx, 'notas', e.target.value)}
+                        className="dense-input"
+                        style={{ width: '100%', fontSize: '11px', background: 'rgba(255,255,255,0.03)' }}
+                    />
+                </div>
+
+                {/* Row 3: Qty, Price and Total Unified V4.14 (Forced Row & Uniform Labels) */}
+                <div style={{ display: 'flex', gap: '12px', marginTop: '12px', flexWrap: 'nowrap', width: '100%', alignItems: 'center' }}>
+                    <div className="form-field is-floating" style={{ flex: '1 1 18%', marginBottom: 0, minWidth: 0 }}>
+                        <SmartNumericInput
+                            inputRef={el => itemRefs.current[idx] = el}
+                            value={det.cantidad}
+                            onChange={(val) => updateDetail(idx, 'cantidad', val)}
+                            disabled={det.por_persona}
+                            className="dense-input"
+                            style={{ width: '100%', textAlign: 'center', borderColor: det.por_persona ? 'var(--color-primary-dim)' : '', height: '42px', padding: '11px 4px 0' }}
+                        />
+                        <label style={{ left: '50%', transform: 'translate(-50%, -50%)', whiteSpace: 'nowrap', fontSize: '9px' }}>CANT</label>
+                    </div>
+                    <div className="form-field is-floating" style={{ flex: '1 1 37%', marginBottom: 0, minWidth: 0 }}>
+                        <SmartNumericInput
+                            value={det.precio_u}
+                            onChange={(val) => updateDetail(idx, 'precio_u', val)}
+                            className="dense-input"
+                            style={{ width: '100%', textAlign: 'center', color: 'var(--color-tertiary)', height: '42px', padding: '11px 5px 0' }}
+                        />
+                        <label style={{ left: '50%', transform: 'translate(-50%, -50%)', whiteSpace: 'nowrap', fontSize: '9px' }}>C/U</label>
+                    </div>
+                    <div className="form-field is-floating" style={{ flex: '1 1 45%', marginBottom: 0, minWidth: 0 }}>
+                        <div className="dense-input" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '42px', fontWeight: '800', color: 'var(--color-primary)', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,132,132,0.2)', borderRadius: '12px', padding: '11px 5px 0', boxSizing: 'border-box' }}>
+                            <span style={{ color: 'var(--color-primary)', filter: 'brightness(1.2)', whiteSpace: 'nowrap', fontSize: (det.cantidad * det.precio_u) > 9999999 ? '11px' : '13px' }}>$ {smartFormat(det.cantidad * det.precio_u)}</span>
+                        </div>
+                        <label style={{ left: '50%', transform: 'translate(-50%, -50%)', whiteSpace: 'nowrap', fontSize: '9px' }}>TOTAL</label>
+                    </div>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div ref={setNodeRef} style={style} className="item-row">
             <div {...attributes} {...listeners} style={{ cursor: 'grab', display: 'flex', alignItems: 'center', opacity: 0.3 }}>
                 <GripVertical size={16} />
             </div>
-            <img src={det.foto ? `${UPLOADS_URL}${det.foto}` : '/placeholder.png'} className="item-thumb" alt="" />
+            <img src={getUploadUrl(det.foto)} className="item-thumb" alt="" />
             <div style={{ flex: 2 }}>
                 <div style={{ fontSize: '13px', fontWeight: '500', display: 'flex', alignItems: 'center', gap: '8px' }}>
                     {det.nombre}
@@ -226,11 +296,86 @@ const SortableItem = ({
     );
 };
 
-const AdminCotizacionForm = () => {
+const AdminCotizacionForm = ({ claseOverride }) => {
     const { id } = useParams();
     const navigate = useNavigate();
     const { user } = useAuth();
     const [selectedColor, setSelectedColor] = useState('#ff8484'); // Default brand primary
+
+    // --- RESPONSIVE MOBILE STATES (v4.5) ---
+    const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+    const [focusedField, setFocusedField] = useState(null);
+    const [mobileSection, setMobileSection] = useState('info'); // 'info', 'budget', 'finance', 'analytics'
+    const [isInfoCollapsed, setIsInfoCollapsed] = useState(false);
+    const [isBudgetSummaryCollapsed, setIsBudgetSummaryCollapsed] = useState(false);
+    const [isFinanceCollapsed, setIsFinanceCollapsed] = useState(true);
+
+    // Helper to render premium floating fields in this custom form
+    const renderCotField = (label, name, type = 'text', options = null, placeholder = '', isRequired = false) => {
+        const value = formData[name];
+        const isFloating = focusedField === name || (value !== null && value !== undefined && value.toString().length > 0) || type === 'date' || type === 'time' || type === 'select';
+        const isTextarea = type === 'textarea';
+        
+        return (
+            <div className={`form-field ${isFloating ? 'is-floating' : ''} ${isTextarea ? 'is-textarea' : ''}`}>
+                {type === 'select' ? (
+                    <select 
+                        name={name} 
+                        value={value || ''} 
+                        onChange={handleInputChange} 
+                        onFocus={() => setFocusedField(name)} 
+                        onBlur={() => setFocusedField(null)} 
+                        className="dense-input"
+                        required={isRequired}
+                    >
+                        {options}
+                    </select>
+                ) : isTextarea ? (
+                    <textarea
+                        name={name}
+                        value={value || ''}
+                        onChange={handleInputChange}
+                        onFocus={() => setFocusedField(name)}
+                        onBlur={() => setFocusedField(null)}
+                        className="dense-input"
+                        placeholder={focusedField === name ? placeholder : ''}
+                        style={{ minHeight: '80px', paddingTop: '20px' }}
+                        required={isRequired}
+                    />
+                ) : (
+                    <input 
+                        type={type} 
+                        name={name} 
+                        value={value || ''} 
+                        onChange={handleInputChange} 
+                        onFocus={() => setFocusedField(name)} 
+                        onBlur={() => setFocusedField(null)} 
+                        className="dense-input"
+                        placeholder={focusedField === name ? placeholder : ''}
+                        required={isRequired}
+                    />
+                )}
+                <label>{label}</label>
+            </div>
+        );
+    };
+
+    useEffect(() => {
+        const handleResize = () => setIsMobile(window.innerWidth < 768);
+        window.addEventListener('resize', handleResize);
+        
+        // --- Add body class for global layout overrides (v4.5) ---
+        if (isMobile) {
+            document.body.classList.add('mobile-quotation-mode');
+        } else {
+            document.body.classList.remove('mobile-quotation-mode');
+        }
+
+        return () => {
+            window.removeEventListener('resize', handleResize);
+            document.body.classList.remove('mobile-quotation-mode');
+        };
+    }, [isMobile]);
 
     const addColor = () => {
         if (!selectedColor) return;
@@ -270,9 +415,17 @@ const AdminCotizacionForm = () => {
     // --- ESTADOS DE GASTOS (v4) ---
     const [gastos, setGastos] = useState([]);
     const [gastosLoading, setGastosLoading] = useState(false);
+    const [docStatus, setDocStatus] = useState({ pdf_path: null, contrato_path: null });
+    const [docLoading, setDocLoading] = useState(false);
     const [showGastoModal, setShowGastoModal] = useState(false);
     const [showReport, setShowReport] = useState(false);
     const [nuevoGasto, setNuevoGasto] = useState({ concepto: '', monto: '', responsable: '', pagado_a: '', metodo: 'Efectivo' });
+    const [modalFocusedField, setModalFocusedField] = useState(null);
+
+    // --- ESTADOS DE DOCUMENTOS (v5.2) ---
+    const [showSendModal, setShowSendModal] = useState(false);
+    const [sendConfig, setSendConfig] = useState({ type: 'cotizacion', method: 'whatsapp', message: '' });
+    const [uploadingDoc, setUploadingDoc] = useState(null); // 'cotizacion' | 'contrato' | null
 
     const fetchGastos = async () => {
         if (!id) return;
@@ -331,6 +484,95 @@ const AdminCotizacionForm = () => {
             fetchGastos();
         } catch (err) {
             console.error('Error toggling gasto estado:', err);
+        }
+    };
+
+    const fetchDocStatus = async () => {
+        if (!id) return;
+        try {
+            const res = await api.get(`/documents/status/${id}`);
+            setDocStatus(res.data);
+        } catch (err) {
+            console.error('Error fetching doc status:', err);
+        }
+    };
+
+    const handleUploadPdf = async (type, file) => {
+        if (!id) {
+            Swal.fire({ icon: 'warning', title: 'Guardar primero', text: 'Guarda la cotización antes de subir documentos.', background: '#1a1a1a', color: '#fff' });
+            return;
+        }
+        if (!file) return;
+
+        setUploadingDoc(type);
+        const fData = new FormData();
+        fData.append('file', file);
+
+        try {
+            const res = await api.post(`/documents/upload/${id}/${type}`, fData, {
+                headers: { 'Content-Type': 'multipart/form-data' }
+            });
+            if (res.data.success) {
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Archivo cargado',
+                    text: `El PDF ha sido guardado como: ${res.data.name}`,
+                    background: '#1a1a1a',
+                    color: '#fff',
+                    timer: 2000,
+                    showConfirmButton: false
+                });
+                fetchDocStatus();
+            }
+        } catch (err) {
+            console.error('Error uploading PDF:', err);
+            Swal.fire({ icon: 'error', title: 'Error', text: 'No se pudo subir el archivo.', background: '#1a1a1a', color: '#fff' });
+        } finally {
+            setUploadingDoc(null);
+        }
+    };
+
+    const handleOpenSendModal = (type, method) => {
+        const clientName = formData.nombre_cliente || 'Cliente';
+        const docName = type === 'cotizacion' ? 'cotización' : 'contrato';
+        const template = `Hola ${clientName}, adjunto la ${docName} para lograr crear tu evento soñado.\n\nTu visión, nuestra magia ✨`;
+        
+        setSendConfig({ type, method, message: template });
+        setShowSendModal(true);
+    };
+
+    const handleSendDoc = async () => {
+        setDocLoading(true);
+        try {
+            const res = await api.post(`/documents/send/${id}`, {
+                method: sendConfig.method,
+                type: sendConfig.type,
+                message: sendConfig.message
+            });
+
+            if (res.data.success) {
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Envío exitoso',
+                    text: 'El documento ha sido enviado correctamente.',
+                    background: '#1a1a1a',
+                    color: '#fff',
+                    timer: 2000,
+                    showConfirmButton: false
+                });
+                setShowSendModal(false);
+            }
+        } catch (err) {
+            console.error('Error sending doc:', err);
+            Swal.fire({ 
+                icon: 'error', 
+                title: 'Error de envío', 
+                text: err.response?.data?.error || 'No se pudo completar el envío.',
+                background: '#1a1a1a', 
+                color: '#fff' 
+            });
+        } finally {
+            setDocLoading(false);
         }
     };
 
@@ -510,6 +752,8 @@ const AdminCotizacionForm = () => {
     const [formData, setFormData] = useState({
         conf_id: user?.conf_id || 1,
         num: '',
+        num_arriendo: '',
+        clase: claseOverride || 'evento',
         cli_id: '',
         u_id: user?.id || 1,
         fcoti: new Date().toISOString().split('T')[0],
@@ -522,13 +766,15 @@ const AdminCotizacionForm = () => {
         lugar: '',
         loc_id: null,
         tematica: '',
-        tipo_evento: 'Boda',
+        tipo_evento: claseOverride === 'arriendo' ? 'Arriendo' : 'Boda',
         paleta_colores: '',
         aplica_iva: false,
         total_tipo: 'calculado',
         monto_final: 0,
         estado: 'borrador',
         notas: '',
+        notas_entrega: '',
+        notas_devolucion: '',
         mostrar_precios: true,
         detalles: []
     });
@@ -555,6 +801,7 @@ const AdminCotizacionForm = () => {
                 if (id) {
                     fetchPagos();
                     fetchGastos();
+                    fetchDocStatus();
                 }
 
                 if (id) {
@@ -563,6 +810,7 @@ const AdminCotizacionForm = () => {
                     // Format dates and times for inputs
                     setFormData({
                         ...coti,
+                        clase: coti.clase || 'evento', // v5.3: Asegurar que no sea NULL
                         fcoti: coti.fcoti ? coti.fcoti.split('T')[0] : '',
                         fevent: coti.fevent ? coti.fevent.split('T')[0] : '',
                         fevent_fin: coti.fevent_fin ? coti.fevent_fin.split('T')[0] : '',
@@ -582,13 +830,27 @@ const AdminCotizacionForm = () => {
                         })
                     });
                 } else {
-                    // Generate a temporary number if new
-                    setFormData(prev => ({
-                        ...prev,
-                        num: Math.floor(1000 + Math.random() * 9000).toString(),
-                        conf_id: activeEmpresa?.id || user?.conf_id || 1,
-                        mostrar_precios: true
-                    }));
+                    try {
+                        const clase = claseOverride || 'evento';
+                        const numRes = await api.get(`/cotizaciones/proximo-numero?clase=${clase}`);
+                        let nextNum = numRes.data.nextNum;
+                        let nextArr = '';
+                        
+                        if (clase === 'arriendo') {
+                            nextArr = nextNum; // Para arriendos, num y num_arriendo suelen ser el mismo formateado
+                        }
+
+                        setFormData(prev => ({
+                            ...prev,
+                            num: nextNum,
+                            num_arriendo: nextArr,
+                            clase: claseOverride || 'evento',
+                            conf_id: activeEmpresa?.id || user?.conf_id || 1,
+                            mostrar_precios: true
+                        }));
+                    } catch (e) {
+                         console.warn("Could not fetch next num, using fallback");
+                    }
                 }
             } catch (err) {
                 console.error('Error loading form data:', err);
@@ -628,16 +890,20 @@ const AdminCotizacionForm = () => {
     const updateDropdownPos = () => {
         if (searchContainerRef.current) {
             const rect = searchContainerRef.current.getBoundingClientRect();
-            const dropdownWidth = 500;
-            const margin = 20;
+            const isMobileView = window.innerWidth <= 768;
+            const dropdownWidth = isMobileView ? window.innerWidth - 30 : 500;
+            const margin = isMobileView ? 15 : 20;
 
             // Calculate left position to keep it in viewport
-            let left = rect.right - dropdownWidth;
-            if (left + dropdownWidth > window.innerWidth - margin) {
-                left = window.innerWidth - dropdownWidth - margin;
-            }
-            if (left < margin) {
-                left = margin;
+            let left = isMobileView ? margin : (rect.right - dropdownWidth);
+            
+            if (!isMobileView) {
+                if (left + dropdownWidth > window.innerWidth - margin) {
+                    left = window.innerWidth - dropdownWidth - margin;
+                }
+                if (left < margin) {
+                    left = margin;
+                }
             }
 
             setDropdownPos({
@@ -924,14 +1190,22 @@ const AdminCotizacionForm = () => {
     }, [subtotals.grandTotal, formData.total_tipo]);
 
     // Sincronizar branding (conf_id) según el cliente seleccionado
+    // Solo sincronizar automáticamente cuando se selecciona un cliente por primera vez o cambia el cli_id
+    // pero respetando si el usuario ya eligió una marca específica en una edición existente
     useEffect(() => {
         if (formData.cli_id && clientes.length > 0) {
             const client = clientes.find(c => String(c.id) === String(formData.cli_id));
-            if (client && client.conf_id && Number(client.conf_id) !== Number(formData.conf_id)) {
-                setFormData(prev => ({ ...prev, conf_id: client.conf_id }));
+            if (client && client.conf_id) {
+                // Solo auto-sincronizar si es una nueva cotización (no id) 
+                // o si el conf_id actual está vacío
+                if (!id || !formData.conf_id) {
+                    if (Number(client.conf_id) !== Number(formData.conf_id)) {
+                        setFormData(prev => ({ ...prev, conf_id: client.conf_id }));
+                    }
+                }
             }
         }
-    }, [formData.cli_id, clientes]);
+    }, [formData.cli_id, clientes, id]);
 
     const totalPAX = Number(formData.num_adultos || 0) + Number(formData.num_ninos || 0);
 
@@ -1023,6 +1297,28 @@ const AdminCotizacionForm = () => {
                 itemRefs.current[lastIdx].select();
             }
         }, 100);
+    };
+
+    const handleSearchKeyDown = (e) => {
+        if (!isSearchFocused) return;
+        
+        if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            setSearchIndex(prev => (prev < filteredRecursos.length - 1 ? prev + 1 : prev));
+        } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            setSearchIndex(prev => (prev > 0 ? prev - 1 : 0));
+        } else if (e.key === 'Enter') {
+            e.preventDefault();
+            if (searchIndex >= 0 && filteredRecursos[searchIndex]) {
+                addResource(filteredRecursos[searchIndex]);
+            } else if (filteredRecursos.length > 0) {
+                addResource(filteredRecursos[0]);
+            }
+        } else if (e.key === 'Escape') {
+            setIsSearchFocused(false);
+            setSearchIndex(-1);
+        }
     };
 
     const handleDragEnd = (event, category) => {
@@ -1159,7 +1455,7 @@ const AdminCotizacionForm = () => {
                 background: '#1a1a1a',
                 color: '#fff'
             });
-            navigate('/admin/cotizaciones');
+            navigate(formData.clase === 'arriendo' ? '/admin/arriendos' : '/admin/cotizaciones');
         } catch (err) {
             Swal.fire({
                 icon: 'error',
@@ -1217,7 +1513,7 @@ const AdminCotizacionForm = () => {
             // Close / Cancel: Alt + X
             if (e.altKey && e.key.toLowerCase() === 'x') {
                 e.preventDefault();
-                navigate('/admin/cotizaciones');
+                navigate(formData.clase === 'arriendo' ? '/admin/arriendos' : '/admin/cotizaciones');
             }
             // History: Alt + H
             if (e.altKey && e.key.toLowerCase() === 'h') {
@@ -1259,17 +1555,20 @@ const AdminCotizacionForm = () => {
                 }
             }}
         >
-            <div className="admin-header-flex" style={{ marginBottom: '8px', alignItems: 'center', gap: '15px' }}>
+            <div className={`admin-header-flex ${isMobile && mobileSection === 'budget' ? 'mobile-hidden' : ''}`} style={{ marginBottom: '8px', alignItems: 'center', gap: '15px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px', minWidth: 'fit-content' }}>
                     {id ? <FileText size={20} style={{ color: 'var(--color-primary)' }} /> : <FilePlus size={20} style={{ color: 'var(--color-primary)' }} />}
-                    <h1 className="admin-title" style={{ fontSize: '18px', margin: 0, whiteSpace: 'nowrap' }}>
-                        Cotización #{formData.num || 'Nueva'}
+                    <h1 className="admin-title" style={{ fontSize: isMobile ? '20px' : '18px', margin: 0, whiteSpace: 'nowrap', fontWeight: '900' }}>
+                        {formData.clase === 'arriendo' 
+                            ? (isMobile ? `A - ${formData.num_arriendo || 'Nuevo'}` : `Arriendo #${formData.num_arriendo || 'Nuevo'}`)
+                            : (isMobile ? `C - ${formData.num || 'Nueva'}` : `Cotización #${formData.num || 'Nueva'}`)
+                        }
                     </h1>
                 </div>
 
                 <div style={{ display: 'flex', gap: '6px', flex: 1, justifyContent: 'flex-end', flexWrap: 'wrap', alignItems: 'center' }}>
                     {/* TABS INTEGRATED - ARCHIPLANNER STYLE */}
-                    <div className="financial-tabs-modern" style={{ marginRight: '15px' }}>
+                    <div className="financial-tabs-modern desktop-only" style={{ marginRight: '15px' }}>
                         <button 
                             type="button" 
                             className={`tab-btn ${activeTab === 'presupuesto' ? 'active' : ''}`}
@@ -1284,21 +1583,36 @@ const AdminCotizacionForm = () => {
                         >
                             <Calculator size={14} /> ESTADO FINANCIERO
                         </button>
+                        <button 
+                            type="button" 
+                            className={`tab-btn ${activeTab === 'documentos' ? 'active' : ''}`}
+                            onClick={() => setActiveTab('documentos')}
+                        >
+                            <FilePlus size={14} /> DOCUMENTOS
+                        </button>
                     </div>
 
-                    <div style={{ display: 'flex', gap: '6px' }}>
-                        <button type="button" className="btn-icon-tooltip" onClick={() => setShowHelp(true)} title="Ayuda (Alt + I)">
-                            <Info size={16} />
-                        </button>
-                        <button type="button" className="btn-icon-tooltip" onClick={() => setShowCosts(!showCosts)} title={`Costos (Alt + C)`}>
-                            {showCosts ? <Eye size={16} /> : <EyeOff size={16} />}
-                        </button>
+                    <div className={isMobile ? "form-floating-actions" : "header-actions-group"} style={!isMobile ? { display: 'flex', gap: '6px' } : {}}>
+                        {!isMobile && (
+                            <>
+                                <button type="button" className="btn-icon-tooltip" onClick={() => setShowHelp(true)} title="Ayuda (Alt + I)">
+                                    <Info size={16} />
+                                </button>
+                                <button type="button" className="btn-icon-tooltip" onClick={() => setShowCosts(!showCosts)} title={`Costos (Alt + C)`}>
+                                    {showCosts ? <Eye size={16} /> : <EyeOff size={16} />}
+                                </button>
+                            </>
+                        )}
+                        
                         <button type="button" className="btn-icon-tooltip" onClick={() => setShowHistory(true)} title="Historial (Alt + H)">
-                            <History size={16} />
+                            <History size={isMobile ? 20 : 16} />
                         </button>
-                        <button type="button" className="btn-icon-tooltip" onClick={() => navigate('/admin/cotizaciones')} title="Salir (Alt + X)">
-                            <X size={16} />
-                        </button>
+                        
+                        {!isMobile && (
+                            <button type="button" className="btn-icon-tooltip" onClick={() => navigate('/admin/cotizaciones')} title="Salir (Alt + X)">
+                                <X size={16} />
+                            </button>
+                        )}
                         
                         {id && (
                             <>
@@ -1309,61 +1623,112 @@ const AdminCotizacionForm = () => {
                                     onClick={() => setShowPagoModal(true)}
                                     title="Abono (Alt + A)"
                                 >
-                                    <CreditCard size={16} />
+                                    <CreditCard size={isMobile ? 20 : 16} />
                                 </button>
                                 <button 
                                     type="button" 
                                     className="btn-icon-tooltip" 
                                     style={{ color: 'var(--color-primary)', borderColor: 'var(--color-primary-dim)' }} 
                                     onClick={() => window.open(`/admin/cotizaciones/${id}/view`, '_blank')}
-                                    title="Vista (Alt + V)"
+                                    title="Vista Web (Alt + V)"
                                 >
-                                    <ExternalLink size={16} />
+                                    <ExternalLink size={isMobile ? 20 : 16} />
+                                </button>
+                                <button 
+                                    type="button" 
+                                    className="btn-icon-tooltip" 
+                                    style={{ color: '#fff', borderColor: 'rgba(255, 255, 255, 0.2)' }} 
+                                    onClick={() => window.open(`/admin/cotizaciones/${id}/contrato`, '_blank')}
+                                    title="Contrato Web (Alt + K)"
+                                >
+                                    <FileText size={isMobile ? 20 : 16} />
                                 </button>
                             </>
                         )}
+
+                        {isMobile && (
+                            <button type="button" className="btn-icon-tooltip" onClick={() => navigate('/admin/cotizaciones')} title="Salir (Alt + X)">
+                                <X size={20} />
+                            </button>
+                        )}
                         
                         <button type="submit" className="btn-icon-tooltip primary" title={id ? 'Actualizar (Alt + S)' : 'Guardar (Alt + S)'}>
-                            <Save size={16} />
+                            <Save size={isMobile ? 20 : 16} />
                         </button>
                     </div>
                 </div>
             </div>
 
-            {activeTab === 'presupuesto' ? (
-                <div className="quotation-grid" style={{ marginTop: '8px' }}>
+            {activeTab === 'presupuesto' && (
+                <div className={`quotation-grid ${isMobile ? 'mobile-mode' : ''}`} style={{ marginTop: '8px' }}>
 
                 {/* Left Panel: Event Data */}
-                <div className="glass-panel dense-grid" style={{ position: 'sticky', top: '24px', alignSelf: 'start', height: 'fit-content', zIndex: 10 }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
-                        <h3 className="section-title-sm" style={{ margin: 0, whiteSpace: 'nowrap' }}><Info size={14} /> Evento</h3>
-                        <div className="status-select-wrapper">
-                            <select
-                                name="estado"
-                                value={formData.estado}
-                                onChange={handleInputChange}
-                                className={`status-badge-select ${formData.estado}`}
-                            >
-                                <option value="borrador">Borrador</option>
-                                <option value="enviada">Enviada</option>
-                                <option value="confirmada">Confirmada</option>
-                                <option value="contratada">Contratada</option>
-                                <option value="rechazada">Rechazada</option>
-                            </select>
+                <div className={`glass-panel dense-grid ${isMobile && mobileSection !== 'info' ? 'mobile-hidden' : ''}`} style={{ position: 'sticky', top: '24px', alignSelf: 'start', height: 'fit-content', zIndex: 10 }}>
+                    <div 
+                        style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px', cursor: isMobile ? 'pointer' : 'default' }}
+                        onClick={() => isMobile && setIsInfoCollapsed(!isInfoCollapsed)}
+                    >
+                        <h3 className="section-title-sm" style={{ margin: 0, whiteSpace: 'nowrap' }}>
+                            <Info size={14} /> {formData.clase === 'arriendo' ? 'Información del Arriendo' : 'Información del Evento'}
+                        </h3>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                            {isMobile && (
+                                <ChevronDown 
+                                    size={16} 
+                                    style={{ 
+                                        transition: 'transform 0.3s ease', 
+                                        transform: isInfoCollapsed ? 'rotate(-90deg)' : 'rotate(0deg)',
+                                        opacity: 0.5
+                                    }} 
+                                />
+                            )}
+                            <div className="status-select-wrapper" onClick={e => e.stopPropagation()}>
+                                <select
+                                    name="estado"
+                                    value={formData.estado}
+                                    onChange={handleInputChange}
+                                    className={`status-badge-select ${formData.estado}`}
+                                >
+                                    <option value="borrador">Borrador</option>
+                                    <option value="enviada">Enviada</option>
+                                    <option value="aprobada">Aprobada</option>
+                                    <option value="contratada">Contratada</option>
+                                    <option value="rechazada">Rechazada</option>
+                                </select>
+                            </div>
                         </div>
                     </div>
 
-                    {user?.rol === 'Super' && (
-                        <div className="form-field">
-                            <label>Empresa Emisora</label>
-                            <select name="conf_id" value={formData.conf_id} onChange={handleInputChange} className="dense-input">
-                                {empresas.map(e => <option key={e.id} value={e.id}>{e.nombre_empresa}</option>)}
-                            </select>
-                        </div>
-                    )}
+                    {!isInfoCollapsed && (
+                        <div className="collapsible-content fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '0' }}>
 
-                    <div className="form-field">
-                        <label>Cliente</label>
+                     {/* Selector de Empresa/Marca (Solo Super Admin) */}
+                    <div className="form-field is-floating" style={{ marginBottom: '12px' }}>
+                        <select 
+                            name="conf_id" 
+                            value={formData.conf_id || ''} 
+                            onChange={handleInputChange}
+                            disabled={!(user?.rol === 'Super' || user?.rol === 'admin')}
+                            className="dense-input"
+                            style={{ 
+                                borderColor: (user?.rol === 'Super' || user?.rol === 'admin') ? 'var(--color-primary)' : 'rgba(255,255,255,0.1)',
+                                cursor: (user?.rol === 'Super' || user?.rol === 'admin') ? 'pointer' : 'not-allowed',
+                                background: (user?.rol === 'Super' || user?.rol === 'admin') ? 'rgba(212, 175, 55, 0.05)' : 'transparent'
+                            }}
+                        >
+                            {empresas.map(emp => (
+                                <option key={emp.id} value={emp.id}>{emp.nombre_empresa}</option>
+                            ))}
+                        </select>
+                        <label style={{ color: (user?.rol === 'Super' || user?.rol === 'admin') ? 'var(--color-primary)' : 'rgba(255,255,255,0.5)' }}>Empresa / Marca Emisora</label>
+                        {!(user?.rol === 'Super' || user?.rol === 'admin') && (
+                            <div style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', opacity: 0.4 }}>
+                                <Lock size={12} />
+                            </div>
+                        )}
+                    </div>
+
+                    <div className="form-field is-floating" style={{ marginBottom: '12px' }}>
                         <SearchableDropdown
                             options={clientes}
                             value={formData.cli_id}
@@ -1382,6 +1747,7 @@ const AdminCotizacionForm = () => {
                                 </div>
                             )}
                         />
+                        <label>Cliente</label>
                         <button
                             type="button"
                             onClick={() => setShowNewClientModal(true)}
@@ -1393,131 +1759,134 @@ const AdminCotizacionForm = () => {
                         </button>
                     </div>
 
-                    <div className="compact-grid-2">
-                        <div className="form-field">
-                            <label>Fecha Inicio</label>
-                            <input type="date" name="fevent" value={formData.fevent} onChange={handleInputChange} className="dense-input" />
+                    <div className={isMobile ? "v4-mobile-row-container v4-mobile-col-2" : "compact-grid-2"}>
+                        {renderCotField(formData.clase === 'arriendo' ? 'Fecha Salida' : 'Fecha Inicio', 'fevent', 'date')}
+                        {renderCotField(formData.clase === 'arriendo' ? 'Fecha Regreso' : 'Fecha Fin', 'fevent_fin', 'date')}
+                    </div>
+
+                    <div className={isMobile ? "v4-mobile-row-container v4-mobile-col-2" : "compact-grid-2"}>
+                        {renderCotField('Hora Inicio', 'hora_inicio', 'time')}
+                        {renderCotField('Hora Fin', 'hora_fin', 'time')}
+                    </div>
+
+                    <div className={isMobile ? "v4-mobile-row-container v4-mobile-col-2" : "compact-grid-2"}>
+                        {renderCotField(formData.clase === 'arriendo' ? 'Categoría' : 'Tipo Evento', 'tipo_evento', 'select', (
+                            <>
+                                {formData.clase === 'arriendo' ? (
+                                    <>
+                                        <option value="Arriendo">Arriendo</option>
+                                        <option value="Venta">Venta</option>
+                                        <option value="Servicio">Servicio</option>
+                                    </>
+                                ) : (
+                                    <>
+                                        <option value="Boda">Boda</option>
+                                        <option value="Quinceaños">Quinceaños</option>
+                                        <option value="Corporativo">Corporativo</option>
+                                        <option value="Baby shower">Baby shower</option>
+                                        <option value="Cumpleaños">Cumpleaños</option>
+                                        <option value="Prom">Prom</option>
+                                        <option value="Aniversario">Aniversario</option>
+                                        <option value="Otro">Otro</option>
+                                    </>
+                                )}
+                            </>
+                        ))}
+                        {renderCotField('Lugar / Locación', 'lugar', 'text', null, 'Nombre del salón')}
+                    </div>
+
+                    {/* PAX / Invitados - Visible para todos */}
+                    <div className={isMobile ? "v4-mobile-row-container v4-mobile-col-3 v4-pax-row" : "compact-grid-3"} style={{ borderTop: isMobile ? '1px solid rgba(255,255,255,0.05)' : 'none', marginTop: '10px' }}>
+                        <div className={isMobile ? "v4-pax-item" : "pax-row-centered"}>
+                            {renderCotField('Adultos', 'num_adultos', 'number')}
                         </div>
-                        <div className="form-field">
-                            <label>Fecha Fin</label>
-                            <input type="date" name="fevent_fin" value={formData.fevent_fin} onChange={handleInputChange} className="dense-input" />
+                        <div className={isMobile ? "v4-pax-item" : "pax-row-centered"}>
+                            {renderCotField('Niños', 'num_ninos', 'number')}
+                        </div>
+                        <div className={isMobile ? "v4-pax-item v4-pax-total" : "form-field is-floating pax-row-centered"}>
+                            <label style={{ color: 'var(--color-primary)', fontWeight: '800' }}>TOTAL</label>
+                            <div className="dense-input total-badge" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '900', fontSize: '15px', color: 'var(--color-primary)', height: '48px', width: '100%' }}>{totalPAX}</div>
                         </div>
                     </div>
 
-                    <div className="compact-grid-2">
-                        <div className="form-field">
-                            <label>Hora Inicio</label>
-                            <input type="time" name="hora_inicio" value={formData.hora_inicio} onChange={handleInputChange} className="dense-input" />
+                    {formData.clase === 'arriendo' && (
+                        <div className={isMobile ? "v4-mobile-row-container v4-mobile-col-1" : "grid grid-cols-1 gap-3"} style={{ marginTop: '10px' }}>
+                            {renderCotField('Notas de Entrega (Salida)', 'notas_entrega', 'textarea', null, 'Condiciones de salida, accesorios faltantes, etc.')}
+                            {renderCotField('Notas de Devolución (Regreso)', 'notas_devolucion', 'textarea', null, 'Estado al recibir, daños, etc.')}
                         </div>
-                        <div className="form-field">
-                            <label>Hora Fin</label>
-                            <input type="time" name="hora_fin" value={formData.hora_fin} onChange={handleInputChange} className="dense-input" />
-                        </div>
-                    </div>
+                    )}
 
-                    <div className="compact-grid-2">
-                        <div className="form-field">
-                            <label>Tipo Evento</label>
-                            <select name="tipo_evento" value={formData.tipo_evento} onChange={handleInputChange} className="dense-input">
-                                <option value="Boda">Boda</option>
-                                <option value="Quinceaños">Quinceaños</option>
-                                <option value="Corporativo">Corporativo</option>
-                                <option value="Baby shower">Baby shower</option>
-                                <option value="Cumpleaños">Cumpleaños</option>
-                                <option value="Prom">Prom</option>
-                                <option value="Aniversario">Aniversario</option>
-                                <option value="Otro">Otro</option>
-                            </select>
+                    {formData.clase === 'evento' && (
+                        <div style={{ marginTop: '10px' }}>
+                            {renderCotField('Temática del Evento', 'tematica', 'text', null, 'Ej: Vintage, Rosas pastel')}
                         </div>
-                        <div className="form-field">
-                            <label>Lugar / Locación</label>
-                            <input type="text" name="lugar" value={formData.lugar} onChange={handleInputChange} placeholder="Nombre del salón" className="dense-input" />
-                        </div>
-                    </div>
+                    )}
 
-                    <div className="compact-grid-3">
-                        <div className="form-field">
-                            <label>PAX Adultos</label>
-                            <input type="number" name="num_adultos" value={formData.num_adultos} onChange={handleInputChange} className="dense-input" />
-                        </div>
-                        <div className="form-field">
-                            <label>PAX Niños</label>
-                            <input type="number" name="num_ninos" value={formData.num_ninos} onChange={handleInputChange} className="dense-input" />
-                        </div>
-                        <div className="form-field">
-                            <label style={{ color: 'var(--color-primary)' }}>PAX Total</label>
-                            <div className="dense-input total-badge" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '800' }}>{totalPAX}</div>
-                        </div>
-                    </div>
-
-                    <div className="form-field" style={{ marginBottom: '5px' }}>
-                        <label>Temática del Evento</label>
-                        <input type="text" name="tematica" value={formData.tematica} onChange={handleInputChange} placeholder="Ej: Vintage, Rosas pastel" className="dense-input" />
-                    </div>
-
-                    <div style={{ marginTop: '10px', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '12px' }}>
-                        <span style={{ fontSize: '9px', color: 'var(--color-primary)', textTransform: 'uppercase', letterSpacing: '2px', fontWeight: '800' }}>Paleta</span>
-                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', alignItems: 'center' }}>
-                            <div style={{ position: 'relative', width: '28px', height: '28px', borderRadius: '50%', overflow: 'hidden', border: '2px solid rgba(255,255,255,0.2)' }}>
-                                <input
-                                    type="color"
-                                    value={selectedColor}
-                                    onChange={(e) => setSelectedColor(e.target.value)}
+                    {formData.clase !== 'arriendo' && (
+                        <div style={{ marginTop: '10px', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                            <span style={{ fontSize: '9px', color: 'var(--color-primary)', textTransform: 'uppercase', letterSpacing: '2px', fontWeight: '800' }}>Paleta</span>
+                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', alignItems: 'center' }}>
+                                <div style={{ position: 'relative', width: '28px', height: '28px', borderRadius: '50%', overflow: 'hidden', border: '2px solid rgba(255,255,255,0.2)' }}>
+                                    <input
+                                        type="color"
+                                        value={selectedColor}
+                                        onChange={(e) => setSelectedColor(e.target.value)}
+                                        style={{
+                                            position: 'absolute',
+                                            top: '-5px',
+                                            left: '-5px',
+                                            width: '150%',
+                                            height: '150%',
+                                            cursor: 'pointer'
+                                        }}
+                                    />
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={addColor}
+                                    className="palette-circle"
+                                    title="Añadir color"
                                     style={{
-                                        position: 'absolute',
-                                        top: '-5px',
-                                        left: '-5px',
-                                        width: '150%',
-                                        height: '150%',
-                                        cursor: 'pointer'
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        background: 'var(--color-bg-light)',
+                                        border: '2px dashed rgba(255,255,255,0.2)',
+                                        color: 'var(--color-text-dim)',
+                                        width: '24px',
+                                        height: '24px'
                                     }}
-                                />
-                            </div>
-                            <button
-                                type="button"
-                                onClick={addColor}
-                                className="palette-circle"
-                                title="Añadir color"
-                                style={{
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    background: 'var(--color-bg-light)',
-                                    border: '2px dashed rgba(255,255,255,0.2)',
-                                    color: 'var(--color-text-dim)',
-                                    width: '24px',
-                                    height: '24px'
-                                }}
-                            >
-                                <Plus size={14} />
-                            </button>
-                            
-                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-                                {(formData.paleta_colores || '').split(',').map((c, i) => {
-                                    const color = c.trim();
-                                    if (!color.startsWith('#')) return null;
-                                    return (
-                                        <div 
-                                            key={i} 
-                                            className="palette-circle"
-                                            style={{ background: color, width: '24px', height: '24px' }}
-                                            title={color.toUpperCase()}
-                                        >
-                                            <button 
-                                                type="button" 
-                                                className="remove"
-                                                onClick={() => removeColor(color)}
+                                >
+                                    <Plus size={14} />
+                                </button>
+                                
+                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                                    {(formData.paleta_colores || '').split(',').map((c, i) => {
+                                        const color = c.trim();
+                                        if (!color.startsWith('#')) return null;
+                                        return (
+                                            <div 
+                                                key={i} 
+                                                className="palette-circle"
+                                                style={{ background: color, width: '24px', height: '24px' }}
+                                                title={color.toUpperCase()}
                                             >
-                                                <X size={8} />
-                                            </button>
-                                        </div>
-                                    );
-                                })}
+                                                <button 
+                                                    type="button" 
+                                                    className="remove"
+                                                    onClick={() => removeColor(color)}
+                                                >
+                                                    <X size={8} />
+                                                </button>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
                             </div>
                         </div>
-                    </div>
+                    )}
 
-                    <div className="form-field">
+                    <div className="form-field is-floating">
                         <label>Cargar Plantilla</label>
                         <SearchableDropdown
                             options={plantillas}
@@ -1537,25 +1906,47 @@ const AdminCotizacionForm = () => {
                             )}
                         />
                     </div>
+                </div>
+                    )} {/* End Collapsible Info */}
 
                     {/* Totals Summary Mini */}
                     <div className="totals-panel" style={{ marginTop: '12px' }}>
-                        <div className="total-row"><span>Subtotal:</span> <span>${smartFormat(subtotals.saleTotal)}</span></div>
-                        <div className="total-row">
-                            <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                IVA 19%:
-                                <input type="checkbox" name="aplica_iva" checked={formData.aplica_iva} onChange={handleInputChange} />
-                            </span>
-                            <span>${smartFormat(subtotals.ivaValue)}</span>
+                        <div 
+                            style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px', cursor: isMobile ? 'pointer' : 'default' }}
+                            onClick={() => isMobile && setIsBudgetSummaryCollapsed(!isBudgetSummaryCollapsed)}
+                        >
+                            <span style={{ fontSize: '10px', fontWeight: '900', color: 'var(--color-primary)', letterSpacing: '1px' }}>RESUMEN DE VENTA</span>
+                            {isMobile && (
+                                <ChevronDown 
+                                    size={14} 
+                                    style={{ 
+                                        transition: 'transform 0.3s ease', 
+                                        transform: isBudgetSummaryCollapsed ? 'rotate(-90deg)' : 'rotate(0deg)',
+                                        opacity: 0.5
+                                    }} 
+                                />
+                            )}
                         </div>
-                        <div className="total-row grand-total" style={{ marginBottom: '4px' }}>
-                            <span>TOTAL:</span>
-                            <span>${smartFormat(subtotals.grandTotal)}</span>
-                        </div>
+
+                        {!isBudgetSummaryCollapsed && (
+                            <div className="collapsible-content fade-in">
+                                <div className="total-row"><span>Subtotal:</span> <span>${smartFormat(subtotals.saleTotal)}</span></div>
+                                <div className="total-row">
+                                    <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                        IVA 19%:
+                                        <input type="checkbox" name="aplica_iva" checked={formData.aplica_iva} onChange={handleInputChange} />
+                                    </span>
+                                    <span>${smartFormat(subtotals.ivaValue)}</span>
+                                </div>
+                                <div className="total-row grand-total" style={{ marginBottom: '4px' }}>
+                                    <span>TOTAL:</span>
+                                    <span>${smartFormat(subtotals.grandTotal)}</span>
+                                </div>
+                            </div>
+                        )}
                         <div style={{ textAlign: 'right', marginTop: '2px' }}>
-                            <div className="form-field" style={{ width: '100%', border: '1px solid var(--color-primary)', background: 'var(--color-primary-dim)', borderRadius: '8px', padding: '1px 8px 8px' }}>
-                                <label style={{ color: 'var(--color-primary)', background: '#1a1a1a', padding: '0 6px', fontSize: '9px', fontWeight: '800' }}>MONTO FINAL ACORDADO</label>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '2px' }}>
+                            <div className={`form-field is-floating`} style={{ width: '100%', border: '1px solid var(--color-primary)', background: 'var(--color-primary-dim)', borderRadius: '12px', padding: '1px 8px 8px' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '12px' }}>
                                     <span style={{ fontSize: '14px', fontWeight: '800', color: 'var(--color-primary)' }}>$</span>
                                     <SmartNumericInput
                                         value={formData.monto_final}
@@ -1569,19 +1960,20 @@ const AdminCotizacionForm = () => {
                                         className="dense-input"
                                         style={{ flex: 1, textAlign: 'right', fontWeight: '900', fontSize: '16px', background: 'transparent', border: 'none', color: '#fff', padding: '0' }}
                                     />
-                                    {formData.total_tipo === 'manual' && (
-                                        <button
-                                            type="button"
-                                            className="action-btn"
-                                            title="Reset"
-                                            onClick={() => setFormData(prev => ({ ...prev, total_tipo: 'calculado' }))}
-                                            style={{ color: 'var(--color-primary)', background: 'rgba(255,255,255,0.05)', borderRadius: '50%', width: '18px', height: '18px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-                                        >
-                                            <X size={12} />
-                                        </button>
-                                    )}
                                 </div>
+                                <label style={{ color: 'var(--color-primary)', background: 'var(--glass-bg)', padding: '0 6px', fontSize: '9px', fontWeight: '800' }}>MONTO FINAL ACORDADO</label>
                             </div>
+                            {formData.total_tipo === 'manual' && (
+                                <button
+                                    type="button"
+                                    className="action-btn"
+                                    title="Reset"
+                                    onClick={() => setFormData(prev => ({ ...prev, total_tipo: 'calculado' }))}
+                                    style={{ color: 'var(--color-primary)', background: 'rgba(255,255,255,0.05)', borderRadius: '50%', width: '18px', height: '18px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginTop: '5px', marginLeft: 'auto' }}
+                                >
+                                    <X size={12} />
+                                </button>
+                            )}
                         </div>
                         <div className="total-row" style={{ marginTop: '8px', paddingTop: '6px', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
                             <label style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '11px' }}>
@@ -1604,100 +1996,108 @@ const AdminCotizacionForm = () => {
                     {/* --- DASHBOARD FINANCIERO INTEGRADO (v4) --- */}
                     {id && (
                         <div className="financial-dashboard-sidebar glass-panel" style={{ marginTop: '12px', padding: '12px', border: '1px solid rgba(255, 132, 132, 0.2)', background: 'rgba(0,0,0,0.2)' }}>
-                            <h4 style={{ fontSize: '10px', color: 'var(--color-primary)', letterSpacing: '1px', marginBottom: '8px' }}>ESTADO FINANCIERO</h4>
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                    <span style={{ fontSize: '11px', opacity: 0.6 }}>Pagado:</span>
-                                    <span style={{ fontSize: '12px', fontWeight: '700', color: '#10b981' }}>$ {smartFormat(totalPagado)}</span>
-                                </div>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '8px' }}>
-                                    <span style={{ fontSize: '11px', opacity: 0.6 }}>Saldo:</span>
-                                    <span style={{ fontSize: '14px', fontWeight: '800', color: '#ff8484' }}>$ {smartFormat(Number(formData.monto_final) - totalPagado)}</span>
-                                </div>
-                                <button 
-                                    type="button" 
-                                    className="btn-admin-primary" 
-                                    style={{ marginTop: '10px', fontSize: '11px', padding: '10px', justifyContent: 'center', background: 'linear-gradient(90deg, #d4af37, #c19b2e)', color: '#000', fontWeight: '800' }}
-                                    onClick={() => setShowPagoModal(true)}
-                                >
-                                    <Plus size={14} /> Registrar Abono
-                                </button>
-                                <button 
-                                    type="button" 
-                                    className="btn-admin-secondary" 
-                                    style={{ fontSize: '11px', padding: '10px', justifyContent: 'center', borderColor: '#d4af37', color: '#d4af37' }}
-                                    onClick={() => window.open(`/admin/cotizaciones/${id}/contrato`, '_blank')}
-                                >
-                                    <FileText size={14} /> Contrato Legal
-                                </button>
+                            <div 
+                                style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px', cursor: isMobile ? 'pointer' : 'default' }}
+                                onClick={() => isMobile && setIsFinanceCollapsed(!isFinanceCollapsed)}
+                            >
+                                <h4 style={{ fontSize: '10px', color: 'var(--color-primary)', letterSpacing: '1px', margin: 0 }}>ESTADO FINANCIERO</h4>
+                                {isMobile && (
+                                    <ChevronDown 
+                                        size={14} 
+                                        style={{ 
+                                            transition: 'transform 0.3s ease', 
+                                            transform: isFinanceCollapsed ? 'rotate(-90deg)' : 'rotate(0deg)',
+                                            opacity: 0.5
+                                        }} 
+                                    />
+                                )}
                             </div>
+
+                            {!isFinanceCollapsed && (
+                                <div className="collapsible-content fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                        <span style={{ fontSize: '11px', opacity: 0.6 }}>Pagado:</span>
+                                        <span style={{ fontSize: '12px', fontWeight: '700', color: '#10b981' }}>$ {smartFormat(totalPagado)}</span>
+                                    </div>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '8px' }}>
+                                        <span style={{ fontSize: '11px', opacity: 0.6 }}>Saldo:</span>
+                                        <span style={{ fontSize: '14px', fontWeight: '800', color: '#ff8484' }}>$ {smartFormat(Number(formData.monto_final) - totalPagado)}</span>
+                                    </div>
+                                    <button 
+                                        type="button" 
+                                        className="btn-admin-primary" 
+                                        style={{ marginTop: '10px', fontSize: '11px', padding: '10px', justifyContent: 'center', background: 'linear-gradient(90deg, #d4af37, #c19b2e)', color: '#000', fontWeight: '800' }}
+                                        onClick={() => setShowPagoModal(true)}
+                                    >
+                                        <Plus size={14} /> Registrar Abono
+                                    </button>
+                                    <button 
+                                        type="button" 
+                                        className="btn-admin-secondary" 
+                                        style={{ fontSize: '11px', padding: '10px', justifyContent: 'center', borderColor: '#d4af37', color: '#d4af37' }}
+                                        onClick={() => window.open(`/admin/cotizaciones/${id}/contrato`, '_blank')}
+                                    >
+                                        <FileText size={14} /> Contrato Legal
+                                    </button>
+                                </div>
+                            )}
                         </div>
                     )}
                 </div>
-
-                {/* Right Panel: Items & Details */}
-                <div className="glass-panel" style={{ display: 'flex', flexDirection: 'column', padding: '10px 15px' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
-                        <h3 className="section-title-sm" style={{ margin: 0 }}><Package size={14} /> Elementos de la Cotización</h3>
+                {/* Items Section */}
+                <div className={`glass-panel ${isMobile && mobileSection !== 'budget' ? 'mobile-hidden' : ''}`} style={{ 
+                    display: 'flex', 
+                    flexDirection: 'column', 
+                    padding: isMobile ? '12px' : '0 15px 15px 15px', 
+                    marginTop: '8px' 
+                }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: isMobile ? '8px' : '4px', padding: isMobile ? '0' : '15px 0 5px 0' }}>
+                        <h3 className="section-title-sm" style={{ margin: 0, fontSize: isMobile ? '12px' : '14px', letterSpacing: '1px' }}><Package size={14} /> Elementos de la Cotización</h3>
                     </div>
 
                     <div className="items-container" style={{ flex: 1, overflowY: 'auto' }}>
-                        {/* Header */}
-                        {/* Header */}
-                        <div style={{ 
-                            display: 'grid', 
-                            gridTemplateColumns: `30px 40px 1fr 80px ${showCosts ? '80px' : ''} 90px 110px 40px`, 
-                            gap: '12px', 
-                            padding: '8px 10px', 
-                            alignItems: 'center',
-                            opacity: 1, 
-                            borderBottom: '1px solid rgba(255,255,255,0.05)',
-                            fontSize: '11px',
-                            fontWeight: '700',
-                            color: 'var(--color-primary)'
-                        }}>
-                            <div ref={searchContainerRef} className="inline-resource-selector" style={{ position: 'relative', width: '100%', marginBottom: 0, gridColumn: 'span 3' }}>
-                                <div className="search-input-wrapper" style={{ margin: 0 }}>
-                                    <Search size={14} className="search-icon" style={{ opacity: 0.5 }} />
-                                    <input
-                                        ref={searchInputRef}
-                                        type="text"
-                                        placeholder="Buscar producto... (Alt + P)"
+                        {/* Header - HIDDEN ON MOBILE */}
+                        {!isMobile && (
+                            <div style={{ 
+                                display: 'grid', 
+                                gridTemplateColumns: `30px 40px 1fr 80px ${showCosts ? '80px' : ''} 90px 110px 40px`, 
+                                gap: '12px', 
+                                padding: '8px 10px', 
+                                alignItems: 'center',
+                                opacity: 1, 
+                                borderBottom: '1px solid rgba(255,255,255,0.05)',
+                                fontSize: '11px',
+                                fontWeight: '700',
+                                color: 'var(--color-primary)'
+                            }}>
+                                <div ref={searchContainerRef} className="inline-resource-selector" style={{ position: 'relative', width: '100%', marginBottom: 0, gridColumn: 'span 3', padding: '10px 0' }}>
+                                    <AdminInput 
+                                        label="Añadir producto o servicio..."
+                                        name="productSearch"
                                         value={searchTerm}
                                         onChange={(e) => {
                                             setSearchTerm(e.target.value);
-                                            setIsSearchFocused(true);
-                                            setSearchIndex(-1);
+                                            setSearchIndex(0);
                                         }}
+                                        icon={Plus}
+                                        placeholder="Escribe para buscar..."
                                         onFocus={() => {
                                             setIsSearchFocused(true);
+                                            setSearchIndex(0);
                                             updateDropdownPos();
                                         }}
-                                        onKeyDown={(e) => {
-                                            if (e.key === 'ArrowDown') {
-                                                e.preventDefault();
-                                                setSearchIndex(prev => Math.min(prev + 1, filteredRecursos.length - 1));
-                                            } else if (e.key === 'ArrowUp') {
-                                                e.preventDefault();
-                                                setSearchIndex(prev => Math.max(prev - 1, 0));
-                                            } else if (e.key === 'Enter' && searchIndex >= 0) {
-                                                e.preventDefault();
-                                                addResource(filteredRecursos[searchIndex]);
-                                            } else if (e.key === 'Escape') {
-                                                setIsSearchFocused(false);
-                                            }
-                                        }}
-                                        className="dense-input"
-                                        style={{ paddingLeft: '28px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)', height: '28px', fontSize: '11px' }}
+                                        inputRef={searchInputRef}
+                                        onKeyDown={handleSearchKeyDown}
                                     />
                                 </div>
+                                <div style={{ textAlign: 'center' }}>Cant.</div>
+                                {showCosts && <div style={{ textAlign: 'center' }}>Costo U.</div>}
+                                <div style={{ textAlign: 'center' }}>Precio U.</div>
+                                <div style={{ textAlign: 'center' }}>Subtotal</div>
+                                <div></div>
                             </div>
-                            <div style={{ textAlign: 'center', opacity: 0.6 }}>CANT</div>
-                            {showCosts && <div style={{ textAlign: 'center', opacity: 0.6 }}>COSTO</div>}
-                            <div style={{ textAlign: 'center', opacity: 0.6 }}>VENTA U.</div>
-                            <div style={{ textAlign: 'center', opacity: 0.6 }}>SUBTOTAL</div>
-                            <div />
-                        </div>
+                        )}
+
 
                         {formData.detalles.length === 0 && (
                             <div style={{ textAlign: 'center', padding: '40px', color: 'var(--color-text-dim)' }}>
@@ -1714,7 +2114,7 @@ const AdminCotizacionForm = () => {
                                         display: 'flex', 
                                         justifyContent: 'space-between', 
                                         alignItems: 'center',
-                                        padding: '8px 12px',
+                                        padding: '5px 10px',
                                         background: 'rgba(255,255,255,0.03)',
                                         borderRadius: '8px',
                                         cursor: 'pointer',
@@ -1749,6 +2149,7 @@ const AdminCotizacionForm = () => {
                                                         removeDetail={removeDetail}
                                                         itemRefs={itemRefs}
                                                         searchInputRef={searchInputRef}
+                                                        isMobile={isMobile}
                                                     />
                                                 );
                                             })}
@@ -1758,63 +2159,66 @@ const AdminCotizacionForm = () => {
                             </div>
                         ))}
                     </div>
+                    
 
                     <div style={{ marginTop: '10px' }}>
-                        <label className="label-sm">Observaciones Generales</label>
-                        <textarea
-                            name="notas"
-                            value={formData.notas}
-                            onChange={handleInputChange}
-                            className="dense-input"
-                            style={{ width: '100%', height: '80px', marginTop: '8px' }}
-                            placeholder="Términos y condiciones, notas especiales..."
-                        ></textarea>
+                        {renderCotField('Observaciones Generales', 'notas', 'textarea', null, 'Términos y condiciones, notas especiales...')}
                     </div>
                 </div>
             </div>
-        ) : (
-            <div className="financial-dashboard-full fade-in" style={{ marginTop: '12px' }}>
+            )}
+
+            {activeTab === 'financiero' && (
+            <div className={`financial-dashboard-full fade-in ${isMobile && !['finance', 'analytics'].includes(mobileSection) ? 'mobile-hidden' : ''}`} style={{ marginTop: '12px' }}>
                     {/* 1. TOP SUMMARY CARDS - EDITORIAL STYLE */}
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px', marginBottom: '24px' }}>
-                        <div className="glass-panel" style={{ padding: '20px', borderLeft: '4px solid var(--color-primary)' }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                                <span style={{ fontSize: '10px', opacity: 0.5, fontWeight: '800', letterSpacing: '1px' }}>TOTAL CONTRATO</span>
-                                <TrendingUp size={14} style={{ color: 'var(--color-primary)' }} />
+                    <div className={isMobile ? "finance-overview-grid-mobile" : ""} style={{ display: isMobile ? 'flex' : 'grid', gridTemplateColumns: isMobile ? 'none' : 'repeat(4, 1fr)', gap: '12px', marginBottom: isMobile ? '12px' : '24px' }}>
+                        <div className="glass-panel" style={{ borderLeft: '4px solid var(--color-primary)' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: isMobile ? '4px' : '8px' }}>
+                                <span style={{ fontSize: isMobile ? '8px' : '10px', opacity: 0.5, fontWeight: '800', letterSpacing: isMobile ? '0' : '1px' }}>{isMobile ? 'CONTRATO' : 'TOTAL CONTRATO'}</span>
+                                <TrendingUp size={isMobile ? 10 : 14} style={{ color: 'var(--color-primary)' }} />
                             </div>
-                            <div style={{ fontSize: '24px', fontWeight: '900', marginTop: '8px' }}>$ {smartFormat(formData.monto_final)}</div>
+                            <div style={{ fontSize: isMobile ? '12px' : '24px', fontWeight: '900' }}>$ {smartFormat(formData.monto_final)}</div>
                         </div>
-                        <div className="glass-panel" style={{ padding: '20px', borderLeft: '4px solid #10b981' }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                                <span style={{ fontSize: '10px', opacity: 0.5, fontWeight: '800', letterSpacing: '1px' }}>TOTAL PAGADO</span>
-                                <CheckCircle2 size={14} style={{ color: '#10b981' }} />
+                        <div className="glass-panel" style={{ borderLeft: '4px solid #10b981' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: isMobile ? '4px' : '8px' }}>
+                                <span style={{ fontSize: isMobile ? '8px' : '10px', opacity: 0.5, fontWeight: '800', letterSpacing: isMobile ? '0' : '1px' }}>{isMobile ? 'PAGO' : 'TOTAL PAGADO'}</span>
+                                <CheckCircle2 size={isMobile ? 10 : 14} style={{ color: '#10b981' }} />
                             </div>
-                            <div style={{ fontSize: '24px', fontWeight: '900', marginTop: '8px', color: '#10b981' }}>$ {smartFormat(totalPagado)}</div>
+                            <div style={{ fontSize: isMobile ? '12px' : '24px', fontWeight: '900', color: '#10b981' }}>$ {smartFormat(totalPagado)}</div>
                         </div>
-                        <div className="glass-panel" style={{ padding: '20px', borderLeft: '4px solid #ff8484' }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                                <span style={{ fontSize: '10px', opacity: 0.5, fontWeight: '800', letterSpacing: '1px' }}>TOTAL COSTOS / GASTOS</span>
-                                <TrendingDown size={14} style={{ color: '#ff8484' }} />
+                        <div className="glass-panel" style={{ borderLeft: '4px solid #ff8484' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: isMobile ? '4px' : '8px' }}>
+                                <span style={{ fontSize: isMobile ? '8px' : '10px', opacity: 0.5, fontWeight: '800', letterSpacing: isMobile ? '0' : '1px' }}>{isMobile ? 'GASTOS' : 'TOTAL COSTOS / GASTOS'}</span>
+                                <TrendingDown size={isMobile ? 10 : 14} style={{ color: '#ff8484' }} />
                             </div>
-                            <div style={{ fontSize: '24px', fontWeight: '900', marginTop: '8px', color: '#ff8484' }}>
+                            <div style={{ fontSize: isMobile ? '12px' : '24px', fontWeight: '900', color: '#ff8484' }}>
                                 $ {smartFormat(Math.max(subtotals.costTotal, gastos.reduce((acc, g) => acc + Number(g.monto), 0)))}
                             </div>
-                            <div style={{ fontSize: '9px', opacity: 0.6, marginTop: '4px' }}>
-                                Proyectado: $ {smartFormat(subtotals.costTotal)} | Real: $ {smartFormat(gastos.reduce((acc, g) => acc + Number(g.monto), 0))}
-                            </div>
+                            {!isMobile && (
+                                <div style={{ fontSize: '9px', opacity: 0.6, marginTop: '4px' }}>
+                                    Proyectado: $ {smartFormat(subtotals.costTotal)} | Real: $ {smartFormat(gastos.reduce((acc, g) => acc + Number(g.monto), 0))}
+                                </div>
+                            )}
                         </div>
-                        <div className="glass-panel" style={{ padding: '20px', borderLeft: '4px solid var(--color-tertiary)', background: 'rgba(95, 220, 199, 0.05)', cursor: 'pointer', transition: 'all 0.3s ease' }} onClick={() => setShowReport(true)}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                                <span style={{ fontSize: '10px', opacity: 0.5, fontWeight: '800', letterSpacing: '1px' }}>UTILIDAD NETA</span>
-                                <Activity size={14} style={{ color: 'var(--color-tertiary)' }} />
+                        <div className="glass-panel" style={{ borderLeft: '4px solid var(--color-tertiary)', background: 'rgba(95, 220, 199, 0.05)', cursor: 'pointer', transition: 'all 0.3s ease' }} onClick={() => setShowReport(true)}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: isMobile ? '4px' : '8px' }}>
+                                <span style={{ fontSize: isMobile ? '8px' : '10px', opacity: 0.5, fontWeight: '800', letterSpacing: isMobile ? '0' : '1px' }}>{isMobile ? 'UTILIDAD' : 'UTILIDAD NETA'}</span>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                    {isMobile && <Activity size={10} style={{ color: 'var(--color-tertiary)' }} />}
+                                    {isMobile && (
+                                        <button type="button" style={{ background: 'var(--color-tertiary)', color: '#000', border: 'none', borderRadius: '3px', padding: '1px 3px', fontSize: '6px', fontWeight: '900' }}>REPO</button>
+                                    )}
+                                    {!isMobile && <Activity size={14} style={{ color: 'var(--color-tertiary)' }} />}
+                                </div>
                             </div>
-                            <div style={{ fontSize: '24px', fontWeight: '900', marginTop: '8px', color: 'var(--color-tertiary)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <div style={{ fontSize: isMobile ? '12px' : '24px', fontWeight: '900', color: 'var(--color-tertiary)', display: 'flex', alignItems: 'center', gap: '8px' }}>
                                 $ {smartFormat(Number(formData.monto_final) - gastos.reduce((acc, g) => acc + Number(g.monto), 0))}
-                                <span style={{ fontSize: '10px', background: 'var(--color-tertiary)', color: '#000', padding: '2px 4px', borderRadius: '4px' }}>VER REPORTE</span>
+                                {!isMobile && <span style={{ fontSize: '10px', background: 'var(--color-tertiary)', color: '#000', padding: '2px 4px', borderRadius: '4px' }}>VER REPORTE</span>}
                             </div>
                         </div>
                     </div>
 
-                    <div className="quotation-grid" style={{ gap: '20px' }}>
+                    <div className="quotation-grid" style={{ gap: isMobile ? '12px' : '20px' }}>
                         {/* LEFT: INCOME & PAYMENTS */}
                         <div className="glass-panel" style={{ padding: '24px' }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
@@ -1822,44 +2226,49 @@ const AdminCotizacionForm = () => {
                                 <button type="button" className="btn-admin-primary" style={{ fontSize: '10px', height: '32px', minWidth: '90px', padding: '0 12px' }} onClick={() => setShowPagoModal(true)}>+ Abono</button>
                             </div>
                             
-                            <table style={{ width: '100%', fontSize: '12px', borderCollapse: 'collapse' }}>
-                                <thead>
-                                    <tr style={{ textAlign: 'left', opacity: 0.5, borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
-                                        <th style={{ padding: '10px 5px' }}>FECHA</th>
-                                        <th>MÉTODO</th>
-                                        <th>MONTO</th>
-                                        <th style={{ textAlign: 'right' }}>ACCIONES</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {pagos.length === 0 ? (
-                                        <tr><td colSpan="4" style={{ padding: '30px', textAlign: 'center', opacity: 0.3 }}>No hay abonos registrados</td></tr>
-                                    ) : pagos.map(p => (
-                                        <tr key={p.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
-                                            <td style={{ padding: '12px 5px' }}>{p.fpago ? p.fpago.split('T')[0] : '-'}</td>
-                                            <td style={{ textTransform: 'capitalize' }}>{p.metodo}</td>
-                                            <td style={{ fontWeight: '700', color: p.estado === 'completado' ? '#10b981' : 'var(--color-primary)' }}>
-                                                $ {smartFormat(p.monto)} 
-                                                {p.estado !== 'completado' && <span style={{ fontSize: '8px', marginLeft: '5px', opacity: 0.6 }}>(PENDIENTE)</span>}
-                                            </td>
-                                            <td style={{ textAlign: 'right' }}>
-                                                <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
-                                                    {p.foto_comprobante && (
-                                                        <button type="button" className="action-btn" title="Ver Comprobante" onClick={() => window.open(`${UPLOADS_URL}${p.foto_comprobante}`, '_blank')}>
-                                                            <Eye size={14} />
-                                                        </button>
-                                                    )}
-                                                    {p.estado !== 'completado' && (
-                                                        <button type="button" className="action-btn" style={{ color: '#10b981' }} onClick={() => handleAprobarPago(p.id)} title="Aprobar Pago">
-                                                            <CheckCircle2 size={14} />
-                                                        </button>
-                                                    )}
-                                                </div>
-                                            </td>
+                            <div className="mobile-table-container">
+                                <table style={{ width: '100%', fontSize: '12px', borderCollapse: 'collapse' }}>
+                                    <thead>
+                                        <tr style={{ textAlign: 'left', opacity: 0.5, borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
+                                            <th style={{ padding: '10px 5px' }}>FECHA</th>
+                                            <th>MÉTODO</th>
+                                            <th>MONTO</th>
+                                            <th style={{ textAlign: 'right' }}>ACCIONES</th>
                                         </tr>
-                                    ))}
-                                </tbody>
-                            </table>
+                                    </thead>
+                                    <tbody>
+                                        {pagos.length === 0 ? (
+                                            <tr><td colSpan="4" style={{ padding: '30px', textAlign: 'center', opacity: 0.3 }}>No hay abonos registrados</td></tr>
+                                        ) : pagos.map(p => (
+                                            <tr key={p.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
+                                                <td style={{ padding: '12px 5px' }}>{p.fpago ? p.fpago.split('T')[0] : '-'}</td>
+                                                <td style={{ textTransform: 'capitalize' }}>{p.metodo}</td>
+                                                <td style={{ fontWeight: '700', color: p.estado === 'completado' ? '#10b981' : 'var(--color-primary)' }}>
+                                                    $ {smartFormat(p.monto)} 
+                                                    {p.estado !== 'completado' && <span style={{ fontSize: '8px', marginLeft: '5px', opacity: 0.6 }}>(PENDIENTE)</span>}
+                                                </td>
+                                                <td style={{ textAlign: 'right' }}>
+                                                    <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                                                        {p.foto_comprobante && (
+                                                            <button type="button" className="action-btn" title="Ver Comprobante" onClick={() => window.open(getUploadUrl(p.foto_comprobante), '_blank')}>
+                                                                <Eye size={14} />
+                                                            </button>
+                                                        )}
+                                                        <button type="button" className="action-btn" title="Descargar Recibo PDF" onClick={() => window.open(`/api/documents/recibo/${p.id}`, '_blank')} style={{ color: 'var(--color-tertiary)' }}>
+                                                            <Download size={14} />
+                                                        </button>
+                                                        {p.estado !== 'completado' && (
+                                                            <button type="button" className="action-btn" style={{ color: '#10b981' }} onClick={() => handleAprobarPago(p.id)} title="Aprobar Pago">
+                                                                <CheckCircle2 size={14} />
+                                                            </button>
+                                                        )}
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
 
                         {/* RIGHT: EXPENSES */}
@@ -1880,88 +2289,314 @@ const AdminCotizacionForm = () => {
                                 </div>
                             </div>
 
-                            <table style={{ width: '100%', fontSize: '12px', borderCollapse: 'collapse' }}>
-                                <thead>
-                                    <tr style={{ textAlign: 'left', opacity: 0.5, borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
-                                        <th style={{ padding: '10px 5px' }}>CONCEPTO</th>
-                                        <th>RESPONSABLE</th>
-                                        <th style={{ textAlign: 'center' }}>ESTADO</th>
-                                        <th style={{ textAlign: 'right' }}>MONTO</th>
-                                        <th style={{ textAlign: 'right' }}>ACCIONES</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {(gastos.length === 0 ? formData.detalles.filter(d => (Number(d.costo_u || 0) * Number(d.cantidad || 1)) > 0) : gastos).map((item, idx) => {
-                                        const isBudgetedOnly = gastos.length === 0;
-                                        const displayConcept = isBudgetedOnly ? (item.nombre || 'Sin Nombre') : item.concepto;
-                                        const displayMonto = isBudgetedOnly ? (Number(item.costo_u || 0) * Number(item.cantidad || 1)) : item.monto;
-                                        const displayCat = isBudgetedOnly ? item.categoria : item.categoria;
-                                        
-                                        return (
-                                            <tr key={idx} style={{ borderBottom: '1px solid rgba(255,255,255,0.03)', opacity: isBudgetedOnly ? 0.7 : 1 }}>
-                                                <td style={{ padding: '12px 5px' }}>
-                                                    <div style={{ fontWeight: '700', fontSize: '11px', textTransform: 'uppercase' }}>{displayConcept}</div>
-                                                    <div style={{ fontSize: '9px', opacity: 0.5, display: 'flex', gap: '8px' }}>
-                                                        <span style={{ color: 'var(--color-tertiary)', fontWeight: '800' }}>{displayCat || 'General'}</span>
-                                                        {isBudgetedOnly && (
-                                                            <span style={{ color: 'var(--color-primary)', opacity: 0.8 }}>[ PROYECTADO ]</span>
-                                                        )}
-                                                        {!isBudgetedOnly && item.pagado_a && <span>a {item.pagado_a}</span>}
-                                                    </div>
-                                                </td>
-                                                <td style={{ opacity: 0.7 }}>{isBudgetedOnly ? 'Sistema' : (item.responsable || '-')}</td>
-                                                <td style={{ textAlign: 'center' }}>
-                                                            <button 
-                                                                type="button"
-                                                                onClick={() => isBudgetedOnly ? handleSyncBudgetToGastos() : handleToggleGastoEstado(item.id, item.estado)}
-                                                                style={{ 
-                                                                    background: item.estado === 'pagado' ? 'rgba(16, 185, 129, 0.1)' : (isBudgetedOnly ? 'rgba(212, 175, 55, 0.1)' : 'rgba(255, 132, 132, 0.1)'),
-                                                                    color: item.estado === 'pagado' ? '#10b981' : (isBudgetedOnly ? 'var(--color-primary)' : '#ff8484'),
-                                                                    border: 'none',
-                                                                    padding: '3px 10px',
-                                                                    borderRadius: '4px',
-                                                                    fontSize: '9px',
-                                                                    fontWeight: '900',
-                                                                    cursor: 'pointer'
-                                                                }}
-                                                            >
-                                                                {isBudgetedOnly ? 'REPORTAR PAGO' : (item.estado ? item.estado.toUpperCase() : 'PENDIENTE')}
-                                                            </button>
-                                                        </td>
-                                                        <td style={{ textAlign: 'right', fontWeight: '800', color: isBudgetedOnly ? 'var(--color-primary)' : (item.estado === 'pagado' ? '#fff' : '#ff8484') }}>$ {smartFormat(displayMonto)}</td>
-                                                        <td style={{ textAlign: 'right' }}>
-                                                            <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
-                                                                {isBudgetedOnly ? (
-                                                                    <button type="button" className="action-btn" title="Convertir a Gasto Real" onClick={() => handleSyncBudgetToGastos()} style={{ color: 'var(--color-primary)' }}>
-                                                                        <CheckCircle2 size={14} />
+                            <div className="mobile-table-container">
+                                <table style={{ width: '100%', fontSize: '12px', borderCollapse: 'collapse' }}>
+                                    <thead>
+                                        <tr style={{ textAlign: 'left', opacity: 0.5, borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
+                                            <th style={{ padding: '10px 5px' }}>CONCEPTO</th>
+                                            {!isMobile && <th>RESP</th>}
+                                            {!isMobile && <th style={{ textAlign: 'center' }}>EST</th>}
+                                            <th style={{ textAlign: 'right' }}>MONTO</th>
+                                            <th style={{ textAlign: 'right' }}>ACCIÓN</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {(gastos.length === 0 ? formData.detalles.filter(d => (Number(d.costo_u || 0) * Number(d.cantidad || 1)) > 0) : gastos).map((item, idx) => {
+                                            const isBudgetedOnly = gastos.length === 0;
+                                            const displayConcept = isBudgetedOnly ? (item.nombre || 'Sin Nombre') : item.concepto;
+                                            const displayMonto = isBudgetedOnly ? (Number(item.costo_u || 0) * Number(item.cantidad || 1)) : item.monto;
+                                            const displayCat = isBudgetedOnly ? item.categoria : item.categoria;
+                                            
+                                            return (
+                                                <tr key={idx} style={{ borderBottom: '1px solid rgba(255,255,255,0.03)', opacity: isBudgetedOnly ? 0.7 : 1 }}>
+                                                    <td style={{ padding: '12px 5px' }}>
+                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                            <div style={{ flex: 1 }}>
+                                                                <div style={{ fontWeight: '700', fontSize: '11px', textTransform: 'uppercase' }}>{displayConcept}</div>
+                                                                <div style={{ fontSize: '9px', opacity: 0.5, display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                                                                    <span style={{ color: 'var(--color-tertiary)', fontWeight: '800' }}>{displayCat || 'General'}</span>
+                                                                    {isMobile && !isBudgetedOnly && <span style={{ color: 'var(--color-primary)' }}>• {item.responsable || 'Sys'}</span>}
+                                                                    {isBudgetedOnly && (
+                                                                        <span style={{ color: 'var(--color-primary)', opacity: 0.8 }}>[ PROYECTADO ]</span>
+                                                                    )}
+                                                                </div>
+                                                            </div>
+                                                            {isMobile && !isBudgetedOnly && (
+                                                                <div style={{ 
+                                                                    width: '8px', 
+                                                                    height: '8px', 
+                                                                    borderRadius: '50%', 
+                                                                    background: item.estado === 'pagado' ? '#10b981' : '#ff8484',
+                                                                    boxShadow: `0 0 10px ${item.estado === 'pagado' ? '#10b98166' : '#ff848466'}`
+                                                                }} />
+                                                            )}
+                                                        </div>
+                                                    </td>
+                                                    {!isMobile && <td style={{ opacity: 0.7 }}>{isBudgetedOnly ? 'Sys' : (item.responsable || '-')}</td>}
+                                                    {!isMobile && (
+                                                        <td style={{ textAlign: 'center' }}>
+                                                                    <button 
+                                                                        type="button"
+                                                                        onClick={() => isBudgetedOnly ? handleSyncBudgetToGastos() : handleToggleGastoEstado(item.id, item.estado)}
+                                                                        style={{ 
+                                                                            background: item.estado === 'pagado' ? 'rgba(16, 185, 129, 0.1)' : (isBudgetedOnly ? 'rgba(212, 175, 55, 0.1)' : 'rgba(255, 132, 132, 0.1)'),
+                                                                            color: item.estado === 'pagado' ? '#10b981' : (isBudgetedOnly ? 'var(--color-primary)' : '#ff8484'),
+                                                                            border: 'none',
+                                                                            padding: '3px 10px',
+                                                                            borderRadius: '4px',
+                                                                            fontSize: '9px',
+                                                                            fontWeight: '900',
+                                                                            cursor: 'pointer'
+                                                                        }}
+                                                                    >
+                                                                        {isBudgetedOnly ? 'REPORTAR' : (item.estado ? item.estado.substring(0,4).toUpperCase() : 'PEND')}
                                                                     </button>
-                                                        ) : (
-                                                            <>
-                                                                {(item.foto_comprobante || item.comprobante_path) && (
-                                                                    <button type="button" className="action-btn" title="Ver Comprobante" onClick={() => window.open(`${UPLOADS_URL}${item.foto_comprobante || item.comprobante_path}`, '_blank')}>
-                                                                        <Eye size={14} />
+                                                                </td>
+                                                    )}
+                                                    <td style={{ textAlign: 'right', fontWeight: '800', color: isBudgetedOnly ? 'var(--color-primary)' : (item.estado === 'pagado' ? '#fff' : '#ff8484'), whiteSpace: 'nowrap' }}>$ {smartFormat(displayMonto)}</td>
+                                                            <td style={{ textAlign: 'right' }}>
+                                                                <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                                                                    {isBudgetedOnly ? (
+                                                                        <button type="button" className="action-btn" title="Convertir a Gasto Real" onClick={() => handleSyncBudgetToGastos()} style={{ color: 'var(--color-primary)' }}>
+                                                                            <CheckCircle2 size={14} />
+                                                                        </button>
+                                                            ) : (
+                                                                <>
+                                                                    {(item.foto_comprobante || item.comprobante_path) && (
+                                                                        <button type="button" className="action-btn" title="Ver Comprobante" onClick={() => window.open(getUploadUrl(item.foto_comprobante || item.comprobante_path), '_blank')}>
+                                                                            <Eye size={14} />
+                                                                        </button>
+                                                                    )}
+                                                                    <button type="button" className="action-btn" style={{ color: '#ff4444', opacity: 0.6 }} onClick={() => handleEliminarGasto(item.id)} title="Eliminar">
+                                                                        <Trash2 size={14} />
                                                                     </button>
-                                                                )}
-                                                                <button type="button" className="action-btn" style={{ color: '#ff4444', opacity: 0.6 }} onClick={() => handleEliminarGasto(item.id)} title="Eliminar">
-                                                                    <Trash2 size={14} />
-                                                                </button>
-                                                            </>
-                                                        )}
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        );
-                                    })}
-                                </tbody>
-                            </table>
+                                                                </>
+                                                            )}
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            );
+                                        })}
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
                     </div>
                 </div>
             )}
 
+            {/* --- TAB CONTENT: DOCUMENTOS (v5.3) --- */}
+            {activeTab === 'documentos' && (
+                <div className={`glass-panel fade-in ${isMobile && mobileSection !== 'docs' ? 'mobile-hidden' : ''}`} style={{ 
+                    marginTop: isMobile ? '0' : '20px', 
+                    padding: isMobile ? '15px' : '30px',
+                    minHeight: isMobile ? 'calc(100vh - 180px)' : 'auto'
+                }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginBottom: isMobile ? '15px' : '25px' }}>
+                        <div style={{ padding: '12px', background: 'var(--color-primary-dim)', borderRadius: '12px', color: 'var(--color-primary)' }}>
+                            <FilePlus size={isMobile ? 20 : 24} />
+                        </div>
+                        <div>
+                            <h2 style={{ fontSize: isMobile ? '16px' : '20px', margin: 0, fontWeight: '800' }}>Gestión de Documentos</h2>
+                            <p style={{ fontSize: '11px', color: 'var(--color-text-dim)', margin: 0 }}>Carga y envía PDFs personalizados para este evento.</p>
+                        </div>
+                    </div>
+
+                    {!id ? (
+                        <div style={{ textAlign: 'center', padding: '40px 20px', background: 'rgba(255,255,255,0.02)', borderRadius: '24px', border: '1px dashed rgba(255,255,255,0.1)' }}>
+                            <div style={{ width: '60px', height: '60px', background: 'rgba(212, 175, 55, 0.1)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}>
+                                <Save size={30} color="var(--color-primary)" />
+                            </div>
+                            <h3 style={{ fontSize: '18px', color: '#fff', marginBottom: '10px' }}>Primero guarda la cotización</h3>
+                            <p style={{ fontSize: '13px', opacity: 0.6, maxWidth: '300px', margin: '0 auto' }}>Necesitamos un número de folio para organizar tus archivos correctamente.</p>
+                        </div>
+                    ) : (
+                        <div className="doc-grid" style={{ 
+                            display: 'grid', 
+                            gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fit, minmax(350px, 1fr))', 
+                            gap: isMobile ? '15px' : '25px' 
+                        }}>
+                            {['cotizacion', 'contrato'].map(type => (
+                                <div key={type} className="doc-card premium-card" style={{ 
+                                    background: 'rgba(255,255,255,0.03)', 
+                                    border: '1px solid rgba(255,255,255,0.08)', 
+                                    borderRadius: '20px', 
+                                    padding: isMobile ? '15px' : '24px',
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    gap: '12px',
+                                    transition: 'all 0.3s ease',
+                                    position: 'relative',
+                                    overflow: 'hidden'
+                                }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                            <div style={{ 
+                                                width: '44px', 
+                                                height: '44px', 
+                                                background: type === 'cotizacion' ? 'rgba(212, 175, 55, 0.1)' : 'rgba(255,255,255,0.05)', 
+                                                borderRadius: '12px', 
+                                                display: 'flex', 
+                                                alignItems: 'center', 
+                                                justifyContent: 'center',
+                                                border: '1px solid rgba(255,255,255,0.05)'
+                                            }}>
+                                                <FileText size={22} color={type === 'cotizacion' ? 'var(--color-primary)' : '#fff'} />
+                                            </div>
+                                            <div>
+                                                <span style={{ fontWeight: '800', fontSize: '14px', color: '#fff', display: 'block' }}>
+                                                    {type === 'cotizacion' ? 'Cotización PDF' : 'Contrato PDF'}
+                                                </span>
+                                                <span style={{ fontSize: '10px', color: 'var(--color-text-dim)', textTransform: 'uppercase', letterSpacing: '1px' }}>Documento Oficial</span>
+                                            </div>
+                                        </div>
+                                        <div style={{ 
+                                            fontSize: '9px', 
+                                            fontWeight: '900',
+                                            padding: '4px 10px', 
+                                            borderRadius: '20px', 
+                                            background: docStatus[type === 'cotizacion' ? 'pdf_path' : 'contrato_path'] ? 'rgba(16, 185, 129, 0.2)' : 'rgba(255,255,255,0.05)', 
+                                            color: docStatus[type === 'cotizacion' ? 'pdf_path' : 'contrato_path'] ? '#10b981' : 'rgba(255,255,255,0.3)',
+                                            border: `1px solid ${docStatus[type === 'cotizacion' ? 'pdf_path' : 'contrato_path'] ? 'rgba(16, 185, 129, 0.3)' : 'transparent'}`
+                                        }}>
+                                            {docStatus[type === 'cotizacion' ? 'pdf_path' : 'contrato_path'] ? 'CARGADO' : 'PENDIENTE'}
+                                        </div>
+                                    </div>
+
+                                    <div style={{ 
+                                        minHeight: '38px',
+                                        background: 'rgba(0,0,0,0.2)',
+                                        borderRadius: '10px',
+                                        padding: '10px',
+                                        display: 'flex',
+                                        alignItems: 'center'
+                                    }}>
+                                        {docStatus[type === 'cotizacion' ? 'pdf_path' : 'contrato_path'] ? (
+                                            <div style={{ fontSize: '12px', color: 'var(--color-primary)', fontWeight: '600', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', width: '100%' }}>
+                                                {docStatus[type === 'cotizacion' ? 'pdf_path' : 'contrato_path'].split('/').pop()}
+                                            </div>
+                                        ) : (
+                                            <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.3)', margin: 0 }}>Sube el archivo PDF para habilitar el envío.</p>
+                                        )}
+                                    </div>
+
+                                    <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '5px' }}>
+                                        <div className="upload-btn-wrapper" style={{ position: 'relative', overflow: 'hidden', display: 'inline-block', flex: 1 }}>
+                                            <button type="button" className={`doc-action-btn primary ${uploadingDoc === type ? 'loading' : ''}`} style={{ 
+                                                width: '100%',
+                                                background: 'var(--color-primary)', 
+                                                color: '#000', 
+                                                padding: '10px', 
+                                                borderRadius: '10px', 
+                                                fontSize: '11px', 
+                                                fontWeight: '800',
+                                                display: 'flex', 
+                                                alignItems: 'center', 
+                                                justifyContent: 'center',
+                                                gap: '8px',
+                                                cursor: 'pointer',
+                                                border: 'none'
+                                            }}>
+                                                {uploadingDoc === type ? <RefreshCw size={14} className="spinning" /> : <Upload size={14} />} 
+                                                {docStatus[type === 'cotizacion' ? 'pdf_path' : 'contrato_path'] ? 'REEMPLAZAR' : 'SUBIR PDF'}
+                                            </button>
+                                            <input 
+                                                type="file" 
+                                                accept="application/pdf" 
+                                                style={{ position: 'absolute', fontSize: '100px', left: 0, top: 0, opacity: 0, cursor: 'pointer' }} 
+                                                onChange={(e) => e.target.files[0] && handleUploadPdf(type, e.target.files[0])}
+                                            />
+                                        </div>
+
+                                        {type === 'cotizacion' && (
+                                            <button 
+                                                type="button" 
+                                                onClick={() => window.open(`/api/documents/${formData.clase === 'arriendo' ? 'arriendo' : 'cotizacion'}/${id}`, '_blank')}
+                                                style={{ 
+                                                    flex: 1,
+                                                    background: 'rgba(212, 175, 55, 0.15)', 
+                                                    border: '1px solid rgba(212, 175, 55, 0.3)', 
+                                                    color: 'var(--color-primary)', 
+                                                    padding: '10px', 
+                                                    borderRadius: '10px', 
+                                                    fontSize: '11px', 
+                                                    fontWeight: '800',
+                                                    display: 'flex', 
+                                                    alignItems: 'center', 
+                                                    justifyContent: 'center',
+                                                    gap: '8px'
+                                                }}
+                                            >
+                                                <RefreshCw size={14} /> {formData.clase === 'arriendo' ? 'GENERAR RECIBO' : 'GENERAR PDF'}
+                                            </button>
+                                        )}
+
+                                        {docStatus[type === 'cotizacion' ? 'pdf_path' : 'contrato_path'] && (
+                                            <button type="button" onClick={() => window.open(getUploadUrl(docStatus[type === 'cotizacion' ? 'pdf_path' : 'contrato_path']), '_blank')} style={{ 
+                                                flex: 1,
+                                                background: 'rgba(255,255,255,0.05)', 
+                                                border: '1px solid rgba(255,255,255,0.1)', 
+                                                color: '#fff', 
+                                                padding: '10px', 
+                                                borderRadius: '10px', 
+                                                fontSize: '11px', 
+                                                fontWeight: '700',
+                                                display: 'flex', 
+                                                alignItems: 'center', 
+                                                justifyContent: 'center',
+                                                gap: '8px'
+                                            }}>
+                                                <Eye size={14} /> VER
+                                            </button>
+                                        )}
+                                    </div>
+
+                                    {docStatus[type === 'cotizacion' ? 'pdf_path' : 'contrato_path'] && (
+                                        <div style={{ display: 'flex', gap: '8px', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '12px' }}>
+                                            <button type="button" onClick={() => handleOpenSendModal(type, 'whatsapp')} style={{ 
+                                                flex: 1,
+                                                background: 'rgba(37, 211, 102, 0.15)', 
+                                                border: '1px solid rgba(37, 211, 102, 0.3)', 
+                                                color: '#25D366', 
+                                                padding: '10px', 
+                                                borderRadius: '10px', 
+                                                fontSize: '11px', 
+                                                fontWeight: '800',
+                                                display: 'flex', 
+                                                alignItems: 'center', 
+                                                justifyContent: 'center',
+                                                gap: '8px'
+                                            }}>
+                                                <MessageCircle size={14} /> WHATSAPP
+                                            </button>
+                                            <button type="button" onClick={() => handleOpenSendModal(type, 'email')} style={{ 
+                                                flex: 1,
+                                                background: 'rgba(66, 133, 244, 0.15)', 
+                                                border: '1px solid rgba(66, 133, 244, 0.3)', 
+                                                color: '#fff', 
+                                                padding: '10px', 
+                                                borderRadius: '10px', 
+                                                fontSize: '11px', 
+                                                fontWeight: '800',
+                                                display: 'flex', 
+                                                alignItems: 'center', 
+                                                justifyContent: 'center',
+                                                gap: '8px'
+                                            }}>
+                                                <Mail size={14} /> EMAIL
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+            )}
+
             {/* FLOATING SEARCH RESULTS - Rendered at form root for zero clipping */}
             {isSearchFocused && (
-                <div className="inline-results-dropdown floating-portal glass-panel fade-in-up" style={{
+                <div className={`inline-results-dropdown floating-portal glass-panel fade-in-up ${isMobile ? 'mobile-fullscreen-search' : ''}`} style={!isMobile ? {
                     position: 'fixed',
                     top: dropdownPos.top,
                     left: dropdownPos.left,
@@ -1975,15 +2610,47 @@ const AdminCotizacionForm = () => {
                     background: '#1a1a1c',
                     borderRadius: '14px',
                     backdropFilter: 'blur(15px)'
-                }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
-                        <span style={{ fontSize: '11px', fontWeight: '800', color: 'var(--color-primary)', letterSpacing: '2px' }}>CATÁLOGO DE PRODUCTOS</span>
-                        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                            <span style={{ fontSize: '10px', opacity: 0.4 }}>{filteredRecursos.length} resultados</span>
-                            <button type="button" onClick={() => setIsSearchFocused(false)} className="action-btn"><X size={16} /></button>
+                } : {}}>
+                    {isMobile ? (
+                        <div className="mobile-search-header">
+                            <button type="button" onClick={() => setIsSearchFocused(false)} className="mobile-search-close">
+                                <ChevronLeft size={24} />
+                            </button>
+                            <div className="mobile-search-input-container">
+                                <Search size={18} className="search-icon" />
+                                <input 
+                                    autoFocus
+                                    type="text" 
+                                    placeholder="Buscar producto o servicio..."
+                                    value={searchTerm}
+                                    onChange={(e) => {
+                                        setSearchTerm(e.target.value);
+                                        setSearchIndex(0); // Reset to first item
+                                    }}
+                                    onKeyDown={handleSearchKeyDown}
+                                />
+                                {searchTerm && (
+                                    <button 
+                                        type="button" 
+                                        onClick={() => setSearchTerm('')}
+                                        style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: 'rgba(255,255,255,0.3)' }}
+                                    >
+                                        <X size={16} />
+                                    </button>
+                                )}
+                            </div>
                         </div>
-                    </div>
-                    <div className="results-list">
+                    ) : (
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
+                            <span style={{ fontSize: '11px', fontWeight: '800', color: 'var(--color-primary)', letterSpacing: '2px' }}>CATÁLOGO DE PRODUCTOS</span>
+                            <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                                <span style={{ fontSize: '10px', opacity: 0.4 }}>{filteredRecursos.length} resultados</span>
+                                <button type="button" onClick={() => setIsSearchFocused(false)} className="action-btn"><X size={16} /></button>
+                            </div>
+                        </div>
+                    )}
+
+                    <div className={isMobile ? "mobile-search-results" : "results-list"}>
                         {filteredRecursos.length === 0 ? (
                             <div style={{ padding: '30px', textAlign: 'center', color: 'var(--color-text-dim)' }}>
                                 <Search size={24} style={{ opacity: 0.2, marginBottom: '8px' }} />
@@ -2010,7 +2677,7 @@ const AdminCotizacionForm = () => {
                                     }}
                                 >
                                     <img
-                                        src={r.foto ? (r.foto.startsWith('http') ? r.foto : `${UPLOADS_URL}/${r.foto}`) : '/placeholder.png'}
+                                        src={getUploadUrl(r.foto)}
                                         style={{ width: '44px', height: '44px', borderRadius: '6px', objectFit: 'cover' }}
                                         alt=""
                                     />
@@ -2180,41 +2847,45 @@ const AdminCotizacionForm = () => {
                     onClose={() => setShowHistory(false)} 
                 />
             )}
-            {/* Modal de Registro de Abono Premium V2 (v4) */}
             {showPagoModal && (
                 <div className="admin-modal-overlay" style={{ zIndex: 10000 }}>
-                    <div className="v2-modal-container" style={{ maxWidth: '450px', width: '90%', margin: 'auto', background: '#1a1a1c', borderRadius: '14px', border: '1px solid #333' }}>
-                        <div className="v2-modal-header" style={{ padding: '15px', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                <h3 style={{ margin: 0, fontSize: '14px', color: 'var(--color-primary)' }}>REGISTRAR ABONO</h3>
-                                <button type="button" onClick={() => { setShowPagoModal(false); setComprobantePreview(null); }} className="action-btn"><X size={18} /></button>
-                            </div>
+                    <div className="admin-modal-content" style={{ maxWidth: '450px', width: '90%' }} onClick={e => e.stopPropagation()}>
+                        <div className="modal-header-premium">
+                            <h2 style={{ fontSize: '18px', fontWeight: '900', letterSpacing: '1px' }}>REGISTRAR ABONO</h2>
+                            <button type="button" onClick={() => { setShowPagoModal(false); setComprobantePreview(null); }} className="action-btn"><X size={20} /></button>
                         </div>
                         <div style={{ padding: '20px' }}>
-                            <div className="form-field">
-                                <label>Monto del Abono</label>
+                            <div className={`form-field ${(modalFocusedField === 'monto_pago' || nuevoPago.monto) ? 'is-floating' : ''}`}>
                                 <input 
-                                    type="number" 
+                                    type="text" 
                                     value={nuevoPago.monto} 
                                     onChange={(e) => setNuevoPago({...nuevoPago, monto: e.target.value})}
+                                    onBlur={(e) => {
+                                        setModalFocusedField(null);
+                                        setNuevoPago({...nuevoPago, monto: smartFormat(e.target.value)});
+                                    }}
+                                    onFocus={() => setModalFocusedField('monto_pago')}
                                     className="dense-input"
-                                    style={{ padding: '10px', fontSize: '1.2rem', height: 'auto' }}
+                                    style={{ fontSize: '1.2rem', height: 'auto', textAlign: 'center', fontWeight: '800', color: '#10b981' }}
                                 />
+                                <label>Monto del Abono ($)</label>
                             </div>
                             <div className="compact-grid-2">
-                                <div className="form-field">
-                                    <label>Método de Pago</label>
+                                <div className={`form-field ${(modalFocusedField === 'metodo_pago' || nuevoPago.metodo) ? 'is-floating' : ''}`}>
                                     <select 
                                         value={nuevoPago.metodo}
                                         onChange={(e) => setNuevoPago({...nuevoPago, metodo: e.target.value})}
+                                        onFocus={() => setModalFocusedField('metodo_pago')}
+                                        onBlur={() => setModalFocusedField(null)}
                                         className="dense-input"
                                     >
                                         <option value="Transferencia">Transferencia</option>
                                         <option value="Efectivo">Efectivo</option>
                                     </select>
+                                    <label>Método de Pago</label>
                                 </div>
                                 <div className="form-field">
-                                    <label>Comprobante de Pago</label>
+                                    <label style={{ position: 'static', transform: 'none', fontSize: '10px', marginBottom: '8px', opacity: 0.6 }}>Comprobante de Pago</label>
                                     <div 
                                         className="premium-upload-box" 
                                         style={{ 
@@ -2266,15 +2937,17 @@ const AdminCotizacionForm = () => {
                                     </div>
                                 </div>
                             </div>
-                            <div className="form-field">
-                                <label>Notas / Referencia</label>
+                            <div className={`form-field ${(modalFocusedField === 'nota_pago' || nuevoPago.nota) ? 'is-floating' : ''}`} style={{ marginTop: '10px' }}>
                                 <textarea 
                                     value={nuevoPago.nota}
                                     onChange={(e) => setNuevoPago({...nuevoPago, nota: e.target.value})}
-                                    placeholder="N° de operación, banco, etc..."
+                                    onFocus={() => setModalFocusedField('nota_pago')}
+                                    onBlur={() => setModalFocusedField(null)}
+                                    placeholder=" "
                                     className="dense-input"
                                     style={{ minHeight: '60px' }}
                                 />
+                                <label>Notas / Referencia (N° operación, banco, etc...)</label>
                             </div>
                             <div style={{ display: 'flex', gap: '10px', marginTop: '20px' }}>
                                 <button type="button" onClick={() => { setShowPagoModal(false); setComprobantePreview(null); }} className="btn-admin-secondary" style={{ flex: 1 }}>Cancelar</button>
@@ -2302,57 +2975,68 @@ const AdminCotizacionForm = () => {
                         </div>
                         <div className="modal-body-premium" style={{ padding: '20px' }}>
                             <div className="dense-grid">
-                                <div className="form-field">
-                                    <label>Concepto / Detalle *</label>
+                                <div className={`form-field ${(modalFocusedField === 'concepto_gasto' || nuevoGasto.concepto) ? 'is-floating' : ''}`}>
                                     <input 
                                         type="text" 
                                         value={nuevoGasto.concepto}
                                         onChange={(e) => setNuevoGasto({...nuevoGasto, concepto: e.target.value})}
-                                        placeholder="Ej: Pago Mesoneros, Compra Flores..."
+                                        onFocus={() => setModalFocusedField('concepto_gasto')}
+                                        onBlur={() => setModalFocusedField(null)}
+                                        placeholder=" "
                                         className="dense-input"
                                     />
+                                    <label>Concepto / Detalle *</label>
                                 </div>
                                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
-                                    <div className="form-field">
-                                        <label>Monto *</label>
+                                    <div className={`form-field ${(modalFocusedField === 'monto_gasto' || nuevoGasto.monto) ? 'is-floating' : ''}`}>
                                         <input 
                                             type="text" 
                                             value={nuevoGasto.monto}
                                             onChange={(e) => setNuevoGasto({...nuevoGasto, monto: e.target.value})}
-                                            onBlur={(e) => setNuevoGasto({...nuevoGasto, monto: smartFormat(e.target.value)})}
-                                            placeholder="0"
+                                            onFocus={() => setModalFocusedField('monto_gasto')}
+                                            onBlur={(e) => {
+                                                setModalFocusedField(null);
+                                                setNuevoGasto({...nuevoGasto, monto: smartFormat(e.target.value)});
+                                            }}
+                                            placeholder=" "
                                             className="dense-input"
                                         />
+                                        <label>Monto *</label>
                                     </div>
-                                    <div className="form-field">
-                                        <label>Método</label>
+                                    <div className={`form-field ${(modalFocusedField === 'metodo_gasto' || nuevoGasto.metodo) ? 'is-floating' : ''}`}>
                                         <select 
                                             value={nuevoGasto.metodo}
                                             onChange={(e) => setNuevoGasto({...nuevoGasto, metodo: e.target.value})}
+                                            onFocus={() => setModalFocusedField('metodo_gasto')}
+                                            onBlur={() => setModalFocusedField(null)}
                                             className="dense-input"
                                         >
                                             <option value="Efectivo">Efectivo</option>
                                             <option value="Transferencia">Transferencia</option>
                                             <option value="Tarjeta">Tarjeta</option>
                                         </select>
+                                        <label>Método</label>
                                     </div>
                                 </div>
                                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
-                                    <div className="form-field">
-                                        <label>Pagado a</label>
+                                    <div className={`form-field ${(modalFocusedField === 'pagado_a_gasto' || nuevoGasto.pagado_a) ? 'is-floating' : ''}`}>
                                         <input 
                                             type="text" 
                                             value={nuevoGasto.pagado_a}
                                             onChange={(e) => setNuevoGasto({...nuevoGasto, pagado_a: e.target.value})}
-                                            placeholder="Nombre del proveedor"
+                                            onFocus={() => setModalFocusedField('pagado_a_gasto')}
+                                            onBlur={() => setModalFocusedField(null)}
+                                            placeholder=" "
                                             className="dense-input"
                                         />
+                                        <label>Pagado a</label>
                                     </div>
-                                    <div className="form-field">
-                                        <label>Categoría / Área</label>
+                                    <div className={`form-field ${(modalFocusedField === 'categoria_gasto' || nuevoGasto.categoria) ? 'is-floating' : ''}`}>
                                         <select 
                                             value={nuevoGasto.categoria}
                                             onChange={(e) => setNuevoGasto({...nuevoGasto, categoria: e.target.value})}
+                                            onFocus={() => setModalFocusedField('categoria_gasto')}
+                                            onBlur={() => setModalFocusedField(null)}
                                             className="dense-input"
                                         >
                                             <option value="General">General</option>
@@ -2365,21 +3049,24 @@ const AdminCotizacionForm = () => {
                                             <option value="Locación">Locación / Espacio</option>
                                             <option value="Otros">Otros / Varios</option>
                                         </select>
+                                        <label>Categoría / Área</label>
                                     </div>
                                 </div>
-                                <div className="form-field">
-                                    <label>Responsable</label>
+                                <div className={`form-field ${(modalFocusedField === 'responsable_gasto' || nuevoGasto.responsable) ? 'is-floating' : ''}`}>
                                     <input 
                                         type="text" 
                                         value={nuevoGasto.responsable}
                                         onChange={(e) => setNuevoGasto({...nuevoGasto, responsable: e.target.value})}
-                                        placeholder="Quién hizo el gasto"
+                                        onFocus={() => setModalFocusedField('responsable_gasto')}
+                                        onBlur={() => setModalFocusedField(null)}
+                                        placeholder=" "
                                         className="dense-input"
                                     />
+                                    <label>Responsable</label>
                                 </div>
 
                                 <div className="form-field">
-                                    <label>Comprobante de Gasto</label>
+                                    <label style={{ position: 'static', transform: 'none', fontSize: '10px', marginBottom: '8px', opacity: 0.6 }}>Comprobante de Gasto</label>
                                     <div 
                                         className="premium-upload-box" 
                                         style={{ 
@@ -2533,43 +3220,6 @@ const AdminCotizacionForm = () => {
                             </div>
                         </div>
                     </div>
-                    <style>{`
-                        .report-grid-system {
-                            display: grid;
-                            grid-template-columns: 1.1fr 1.2fr;
-                            gap: 40px;
-                        }
-                        @media (max-width: 768px) {
-                            .report-grid-system {
-                                grid-template-columns: 1fr;
-                                gap: 30px;
-                            }
-                            .report-modal-content {
-                                padding: 20px !important;
-                                margin: 10px !important;
-                                width: calc(100% - 20px) !important;
-                            }
-                        }
-                        .report-circle-anim {
-                            animation: dash 1.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-                        }
-                        .wave-anim {
-                            stroke-dasharray: 1000;
-                            stroke-dashoffset: 1000;
-                            animation: dashWave 2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-                        }
-                        .wave-anim-delay {
-                            stroke-dasharray: 1000;
-                            stroke-dashoffset: 1000;
-                            animation: dashWave 2.5s cubic-bezier(0.16, 1, 0.3, 1) 0.5s forwards;
-                        }
-                        @keyframes dash {
-                            from { stroke-dasharray: 0, 100; }
-                        }
-                        @keyframes dashWave {
-                            to { stroke-dashoffset: 0; }
-                        }
-                    `}</style>
                 </div>
             )}
 
@@ -2605,6 +3255,129 @@ const AdminCotizacionForm = () => {
                         </div>
                         <button type="button" onClick={() => setShowHelp(false)} className="btn-admin-primary" style={{ width: '100%', marginTop: '20px', justifyContent: 'center', padding: '12px' }}>ENTENDIDO</button>
                     </div>
+                </div>
+            )}
+
+
+            {/* --- MODAL: ENVIAR DOCUMENTO (v5.2) --- */}
+            {showSendModal && (
+                <div className="modal-overlay" style={{ zIndex: 3000 }}>
+                    <div className="modal-content glass-effect" style={{ maxWidth: '500px', width: '90%' }}>
+                        <div className="modal-header">
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                {sendConfig.method === 'whatsapp' ? <MessageCircle size={20} color="#25D366" /> : <Mail size={20} color="#4285F4" />}
+                                <h3 style={{ margin: 0 }}>Enviar {sendConfig.type === 'cotizacion' ? 'Cotización' : 'Contrato'}</h3>
+                            </div>
+                            <button onClick={() => setShowSendModal(false)} className="close-btn"><X /></button>
+                        </div>
+                        <div className="modal-body" style={{ padding: '20px' }}>
+                            <p style={{ fontSize: '13px', color: 'var(--color-text-dim)', marginBottom: '15px' }}>
+                                Se enviará el archivo PDF cargado a {formData.nombre_cliente} ({sendConfig.method === 'whatsapp' ? formData.telefono_cliente : formData.correo_cliente}).
+                            </p>
+                            
+                            <div className="form-field is-floating">
+                                <textarea 
+                                    style={{ width: '100%', minHeight: '120px', padding: '15px', background: 'rgba(0,0,0,0.2)', color: '#fff', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', fontSize: '14px', resize: 'none' }}
+                                    value={sendConfig.message}
+                                    onChange={(e) => setSendConfig(prev => ({ ...prev, message: e.target.value }))}
+                                />
+                                <label>Mensaje Personalizado</label>
+                            </div>
+
+                            <div style={{ marginTop: '20px', display: 'flex', gap: '10px' }}>
+                                <button 
+                                    className="btn-p-modern" 
+                                    style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
+                                    onClick={handleSendDoc}
+                                    disabled={docLoading}
+                                >
+                                    {docLoading ? <RefreshCw size={18} className="spinning" /> : <Send size={18} />}
+                                    {docLoading ? 'Enviando...' : 'Enviar Ahora'}
+                                </button>
+                                <button className="btn-s-modern" onClick={() => setShowSendModal(false)}>Cancelar</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Mobile Navigation Dock (v4.5) */}
+            {isMobile && (
+                <div className="admin-mobile-dock">
+                    <button 
+                        type="button" 
+                        className="dock-item"
+                        onClick={() => window.dispatchEvent(new CustomEvent('toggle-admin-sidebar'))}
+                    >
+                        <Menu size={20} />
+                        <span>Menú</span>
+                    </button>
+                    <button 
+                        type="button" 
+                        className={`dock-item ${mobileSection === 'info' ? 'active' : ''}`}
+                        onClick={() => {
+                            setActiveTab('presupuesto');
+                            setMobileSection('info');
+                            window.scrollTo({ top: 0, behavior: 'smooth' });
+                        }}
+                    >
+                        <User size={20} />
+                        <span>Info</span>
+                    </button>
+
+                    {activeTab === 'presupuesto' && (
+                        <button 
+                            type="button" 
+                            className="dock-item primary-dock-fab"
+                            onClick={() => {
+                                setMobileSection('budget');
+                                setIsSearchFocused(true);
+                            }}
+                        >
+                            <Plus size={28} />
+                        </button>
+                    )}
+
+                    <button 
+                        type="button" 
+                        className={`dock-item ${mobileSection === 'budget' ? 'active' : ''}`}
+                        onClick={() => {
+                            setActiveTab('presupuesto');
+                            setMobileSection('budget');
+                            setIsSearchFocused(false);
+                            window.scrollTo({ top: 0, behavior: 'smooth' });
+                        }}
+                    >
+                        <Package size={20} />
+                        <span>Items</span>
+                    </button>
+
+                    <button 
+                        type="button" 
+                        className={`dock-item ${mobileSection === 'finance' ? 'active' : ''}`}
+                        onClick={() => {
+                            setActiveTab('financiero');
+                            setMobileSection('finance');
+                            setShowReport(false);
+                            window.scrollTo({ top: 0, behavior: 'smooth' });
+                        }}
+                    >
+                        <CreditCard size={20} />
+                        <span>Finanzas</span>
+                    </button>
+
+                    <button 
+                        type="button" 
+                        className={`dock-item ${activeTab === 'documentos' ? 'active' : ''}`}
+                        onClick={() => {
+                            setActiveTab('documentos');
+                            setMobileSection('docs');
+                            window.scrollTo({ top: 0, behavior: 'smooth' });
+                        }}
+                    >
+                        <FileText size={20} />
+                        <span>Docs</span>
+                    </button>
                 </div>
             )}
         </form>

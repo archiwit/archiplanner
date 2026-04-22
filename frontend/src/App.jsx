@@ -9,17 +9,12 @@ import AdminLayout from './components/admin/AdminLayout';
 
 // Public Pages
 import Home from './pages/Home';
-import Services from './pages/Services';
 import Gallery from './pages/Gallery';
-import About from './pages/About';
-import Contact from './pages/Contact';
+// import Contact from './pages/Contact';
 import Login from './pages/Login';
 import EventDetail from './pages/EventDetail';
 import PublicPageViewV4 from './pages/PublicPageViewV4';
-
-
-
-
+import SatisfactionSurvey from './pages/SatisfactionSurvey';
 
 // Admin Pages
 import AdminEmpresa from './pages/admin/AdminEmpresa';
@@ -42,110 +37,114 @@ import AdminCmsWeb from './pages/admin/AdminCmsWeb';
 import AdminGallery from './pages/admin/AdminGallery';
 import AdminPaginasV4 from './pages/admin/AdminPaginasV4';
 import VisualBuilderV4 from './pages/admin/VisualBuilderV4';
+import AdminNavigation from './pages/admin/AdminNavigation';
+import AdminDashboard from './pages/admin/AdminDashboard';
+import AdminCalendar from './pages/admin/AdminCalendar';
+import AdminEventPlanner from './pages/admin/AdminEventPlanner';
+import AdminArriendos from './pages/admin/AdminArriendos';
+import AdminGastosEmpresa from './pages/admin/AdminGastosEmpresa';
+import ClientDashboard from './pages/client/ClientDashboard';
 import ErrorBoundary from './components/common/ErrorBoundary';
 
 
-
-
-
-const AdminDashboard = () => {
-    const [stats, setStats] = React.useState({ clientes: 0, cotizaciones: 0, servicios: 0, pendientes: 0 });
-
-    React.useEffect(() => {
-        const fetchStats = async () => {
-            try {
-                const res = await import('./services/api').then(m => m.default.get('/dashboard/stats'));
-                setStats(res.data);
-            } catch (err) {
-                console.error(err);
-            }
-        };
-        fetchStats();
-    }, []);
-
-    return (
-        <div className="admin-dashboard-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '24px' }}>
-            <div className="admin-card stats-card">
-                <span className="tag">Prospectos</span>
-                <h4>{stats.clientes} Clientes</h4>
-                <p>En seguimiento actual.</p>
-            </div>
-            <div className="admin-card stats-card">
-                <span className="tag">Propuestas</span>
-                <h4>{stats.cotizaciones} Cotizaciones</h4>
-                <p>Generadas el último mes.</p>
-            </div>
-            <div className="admin-card stats-card">
-                <span className="tag">Contratados</span>
-                <h4>{stats.pendientes} Eventos</h4>
-                <p>Próximos a celebrarse.</p>
-            </div>
-        </div>
-    );
-};
+import ProtectedRoute from './components/auth/ProtectedRoute';
 
 function App() {
+    console.log('App.jsx: Renderizando componente raíz...');
+    
+    // Roles permitidos para administración general (Eventos, Usuarios, Configuración)
+    const STAFF = ['admin', 'coordinador', 'asesor'];
+    // Roles permitidos para arriendos
+    const RENTAL_ROLES = [...STAFF, 'asesor_arriendos'];
+
     return (
-        <BrandingProvider>
-            <AuthProvider>
-                <Routes>
-                    {/* Public Website */}
-                    <Route element={<MainLayout />}>
-                        <Route path="/" element={<PublicPageViewV4 />} />
-                        <Route path="/legacy-home" element={<Home />} />
-                        <Route path="/servicios" element={<Services />} />
-                        <Route path="/galeria" element={<Gallery />} />
-                        <Route path="/galeria/:id" element={<EventDetail />} />
-                        <Route path="/nosotros" element={<About />} />
-                        <Route path="/contacto" element={<Contact />} />
-                        <Route path="/login" element={<Login />} />
-                        <Route path="/p/:slug" element={<PublicPageViewV4 />} />
+        <ErrorBoundary>
+            <BrandingProvider>
+                <AuthProvider>
+                    <Routes>
+                        {/* Public Website */}
+                        <Route element={<MainLayout />}>
+                            <Route path="/" element={<PublicPageViewV4 />} />
+                            <Route path="/servicios" element={<PublicPageViewV4 slugOverride="servicios" />} />
+                            <Route path="/nosotros" element={<PublicPageViewV4 slugOverride="nosotros" />} />
+                            <Route path="/galeria" element={<Gallery />} />
+                            <Route path="/galeria/:id" element={<EventDetail />} />
+                            <Route path="/contacto" element={<PublicPageViewV4 slugOverride="contacto" />} />
+                            <Route path="/login" element={<Login />} />
+                            <Route path="/p/:slug" element={<PublicPageViewV4 />} />
+                            <Route path="/privacidad" element={<PublicPageViewV4 slugOverride="privacidad" />} />
+                            <Route path="/proteccion" element={<PublicPageViewV4 slugOverride="proteccion" />} />
+                            <Route path="/evaluacion/:id" element={<SatisfactionSurvey />} />
+                        </Route>
+
+                        {/* Administration Area */}
+                        <Route 
+                            path="/admin" 
+                            element={
+                                <ErrorBoundary>
+                                    <AdminLayout />
+                                </ErrorBoundary>
+                            }
+                        >
+                            <Route index element={<AdminDashboard />} />
+                            <Route path="clientes" element={<ProtectedRoute permission="clientes"><AdminClientesTable /></ProtectedRoute>} />
+                            <Route path="cotizaciones" element={<ProtectedRoute permission="cotizaciones"><AdminCotizaciones /></ProtectedRoute>} />
+                            <Route path="cotizaciones/nueva" element={<ProtectedRoute permission="cotizaciones"><AdminCotizacionForm /></ProtectedRoute>} />
+                            <Route path="cotizaciones/editar/:id" element={<ProtectedRoute permission="cotizaciones"><AdminCotizacionForm /></ProtectedRoute>} />
+                            
+                            <Route path="arriendos" element={<ProtectedRoute permission="arriendos"><AdminArriendos /></ProtectedRoute>} />
+                            <Route path="arriendos/nuevo" element={<ProtectedRoute permission="arriendos"><AdminCotizacionForm claseOverride="arriendo" /></ProtectedRoute>} />
+                            <Route path="arriendos/editar/:id" element={<ProtectedRoute permission="arriendos"><AdminCotizacionForm claseOverride="arriendo" /></ProtectedRoute>} />
+
+                            <Route path="cotizaciones/:id/view" element={<QuotationView />} />
+                            <Route path="cotizaciones/:id/contrato" element={<AdminContrato />} />
+                            <Route path="plantillas" element={<ProtectedRoute permission="plantillas"><AdminPlantillas /></ProtectedRoute>} />
+                            <Route path="servicios" element={<ProtectedRoute permission="inventario"><AdminInventario /></ProtectedRoute>} />
+                            <Route path="proveedores" element={<ProtectedRoute permission="proveedores"><AdminProveedoresTable /></ProtectedRoute>} />
+                            <Route path="gastos-empresa" element={<ProtectedRoute permission="gastos_empresa"><AdminGastosEmpresa /></ProtectedRoute>} />
+
+                            <Route path="empresa" element={<ProtectedRoute permission="empresa"><AdminEmpresasTable /></ProtectedRoute>} />
+                            <Route path="empresa/editar/:id" element={<ProtectedRoute permission="empresa"><AdminEmpresa /></ProtectedRoute>} />
+                            <Route path="usuarios" element={<ProtectedRoute permission="usuarios"><AdminUsuariosTable /></ProtectedRoute>} />
+                            <Route path="perfil" element={<AdminPerfil />} />
+                            <Route path="ayuda" element={<AdminAyuda />} />
+                            <Route path="testimonios" element={<AdminTestimonios />} />
+                            <Route path="paginas" element={<ProtectedRoute permission="web_editor"><AdminPaginas /></ProtectedRoute>} />
+                            <Route path="servicios-web" element={<ProtectedRoute permission="web_editor"><AdminServiciosWeb /></ProtectedRoute>} />
+                            <Route path="config-web" element={<ProtectedRoute permission="web_editor"><AdminCmsWeb /></ProtectedRoute>} />
+                            <Route path="galeria" element={<AdminGallery />} />
+                            <Route path="paginas-v4" element={<ProtectedRoute permission="web_editor"><AdminPaginasV4 /></ProtectedRoute>} />
+                            <Route path="navegacion" element={<ProtectedRoute permission="web_editor"><AdminNavigation /></ProtectedRoute>} />
+                            <Route path="calendario" element={<ProtectedRoute permission="calendario"><AdminCalendar /></ProtectedRoute>} />
+                            <Route path="planeador" element={<ProtectedRoute permission="planeador"><AdminEventPlanner /></ProtectedRoute>} />
+                            <Route path="builder-v4/:id" element={<ProtectedRoute allowedRoles={['admin']}><VisualBuilderV4 /></ProtectedRoute>} />
+                        </Route>
 
 
+                        {/* Client Portal V4 */}
+                        <Route 
+                            path="/client" 
+                            element={
+                                <ErrorBoundary>
+                                    <AdminLayout />
+                                </ErrorBoundary>
+                            }
+                        >
+                            <Route index element={<ClientDashboard />} />
+                            <Route path="mis-eventos" element={<ClientDashboard isListView={true} />} />
+                            <Route path="evento/:id" element={<ClientDashboard />} />
+                            <Route path="perfil" element={<AdminPerfil />} />
+                        </Route>
 
-                    </Route>
+                        {/* Isolated Print Route (No Layouts) */}
+                        <Route path="/print-quotation/:id" element={<QuotationView isPrintView={true} />} />
 
-                    {/* Administration Area */}
-                    <Route 
-                        path="/admin" 
-                        element={
-                            <ErrorBoundary>
-                                <AdminLayout />
-                            </ErrorBoundary>
-                        }
-                    >
-                        <Route index element={<AdminDashboard />} />
-                        <Route path="clientes" element={<AdminClientesTable />} />
-                        <Route path="cotizaciones" element={<AdminCotizaciones />} />
-                        <Route path="cotizaciones/nueva" element={<AdminCotizacionForm />} />
-                        <Route path="cotizaciones/editar/:id" element={<AdminCotizacionForm />} />
-                        <Route path="cotizaciones/:id/view" element={<QuotationView />} />
-                        <Route path="cotizaciones/:id/contrato" element={<AdminContrato />} />
-                        <Route path="plantillas" element={<AdminPlantillas />} />
-                        <Route path="servicios" element={<AdminInventario />} />
-                        <Route path="proveedores" element={<AdminProveedoresTable />} />
-                        <Route path="empresa" element={<AdminEmpresasTable />} />
-                        <Route path="empresa/editar/:id" element={<AdminEmpresa />} />
-                        <Route path="usuarios" element={<AdminUsuariosTable />} />
-                        <Route path="perfil" element={<AdminPerfil />} />
-                        <Route path="ayuda" element={<AdminAyuda />} />
-                        <Route path="testimonios" element={<AdminTestimonios />} />
-                        <Route path="paginas" element={<AdminPaginas />} />
-                        <Route path="servicios-web" element={<AdminServiciosWeb />} />
-                        <Route path="config-web" element={<AdminCmsWeb />} />
-                        <Route path="galeria" element={<AdminGallery />} />
-                        <Route path="paginas-v4" element={<AdminPaginasV4 />} />
-                        <Route path="builder-v4/:id" element={<VisualBuilderV4 />} />
-                    </Route>
-
-                    {/* Isolated Print Route (No Layouts) */}
-                    <Route path="/print-quotation/:id" element={<QuotationView isPrintView={true} />} />
-
-                    {/* Fallback */}
-                    <Route path="*" element={<Navigate to="/" />} />
-                </Routes>
-            </AuthProvider>
-        </BrandingProvider>
+                        {/* Fallback */}
+                        <Route path="*" element={<Navigate to="/" />} />
+                    </Routes>
+                </AuthProvider>
+            </BrandingProvider>
+        </ErrorBoundary>
     );
 }
 

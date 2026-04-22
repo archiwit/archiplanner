@@ -211,32 +211,9 @@
     color: white;
 }
 
-/* Form Inputs Styling */
-.contact-v4-form-col .form-field input,
-.contact-v4-form-col .form-field select,
+/* Form Inputs Handled by Global Design System (index.css) */
 .contact-v4-form-col .form-field textarea {
-    background: rgba(255, 255, 255, 0.03) !important;
-    border: 1px solid rgba(255, 255, 255, 0.1) !important;
-    border-radius: 16px !important;
-    padding: 18px !important;
-    color: white !important;
-    backdrop-filter: blur(10px);
-    font-size: 16px !important;
-}
-
-.contact-v4-form-col .form-field input:focus,
-.contact-v4-form-col .form-field select:focus,
-.contact-v4-form-col .form-field textarea:focus {
-    border-color: var(--color-primary) !important;
-    background: rgba(255, 255, 255, 0.06) !important;
-}
-
-.contact-v4-form-col .form-field label {
-    font-weight: 700 !important;
-    font-size: 11px !important;
-    letter-spacing: 1px !important;
-    color: var(--color-text-dim) !important;
-    top: 18px !important;
+    min-height: 120px;
 }
 
 /* Social Media */

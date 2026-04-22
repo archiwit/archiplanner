@@ -1,3 +1,4 @@
+require('dotenv').config({ path: './backend/.env' });
 const db = require('./backend/src/db');
 const fs = require('fs');
 const path = require('path');
@@ -24,11 +25,21 @@ async function exportDB() {
             // Datos
             const [rows] = await db.query(`SELECT * FROM \`${tableName}\``);
             if (rows.length > 0) {
-                sql += `INSERT INTO \`${tableName}\` VALUES \n`;
+                const columnNames = Object.keys(rows[0]).map(name => `\`${name}\``).join(', ');
+                sql += `INSERT INTO \`${tableName}\` (${columnNames}) VALUES \n`;
+                
                 const values = rows.map(row => {
                     const rowValues = Object.values(row).map(val => {
                         if (val === null) return 'NULL';
                         if (typeof val === 'number') return val;
+                        if (val instanceof Date) {
+                            return `'${val.toISOString().slice(0, 19).replace('T', ' ')}'`;
+                        }
+                        if (typeof val === 'object') {
+                            // Escape single quotes for SQL insertion after JSON stringify
+                            return `'${JSON.stringify(val).replace(/'/g, "''")}'`;
+                        }
+                        // Standard string escaping
                         return `'${val.toString().replace(/'/g, "''")}'`;
                     });
                     return `(${rowValues.join(', ')})`;

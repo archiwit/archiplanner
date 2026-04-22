@@ -81,7 +81,7 @@ const QuotationHistoryPanel = ({ cotId, isOpen, onClose }) => {
                                             <Clock size={12} /> {new Date(item.fecha).toLocaleString()}
                                         </span>
                                     </div>
-                                    <p className="timeline-comment">{item.comentario}</p>
+                                    <p className="timeline-comment" style={{ whiteSpace: 'pre-wrap' }}>{item.comentario}</p>
                                     {item.estado_nuevo && (
                                         <div className="timeline-status-badge">
                                             {item.estado_anterior && (
@@ -99,20 +99,31 @@ const QuotationHistoryPanel = ({ cotId, isOpen, onClose }) => {
                     )}
                 </div>
 
-                <form className="history-footer" onSubmit={handleSubmit}>
+                <div className="history-footer">
                     <div className="comment-input-wrapper">
-                        <input
-                            type="text"
+                        <textarea
                             placeholder="Agregar un comentario..."
                             value={comment}
                             onChange={(e) => setComment(e.target.value)}
+                            onKeyDown={(e) => {
+                                if (e.key === 'Enter' && !e.shiftKey) {
+                                    e.preventDefault();
+                                    handleSubmit(e);
+                                }
+                            }}
                             disabled={submitting}
+                            rows="1"
+                            className="history-textarea"
                         />
-                        <button type="submit" disabled={submitting || !comment.trim()}>
+                        <button 
+                            type="button" 
+                            onClick={handleSubmit} 
+                            disabled={submitting || !comment.trim()}
+                        >
                             <Send size={18} />
                         </button>
                     </div>
-                </form>
+                </div>
             </div>
         </div>
     );

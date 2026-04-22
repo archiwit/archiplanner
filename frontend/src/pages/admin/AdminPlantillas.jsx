@@ -359,8 +359,12 @@ const AdminPlantillas = () => {
                     <h1 className="admin-title">Plantillas de Cotización</h1>
                     <p className="admin-subtitle">Modelos base para agilizar la creación de propuestas</p>
                 </div>
-                <button className="btn-admin-primary" onClick={handleNew}>
-                    <Plus size={18} /> Nueva Plantilla
+                <button 
+                    className="btn-icon-tooltip primary" 
+                    onClick={handleNew}
+                    title="Nueva Plantilla"
+                >
+                    <Plus size={22} />
                 </button>
             </div>
 
@@ -373,8 +377,8 @@ const AdminPlantillas = () => {
                             <Package size={12} /> {p.detalles?.length || 0} items incluidos
                         </div>
                         <div style={{ display: 'flex', gap: '10px' }}>
-                            <button className="btn-admin-secondary" style={{ flex: 1 }} onClick={() => handleEdit(p)}>
-                                <Edit2 size={14} /> Editar
+                            <button className="btn-admin-secondary" style={{ flex: 1 }} onClick={() => handleEdit(p)} title="Editar">
+                                <Edit2 size={14} />
                             </button>
                             <button className="action-btn" title="Duplicar" onClick={() => handleDuplicate(p)}>
                                 <Copy size={16} />

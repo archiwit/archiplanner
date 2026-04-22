@@ -49,6 +49,10 @@ const paginasV4Service = {
             headers: { 'Content-Type': 'multipart/form-data' }
         });
         return response.data;
+    },
+    syncMedia: async () => {
+        const response = await api.post('/paginas-v4/media/sync');
+        return response.data;
     }
 };
 

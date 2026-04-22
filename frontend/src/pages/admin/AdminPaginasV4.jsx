@@ -40,7 +40,12 @@ const AdminPaginasV4 = () => {
     const handleAdd = async (formData) => {
         setLoading(true);
         try {
-            const res = await paginasV4Service.create(formData);
+            const initialData = {
+                ...formData,
+                content: JSON.stringify([]),
+                style_config: JSON.stringify({ canvasBg: '#121212', canvasText: '#FFFFFF' })
+            };
+            const res = await paginasV4Service.create(initialData);
             if (res.success) {
                 await fetchPaginas();
                 Swal.fire({

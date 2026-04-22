@@ -1210,7 +1210,7 @@ app.get('/api/cotizaciones', async (req, res) => {
             FROM cotizaciones c
             LEFT JOIN clientes cl ON c.cli_id = cl.id
             LEFT JOIN usuarios u ON c.u_id = u.id
-            LEFT JOIN configuracion cf ON COALESCE(cl.conf_id, c.conf_id) = cf.id
+            LEFT JOIN configuracion cf ON COALESCE(c.conf_id, cl.conf_id) = cf.id
             ${whereClause}
             ORDER BY c.id DESC
         `;
@@ -1242,8 +1242,8 @@ app.get('/api/cotizaciones/:id', async (req, res) => {
 
         const [cliente] = await db.query('SELECT * FROM clientes WHERE id = ?', [coti[0].cli_id]);
         
-        // Prioritize client's company, fallback to quotation's company
-        const finalConfId = (cliente[0] && cliente[0].conf_id) ? cliente[0].conf_id : coti[0].conf_id;
+        // Prioritize quotation's company, fallback to client's company
+        const finalConfId = coti[0].conf_id || (cliente[0] && cliente[0].conf_id) || 1;
         const [config] = await db.query('SELECT * FROM configuracion WHERE id = ?', [finalConfId]);
         
         res.json({ 

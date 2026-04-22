@@ -6,13 +6,27 @@ import BuilderColumn from '../components/builder/Column';
 import SectionHeroModern from '../components/ui/SectionHeroModern';
 import EditorialTestimonials from '../components/ui/Tesimonios';
 import { API_BASE_URL, UPLOADS_URL } from '../config';
+import { getImageUrl } from '../utils/imageUtils';
+import galeriaService from '../services/galeriaService';
 import Swal from 'sweetalert2';
 import { ArrowRight } from 'lucide-react';
 import PhoneMockup from '../components/ui/PhoneMockup';
 import SectionPulse from '../components/ui/SectionPulse';
-import galeriaService from '../services/galeriaService';
+import ServicesGridV4 from '../components/ui/ServicesGridV4';
+import ServicesCorporateV4 from '../components/ui/ServicesCorporateV4';
+import FounderCtaV4 from '../components/ui/FounderCtaV4';
+import ContactSectionV4 from '../components/ui/ContactSectionV4';
+import DynamicForm from '../components/ui/DynamicForm/DynamicForm';
 
-const PublicPageViewV4 = () => {
+// Helper Components for Public View
+const InstagramFeed = ({ title = '@ARCHI.PLANNER' }) => (
+    <div className="v4-instagram-placeholder" style={{ padding: '60px 20px', textAlign: 'center', background: 'rgba(255,255,255,0.02)', borderRadius: '30px', border: '1px dashed rgba(255,255,255,0.1)' }}>
+        <h3 style={{ fontSize: '20px', marginBottom: '20px', letterSpacing: '2px' }}>{title}</h3>
+        <p style={{ opacity: 0.5, fontSize: '13px' }}>Módulo de Instagram activo en producción.</p>
+    </div>
+);
+
+const PublicPageViewV4 = ({ slugOverride }) => {
     const { slug } = useParams();
     const navigate = useNavigate();
     const [page, setPage] = useState(null);
@@ -24,25 +38,16 @@ const PublicPageViewV4 = () => {
     const [systemConfig, setSystemConfig] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     // Form data state
     const [formData, setFormData] = useState({ nombre: '', correo: '', telefono: '', mensaje: '' });
-    const [isSubmitting, setIsSubmitting] = useState(false);
-
-    const resolveMediaPath = (path) => {
-        if (!path) return '';
-        if (path.startsWith('http')) return path;
-        // Clean leading slash if any
-        const cleanPath = path.startsWith('/') ? path.substring(1) : path;
-        // Ensure we point to the absolute URL of the backend
-        return `${UPLOADS_URL}/${cleanPath}`;
-    };
 
     useEffect(() => {
         const fetchPage = async () => {
             try {
                 // Fetch site stories for hero components
-                const targetSlug = slug || 'homepage_v4';
+                const targetSlug = slugOverride || slug || 'bienvenido';
 
                 // Parallel fetch for content and dynamic data
                 // Parallel fetch for content and branding (critical)
@@ -58,7 +63,7 @@ const PublicPageViewV4 = () => {
                     const [gRes, cRes, servicesRes, hRes] = await Promise.all([
                         galeriaService.getEventos().catch(() => []),
                         galeriaService.getCategorias().catch(() => []),
-                        fetch(`${API_BASE_URL}/services`).then(r => r.json()).catch(() => []),
+                        fetch(`${API_BASE_URL}/servicios`).then(r => r.json()).catch(() => []),
                         fetch(`${API_BASE_URL}/historias`).then(r => r.json()).catch(() => [])
                     ]);
                     setAllEvents(gRes);
@@ -80,6 +85,23 @@ const PublicPageViewV4 = () => {
                 if ((isNotPublished || isNotVisible) && !isPreview) {
                     setError('La página aún no está disponible para el público.');
                 } else {
+                    // Critical Fix: Ensure content and style_config are parsed if they're strings
+                    if (data && data.content && typeof data.content === 'string') {
+                        try {
+                            data.content = JSON.parse(data.content);
+                        } catch (e) {
+                            console.error("Error parsing content in public view:", e);
+                            data.content = [];
+                        }
+                    }
+                    if (data && data.style_config && typeof data.style_config === 'string') {
+                        try {
+                            data.style_config = JSON.parse(data.style_config);
+                        } catch (e) {
+                            console.error("Error parsing style_config in public view:", e);
+                            data.style_config = { canvasBg: '#121212', canvasText: '#FFFFFF' };
+                        }
+                    }
                     setPage(data);
                     document.title = `${data.nombre} | ArchiPlanner`;
                 }
@@ -91,7 +113,7 @@ const PublicPageViewV4 = () => {
             }
         };
         fetchPage();
-    }, [slug]);
+    }, [slug, slugOverride]);
 
     const handleFormSubmit = async (e, config) => {
         e.preventDefault();
@@ -128,7 +150,7 @@ const PublicPageViewV4 = () => {
             descFontFamily = '', ctaAlignment = 'right'
         } = conf;
 
-        const resolvedPath = resolveMediaPath(media_path);
+        const resolvedPath = getImageUrl(media_path);
         const isSvg = (media_type === 'svg' || (media_path && media_path.trim().startsWith('<svg')));
 
         return (
@@ -176,7 +198,7 @@ const PublicPageViewV4 = () => {
         const { source = 'servicios', columns = 3, limit = 6, sectionFilter = 'todos', cardStyle = {}, mediaPreference = 'priority_svg' } = conf;
 
         let items = [];
-        if (source === 'servicios') {
+        if (source === 'servicios' && Array.isArray(allServices)) {
             items = allServices.filter(s => sectionFilter === 'todos' || s.seccion === sectionFilter).slice(0, limit);
         }
 
@@ -270,24 +292,24 @@ const PublicPageViewV4 = () => {
                     </div>
                 );
             case 'gallery':
-                if (config.source === 'dynamic') {
-                    const currentCat = activeCategory || config.category || 'todos';
-                    const filtered = allEvents.filter(ev => 
-                        currentCat === 'todos' || 
-                        ev.slug === currentCat || 
-                        (ev.categoria_nombre && ev.categoria_nombre.toLowerCase() === currentCat.toLowerCase())
-                    );
-                    
-                    return (
+            if (config.source === 'dynamic') {
+                const currentCat = activeCategory || config.category || 'todos';
+                const filtered = Array.isArray(allEvents) ? allEvents.filter(ev =>
+                    currentCat === 'todos' ||
+                    ev.slug === currentCat ||
+                    (ev.categoria_nombre && ev.categoria_nombre.toLowerCase() === currentCat.toLowerCase())
+                ) : [];
+
+                return (
                         <div className="v4-portfolio-container section-padding">
                             <div className="v4-portfolio-filters">
-                                <button 
+                                <button
                                     className={`v4-filter-pill ${currentCat === 'todos' ? 'active' : ''}`}
                                     onClick={() => setActiveCategory('todos')}
                                 >TODOS</button>
                                 {allCategories.map(cat => (
-                                    <button 
-                                        key={cat.id} 
+                                    <button
+                                        key={cat.id}
                                         className={`v4-filter-pill ${currentCat === cat.slug ? 'active' : ''}`}
                                         onClick={() => setActiveCategory(cat.slug)}
                                     >
@@ -295,14 +317,14 @@ const PublicPageViewV4 = () => {
                                     </button>
                                 ))}
                             </div>
-                            <div className="v4-portfolio-grid" style={{ 
+                            <div className="v4-portfolio-grid" style={{
                                 gridTemplateColumns: `repeat(${config.columns || 3}, 1fr)`,
-                                gap: `${config.gap || 20}px` 
+                                gap: `${config.gap || 20}px`
                             }}>
                                 {filtered.map((ev, idx) => (
                                     <div key={idx} className="v4-portfolio-card">
                                         <div className="portfolio-media">
-                                            <img src={resolveMediaPath(ev.portada_url)} alt={ev.titulo} loading="lazy" />
+                                            <img src={getImageUrl(ev.portada_url)} alt={ev.titulo} loading="lazy" />
                                         </div>
                                         <div className="portfolio-content">
                                             <div className="portfolio-tag">{ev.categoria_nombre || 'EVENTO'}</div>
@@ -316,13 +338,13 @@ const PublicPageViewV4 = () => {
                 }
                 return (
                     <div className="v4-gallery-container section-padding">
-                        <div className="v4-gallery-grid" style={{ 
+                        <div className="v4-gallery-grid" style={{
                             gridTemplateColumns: `repeat(${config.columns || 4}, 1fr)`,
-                            gap: `${config.gap || 10}px` 
+                            gap: `${config.gap || 10}px`
                         }}>
                             {(config.images || []).map((img, idx) => (
                                 <div key={idx} className="v4-gallery-item">
-                                    <img src={resolveMediaPath(img)} alt={`Gallery ${idx}`} />
+                                    <img src={getImageUrl(img)} alt={`Gallery ${idx}`} />
                                 </div>
                             ))}
                         </div>
@@ -340,7 +362,25 @@ const PublicPageViewV4 = () => {
                         dangerouslySetInnerHTML={{ __html: config.content }} />
                 );
             case 'image':
-                return <img src={config.src || ''} style={{ width: '100%', display: 'block', borderRadius: '8px' }} alt={config.alt} />;
+                return (
+                    <div className="v4-image-rendered" style={{
+                        aspectRatio: config.aspectRatio || 'auto',
+                        overflow: 'hidden',
+                        borderRadius: config.borderRadius || '12px',
+                        boxShadow: config.boxShadow || 'none'
+                    }}>
+                        <img
+                            src={getImageUrl(config.media_path || config.src)}
+                            style={{
+                                width: '100%',
+                                height: '100%',
+                                objectFit: config.objectFit || 'cover',
+                                display: 'block'
+                            }}
+                            alt={config.titulo || config.alt || 'Imagen ArchiPlanner'}
+                        />
+                    </div>
+                );
             case 'button':
                 const handleClick = () => {
                     if (config.linkType === 'internal') {
@@ -370,27 +410,17 @@ const PublicPageViewV4 = () => {
                         <h3 className="v4-premium-title" style={{ fontSize: '32px', marginBottom: '30px', textAlign: 'center' }}>
                             {config.title || 'Contáctanos'}
                         </h3>
-                        <form className="form-v4-grid" onSubmit={(e) => handleFormSubmit(e, config)}>
-                            <div className="form-field">
-                                <label>Nombre Completo</label>
-                                <input type="text" className="dense-input" required value={formData.nombre} onChange={(e) => setFormData({ ...formData, nombre: e.target.value })} />
-                            </div>
-                            <div className="form-field">
-                                <label>Correo Electrónico</label>
-                                <input type="email" className="dense-input" required value={formData.correo} onChange={(e) => setFormData({ ...formData, correo: e.target.value })} />
-                            </div>
-                            <div className="form-field full">
-                                <label>Teléfono</label>
-                                <input type="text" className="dense-input" value={formData.telefono} onChange={(e) => setFormData({ ...formData, telefono: e.target.value })} />
-                            </div>
-                            <div className="form-field full">
-                                <label>Mensaje</label>
-                                <textarea className="dense-input" required value={formData.mensaje} onChange={(e) => setFormData({ ...formData, mensaje: e.target.value })}></textarea>
-                            </div>
-                            <button className="btn-v4 btn-v4-primary full" disabled={isSubmitting}>
-                                {isSubmitting ? 'Enviando...' : (config.buttonLabel || 'Enviar')}
-                            </button>
-                        </form>
+                        <DynamicForm
+                            fields={[
+                                { name: 'nombre', label: 'Nombre Completo', type: 'text', placeholder: ' ', required: true },
+                                { name: 'correo', label: 'Correo Electrónico', type: 'email', placeholder: ' ', required: true },
+                                { name: 'telefono', label: 'Teléfono Móvil', type: 'text', placeholder: ' ', required: false, fullWidth: true },
+                                { name: 'mensaje', label: 'Cuéntanos tu visión', type: 'textarea', placeholder: ' ', required: true, rows: 4, fullWidth: true }
+                            ]}
+                            onSubmit={(data) => handleFormSubmit({ preventDefault: () => { } }, data)}
+                            submitText={config.buttonLabel || 'Solicitar Asesoría Exclusiva'}
+                            isLoading={isSubmitting}
+                        />
                     </div>
                 );
             case 'stories':
@@ -450,7 +480,7 @@ const PublicPageViewV4 = () => {
                 return (
                     <div className="v4-cta-phone-container">
                         <PhoneMockup
-                            src={resolveMediaPath(config.phoneVideo)}
+                            src={getImageUrl(config.phoneVideo)}
                             className="v4-cta-phone-pop"
                         />
                         <div className="v4-cta-phone-component" style={{ backgroundColor: config.bgColor || '#121212' }}>
@@ -491,15 +521,42 @@ const PublicPageViewV4 = () => {
                 return <EditorialTestimonials />;
             case 'PULSE':
                 return <SectionPulse {...config} />;
+            case 'services-grid-v4':
+                return <ServicesGridV4 {...config} services={allServices} />;
+            case 'services-corporate-v4':
+                return <ServicesCorporateV4 {...config} services={allServices} />;
+            case 'founder-cta-v4':
+                return <FounderCtaV4 {...config} />;
+            case 'INSTAGRAM':
+                return <InstagramFeed />;
+            case 'contact-v4':
+                return <ContactSectionV4 config={config} />;
             default:
                 return null;
         }
     };
 
     if (loading) return (
-        <div className="public-loader">
-            <div className="spinner-loader grow"></div>
-            <p style={{ color: 'white', marginTop: '20px' }}>Cargando experiencia ArchiPlanner...</p>
+        <div className="public-loader premium-loader-v4">
+            <div className="loader-orbit-container">
+                <div className="loader-orbit-ring ring-1"></div>
+                <div className="loader-orbit-ring ring-2"></div>
+                <div className="loader-logo-wrapper">
+                    {systemConfig?.logo_path ? (
+                        <img src={`${UPLOADS_URL}${systemConfig.logo_path}`} alt="ArchiPlanner" className="loader-logo-premium" />
+                    ) : (
+                        <div className="loader-logo-fallback">A</div>
+                    )}
+                </div>
+            </div>
+            
+            <div className="loader-content-fade">
+                <p className="loader-brand-label">ArchiPlanner <span className="editorial-mark">®</span></p>
+                <div className="loader-progress-minimal">
+                    <div className="loader-progress-inner"></div>
+                </div>
+                <p className="loader-status-text">Curando tu experiencia editorial...</p>
+            </div>
         </div>
     );
 
@@ -513,19 +570,49 @@ const PublicPageViewV4 = () => {
 
     return (
         <div className="site-wrapper fade-in">
-            {(page?.content || []).map(row => (
-                <BuilderRow key={row.id} id={row.id} config={row.config}>
-                    {(row.children || []).map(col => (
-                        <BuilderColumn key={col.id} id={col.id} span={col.span} config={col.config}>
-                            {(col.children || []).map(comp => (
-                                <div key={comp.id} className="rendered-component">
-                                    {renderComponent(comp)}
-                                </div>
-                            ))}
-                        </BuilderColumn>
-                    ))}
-                </BuilderRow>
-            ))}
+            {(!page?.content || page.content.length === 0) ? (
+                /* Fallback for empty pages (Fixed Black Screen Issue) */
+                <div style={{
+                    padding: '120px 20px',
+                    textAlign: 'center',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    minHeight: '70vh',
+                    background: page?.style_config?.canvasBg || '#121212'
+                }}>
+                    <h2 style={{
+                        fontFamily: 'var(--font-serif)',
+                        fontSize: '3rem',
+                        marginBottom: '20px',
+                        color: page?.style_config?.canvasText || '#FFFFFF'
+                    }}>Próximamente</h2>
+                    <p style={{
+                        opacity: 0.5,
+                        maxWidth: '500px',
+                        fontSize: '1.1rem',
+                        color: page?.style_config?.canvasText || '#FFFFFF'
+                    }}>
+                        Esta sección está siendo curada editorialmente para ofrecerte una experienciaArchiPlanner inolvidable.
+                    </p>
+                    <div style={{ marginTop: '40px', width: '40px', height: '1px', background: 'var(--color-primary)' }}></div>
+                </div>
+            ) : (
+                (page?.content || []).map(row => (
+                    <BuilderRow key={row.id} id={row.id} config={row.config}>
+                        {(row.children || []).map(col => (
+                            <BuilderColumn key={col.id} id={col.id} span={col.span} config={col.config}>
+                                {(col.children || []).map(comp => (
+                                    <div key={comp.id} className="rendered-component">
+                                        {renderComponent(comp)}
+                                    </div>
+                                ))}
+                            </BuilderColumn>
+                        ))}
+                    </BuilderRow>
+                ))
+            )}
 
             <style dangerouslySetInnerHTML={{
                 __html: `
@@ -533,11 +620,44 @@ const PublicPageViewV4 = () => {
                 :root { --color-primary: #d4af37; --color-dark: #000000; --color-onyx: #121212; --font-premium: 'Outfit', sans-serif; }
                 .site-wrapper { 
                     min-height: 100vh; 
-                    background: ${page?.style_config?.canvasBg || '#fff'}; 
-                    color: ${page?.style_config?.canvasText || 'inherit'};
+                    background: ${page?.style_config?.canvasBg || '#121212'}; 
+                    color: ${page?.style_config?.canvasText || '#FFFFFF'};
                     font-family: var(--font-premium); 
                 }
-                .public-loader { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; background: #000; }
+                .premium-loader-v4 { 
+                    display: flex; flex-direction: column; align-items: center; justify-content: center; 
+                    height: 100vh; background: #0a0a0a; position: fixed; top: 0; left: 0; width: 100%; z-index: 99999;
+                    font-family: var(--font-premium);
+                }
+                .loader-orbit-container { position: relative; width: 150px; height: 150px; margin-bottom: 50px; display: flex; align-items: center; justify-content: center; }
+                .loader-orbit-ring { 
+                    position: absolute; border-radius: 50%; border: 1px solid rgba(212, 175, 55, 0.1);
+                    animation: orbitRotate 10s linear infinite; 
+                }
+                .ring-1 { width: 100%; height: 100%; border-top-color: var(--color-primary); animation-duration: 3s; }
+                .ring-2 { width: 80%; height: 80%; border-bottom-color: var(--color-primary); animation-duration: 2s; animation-direction: reverse; }
+                
+                .loader-logo-wrapper { 
+                    width: 70px; height: 70px; display: flex; align-items: center; justify-content: center;
+                    background: rgba(255,255,255,0.02); border-radius: 50%; backdrop-filter: blur(10px);
+                    box-shadow: 0 0 30px rgba(0,0,0,0.5); z-index: 5;
+                }
+                .loader-logo-premium { width: 45px; height: 45px; object-fit: contain; filter: drop-shadow(0 0 10px rgba(212, 175, 55, 0.3)); animation: logoPulse 2s ease-in-out infinite; }
+                .loader-logo-fallback { font-size: 24px; font-weight: 700; color: var(--color-primary); }
+
+                .loader-content-fade { text-align: center; animation: contentFadeIn 1s ease-out; }
+                .loader-brand-label { font-size: 14px; letter-spacing: 5px; text-transform: uppercase; color: #fff; font-weight: 700; margin-bottom: 20px; }
+                .editorial-mark { color: var(--color-primary); font-size: 10px; vertical-align: super; }
+                
+                .loader-progress-minimal { width: 120px; height: 1px; background: rgba(255,255,255,0.05); margin: 0 auto 20px; border-radius: 2px; overflow: hidden; }
+                .loader-progress-inner { width: 40%; height: 100%; background: var(--color-primary); animation: progressMove 2s cubic-bezier(0.65, 0, 0.35, 1) infinite; }
+                
+                .loader-status-text { font-size: 10px; letter-spacing: 2px; color: rgba(255,255,255,0.4); text-transform: uppercase; font-weight: 400; }
+
+                @keyframes orbitRotate { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+                @keyframes logoPulse { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.05); opacity: 0.8; } }
+                @keyframes progressMove { 0% { transform: translateX(-100%); width: 10%; } 50% { width: 40%; } 100% { transform: translateX(300%); width: 10%; } }
+                @keyframes contentFadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
                 .public-error-page { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; text-align: center; background: #000; color: white; }
                 .public-error-page h1 { font-size: 120px; margin: 0; color: var(--color-primary); font-weight: 800; }
                 .btn-v4 { padding: 14px 34px; border: none; font-weight: 700; font-size: 16px; cursor: pointer; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); text-transform: uppercase; letter-spacing: 1px; }
@@ -547,11 +667,8 @@ const PublicPageViewV4 = () => {
                 .btn-v4-secondary:hover { background: #1a1a1a; filter: brightness(1.2); }
                 .btn-v4-outline { background: transparent; color: var(--color-primary); border: 1px solid var(--color-primary); }
                 .btn-v4.full { width: 100%; }
-                .form-rendered-container.premium-form-v4 { background: var(--color-onyx); border: 1px solid rgba(255,132,132,0.1); padding: 50px; border-radius: 30px; }
-                .form-v4-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-                .form-field { display: flex; flex-direction: column; gap: 8px; }
-                .form-field label { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: rgba(255,255,255,0.5); font-weight: 700; }
-                .form-field.full { grid-column: span 2; }
+                .form-field.full { grid-column: span 6 !important; }
+                @media (max-width: 768px) { .form-v4-grid { grid-template-columns: 1fr; } }
 
                 .v4-premium-header-group { padding: 40px 0; display: flex; flex-direction: column; width: 100%; }
                 .v4-premium-header-group.text-left { align-items: flex-start; text-align: left; }
@@ -604,13 +721,8 @@ const PublicPageViewV4 = () => {
                 }
                 .v4-portfolio-card:hover::after { opacity: 1; }
                 
-                @media (max-width: 768px) {
-                    .v4-premium-title { font-size: 38px; }
-                    .form-v4-grid { grid-template-columns: 1fr; }
-                    .form-field.full { grid-column: span 1; }
-                }
-                
-                /* Stories Public Styles */
+
+                /* CTA PHONE V4 PREMIUM */
                 .stories-horizontal-scroll { display: flex; gap: 20px; overflow-x: auto; padding: 10px 0; scrollbar-width: none; }
                 .stories-horizontal-scroll::-webkit-scrollbar { display: none; }
                 .story-item-v4 { display: flex; flex-direction: column; align-items: center; min-width: 90px; cursor: pointer; transition: transform 0.3s ease; }
@@ -689,8 +801,8 @@ const PublicPageViewV4 = () => {
 
                 @media (max-width: 992px) {
                     .v4-cta-phone-container { flex-direction: column; padding: 40px 20px; }
-                    .v4-cta-phone-component { width: 100%; border-radius: 30px; padding: 400px 30px 60px; margin: 100px 0 0; }
-                    .v4-cta-phone-pop { position: relative !important; left: 0 !important; top: 0 !important; transform: rotate(0) translateY(0) scale(0.9) !important; margin: 0 auto -350px !important; }
+                    .v4-cta-phone-component { width: 100%; border-radius: 30px; padding: 200px 30px 60px; margin: 100px 0 0; }
+                    .v4-cta-phone-pop { position: relative !important; left: 0 !important; top: 0 !important; transform: rotate(-5deg) translateY(0) scale(0.7) !important; margin: 0 auto -350px !important; }
                     .c-title { font-size: 38px; }
                     .v4-cta-content { text-align: center; }
                     .c-closure { margin-left: auto; margin-right: auto; }

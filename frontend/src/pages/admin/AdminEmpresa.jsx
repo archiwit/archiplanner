@@ -14,10 +14,11 @@ import {
     AlertCircle,
     Loader2,
     Edit2,
-    Plus
+    Plus,
+    Share2
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
-import { API_BASE_URL, UPLOADS_URL } from '../../config';
+import { API_BASE_URL, UPLOADS_URL, getUploadUrl } from '../../config';
 import '../style/AdminEmpresa.css';
 
 const AdminEmpresa = () => {
@@ -42,7 +43,18 @@ const AdminEmpresa = () => {
         color_terciario: '#5fdcc7',
         color_fondo: '#121212',
         logo_cuadrado_path: '',
-        logo_horizontal_path: ''
+        logo_horizontal_path: '',
+        icon_contact_svg: '',
+        icon_footer_svg: '',
+        ig_svg: '',
+        fb_svg: '',
+        tt_svg: '',
+        li_svg: '',
+        x_svg: '',
+        ws_svg: '',
+        pi_url: '',
+        pi_svg: '',
+        logo_black_path: ''
     });
 
     const [loading, setLoading] = useState(false);
@@ -50,6 +62,7 @@ const AdminEmpresa = () => {
     
     const fileInputHorizontal = useRef(null);
     const fileInputCuadrado = useRef(null);
+    const fileInputBlack = useRef(null);
 
     useEffect(() => {
         const fetchSpecific = async () => {
@@ -75,7 +88,18 @@ const AdminEmpresa = () => {
                     color_terciario: res.data.color_terciario || '#5fdcc7',
                     color_fondo: res.data.color_fondo || '#121212',
                     logo_cuadrado_path: res.data.logo_cuadrado_path || '',
-                    logo_horizontal_path: res.data.logo_horizontal_path || ''
+                    logo_horizontal_path: res.data.logo_horizontal_path || '',
+                    icon_contact_svg: res.data.icon_contact_svg || '',
+                    icon_footer_svg: res.data.icon_footer_svg || '',
+                    ig_svg: res.data.ig_svg || '',
+                    fb_svg: res.data.fb_svg || '',
+                    tt_svg: res.data.tt_svg || '',
+                    li_svg: res.data.li_svg || '',
+                    x_svg: res.data.x_svg || '',
+                    ws_svg: res.data.ws_svg || '',
+                    pi_url: res.data.pi_url || '',
+                    pi_svg: res.data.pi_svg || '',
+                    logo_black_path: res.data.logo_black_path || ''
                 });
             } catch (err) {
                 console.error("Error al cargar empresa:", err);
@@ -107,7 +131,18 @@ const AdminEmpresa = () => {
                 color_terciario: companyConfig.color_terciario || '#5fdcc7',
                 color_fondo: companyConfig.color_fondo || '#121212',
                 logo_cuadrado_path: companyConfig.logo_cuadrado_path || '',
-                logo_horizontal_path: companyConfig.logo_horizontal_path || ''
+                logo_horizontal_path: companyConfig.logo_horizontal_path || '',
+                icon_contact_svg: companyConfig.icon_contact_svg || '',
+                icon_footer_svg: companyConfig.icon_footer_svg || '',
+                ig_svg: companyConfig.ig_svg || '',
+                fb_svg: companyConfig.fb_svg || '',
+                tt_svg: companyConfig.tt_svg || '',
+                li_svg: companyConfig.li_svg || '',
+                x_svg: companyConfig.x_svg || '',
+                ws_svg: companyConfig.ws_svg || '',
+                pi_url: companyConfig.pi_url || '',
+                pi_svg: companyConfig.pi_svg || '',
+                logo_black_path: companyConfig.logo_black_path || ''
             });
         }
     }, [id, companyConfig]);
@@ -138,7 +173,8 @@ const AdminEmpresa = () => {
             
             if (res.data.success) {
                 const updatedPath = res.data.path;
-                const pathKey = type === 'horizontal' ? 'logo_horizontal_path' : 'logo_cuadrado_path';
+                const pathKey = type === 'horizontal' ? 'logo_horizontal_path' : 
+                                 type === 'cuadrado' ? 'logo_cuadrado_path' : 'logo_black_path';
                 
                 setFetchedConfig(prev => ({ ...prev, [pathKey]: updatedPath }));
                 
@@ -234,7 +270,7 @@ const AdminEmpresa = () => {
                                 onClick={() => handleImageClick(fileInputHorizontal)}
                             >
                                 {fetchedConfig?.logo_horizontal_path ? (
-                                    <img src={`${UPLOADS_URL}${fetchedConfig.logo_horizontal_path}`} alt="Logo Horizontal" />
+                                    <img src={getUploadUrl(fetchedConfig.logo_horizontal_path)} alt="Logo Horizontal" />
                                 ) : (
                                     <div className="placeholder-icon">
                                         <Plus size={40} />
@@ -262,7 +298,7 @@ const AdminEmpresa = () => {
                                 onClick={() => handleImageClick(fileInputCuadrado)}
                             >
                                 {fetchedConfig?.logo_cuadrado_path ? (
-                                    <img src={`${UPLOADS_URL}${fetchedConfig.logo_cuadrado_path}`} alt="Logo Cuadrado" />
+                                    <img src={getUploadUrl(fetchedConfig.logo_cuadrado_path)} alt="Logo Cuadrado" />
                                 ) : (
                                     <div className="placeholder-icon">
                                         <Plus size={40} />
@@ -279,6 +315,35 @@ const AdminEmpresa = () => {
                                 ref={fileInputCuadrado} 
                                 style={{ display: 'none' }} 
                                 onChange={(e) => handleFileChange(e, 'cuadrado')}
+                                accept="image/*"
+                            />
+                        </div>
+
+                        <div className="logo-upload-section" style={{ marginTop: '30px' }}>
+                            <h3>Logo Negro (Contratos/Impresión)</h3>
+                            <div 
+                                className="logo-display" 
+                                style={{ background: '#fff' }} // White bg to see black logo clearly
+                                onClick={() => handleImageClick(fileInputBlack)}
+                            >
+                                {fetchedConfig?.logo_black_path ? (
+                                    <img src={getUploadUrl(fetchedConfig.logo_black_path)} alt="Logo Negro" />
+                                ) : (
+                                    <div className="placeholder-icon" style={{ color: '#000' }}>
+                                        <Plus size={40} />
+                                        <span>Click para subir</span>
+                                    </div>
+                                )}
+                                <div className="logo-overlay">
+                                    <Edit2 size={24} />
+                                    <span>Cambiar Logo Negro</span>
+                                </div>
+                            </div>
+                            <input 
+                                type="file" 
+                                ref={fileInputBlack} 
+                                style={{ display: 'none' }} 
+                                onChange={(e) => handleFileChange(e, 'black')}
                                 accept="image/*"
                             />
                         </div>
@@ -415,72 +480,156 @@ const AdminEmpresa = () => {
                         </section>
 
                         <section className="form-section" style={{ marginTop: '30px' }}>
-                            <h3><Globe size={20} /> Redes Sociales</h3>
+                            <h3><Globe size={20} /> Redes Sociales (Enlaces)</h3>
                             <div className="form-grid">
                                 <div className="input-container">
                                     <label>Instagram URL</label>
                                     <div className="input-with-icon">
                                         <span className="prefix-icon"><Plus size={18} /></span>
-                                        <input 
-                                            type="url" 
-                                            name="ig_url" 
-                                            value={formData.ig_url} 
-                                            onChange={handleChange} 
-                                            placeholder="https://instagram.com/perfil"
-                                        />
+                                        <input type="url" name="ig_url" value={formData.ig_url} onChange={handleChange} placeholder="https://instagram.com/perfil" />
                                     </div>
                                 </div>
                                 <div className="input-container">
                                     <label>Facebook URL</label>
                                     <div className="input-with-icon">
                                         <span className="prefix-icon"><Plus size={18} /></span>
-                                        <input 
-                                            type="url" 
-                                            name="fb_url" 
-                                            value={formData.fb_url} 
-                                            onChange={handleChange} 
-                                            placeholder="https://facebook.com/perfil"
-                                        />
+                                        <input type="url" name="fb_url" value={formData.fb_url} onChange={handleChange} placeholder="https://facebook.com/perfil" />
                                     </div>
                                 </div>
                                 <div className="input-container">
                                     <label>TikTok URL</label>
                                     <div className="input-with-icon">
                                         <span className="prefix-icon"><Plus size={18} /></span>
-                                        <input 
-                                            type="url" 
-                                            name="tt_url" 
-                                            value={formData.tt_url} 
-                                            onChange={handleChange} 
-                                            placeholder="https://tiktok.com/@perfil"
-                                        />
+                                        <input type="url" name="tt_url" value={formData.tt_url} onChange={handleChange} placeholder="https://tiktok.com/@perfil" />
                                     </div>
                                 </div>
                                 <div className="input-container">
                                     <label>LinkedIn URL</label>
                                     <div className="input-with-icon">
                                         <span className="prefix-icon"><Plus size={18} /></span>
-                                        <input 
-                                            type="url" 
-                                            name="li_url" 
-                                            value={formData.li_url} 
-                                            onChange={handleChange} 
-                                            placeholder="https://linkedin.com/company/perfil"
-                                        />
+                                        <input type="url" name="li_url" value={formData.li_url} onChange={handleChange} placeholder="https://linkedin.com/perfil" />
                                     </div>
                                 </div>
                                 <div className="input-container">
-                                    <label>Red-X (Twitter) URL</label>
+                                    <label>X / Twitter URL</label>
                                     <div className="input-with-icon">
                                         <span className="prefix-icon"><Plus size={18} /></span>
-                                        <input 
-                                            type="url" 
-                                            name="x_url" 
-                                            value={formData.x_url} 
-                                            onChange={handleChange} 
-                                            placeholder="https://x.com/perfil"
-                                        />
+                                        <input type="url" name="x_url" value={formData.x_url} onChange={handleChange} placeholder="https://x.com/perfil" />
                                     </div>
+                                </div>
+                                <div className="input-container">
+                                    <label>WhatsApp URL</label>
+                                    <div className="input-with-icon">
+                                        <span className="prefix-icon"><Plus size={18} /></span>
+                                        <input type="url" name="web_url" value={formData.web_url} onChange={handleChange} placeholder="https://wa.me/..." />
+                                    </div>
+                                </div>
+                                <div className="input-container">
+                                    <label>Pinterest URL</label>
+                                    <div className="input-with-icon">
+                                        <span className="prefix-icon"><Plus size={18} /></span>
+                                        <input type="url" name="pi_url" value={formData.pi_url} onChange={handleChange} placeholder="https://pinterest.com/perfil" />
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
+
+                        <section className="form-section" style={{ marginTop: '30px' }}>
+                            <h3><Share2 size={20} /> Iconos de Redes Sociales (SVG)</h3>
+                            <p style={{ fontSize: '12px', opacity: 0.6, marginBottom: '20px' }}>
+                                Personaliza el diseño de los iconos sociales pegando el código SVG.
+                            </p>
+                            <div className="form-grid">
+                                <div className="input-container">
+                                    <label>Instagram SVG</label>
+                                    <textarea 
+                                        name="ig_svg" 
+                                        value={formData.ig_svg} 
+                                        onChange={handleChange} 
+                                        placeholder="<svg ...>...</svg>"
+                                        className="svg-textarea"
+                                    />
+                                </div>
+                                <div className="input-container">
+                                    <label>Facebook SVG</label>
+                                    <textarea 
+                                        name="fb_svg" 
+                                        value={formData.fb_svg} 
+                                        onChange={handleChange} 
+                                        placeholder="<svg ...>...</svg>"
+                                        className="svg-textarea"
+                                    />
+                                </div>
+                                <div className="input-container">
+                                    <label>TikTok SVG</label>
+                                    <textarea 
+                                        name="tt_svg" 
+                                        value={formData.tt_svg} 
+                                        onChange={handleChange} 
+                                        placeholder="<svg ...>...</svg>"
+                                        className="svg-textarea"
+                                    />
+                                </div>
+                                <div className="input-container">
+                                    <label>LinkedIn SVG</label>
+                                    <textarea 
+                                        name="li_svg" 
+                                        value={formData.li_svg} 
+                                        onChange={handleChange} 
+                                        placeholder="<svg ...>...</svg>"
+                                        className="svg-textarea"
+                                    />
+                                </div>
+                                <div className="input-container">
+                                    <label>Twitter/X SVG</label>
+                                    <textarea 
+                                        name="x_svg" 
+                                        value={formData.x_svg} 
+                                        onChange={handleChange} 
+                                        placeholder="<svg ...>...</svg>"
+                                        className="svg-textarea"
+                                    />
+                                </div>
+                                <div className="input-container">
+                                    <label>Pinterest SVG</label>
+                                    <textarea 
+                                        name="pi_svg" 
+                                        value={formData.pi_svg} 
+                                        onChange={handleChange} 
+                                        placeholder="<svg ...>...</svg>"
+                                        className="svg-textarea"
+                                    />
+                                </div>
+                            </div>
+                        </section>
+
+                        <section className="form-section" style={{ marginTop: '30px' }}>
+                            <h3><Globe size={20} /> Iconos Personalizados (SVG)</h3>
+                            <p style={{ fontSize: '12px', opacity: 0.6, marginBottom: '20px' }}>
+                                Pega el código &lt;svg&gt;...&lt;/svg&gt; para personalizar los iconos principales.
+                            </p>
+                            <div className="form-grid">
+                                <div className="input-container full-width">
+                                    <label>Icono Sección Contacto (SVG)</label>
+                                    <textarea 
+                                        name="icon_contact_svg" 
+                                        value={formData.icon_contact_svg} 
+                                        onChange={handleChange} 
+                                        placeholder="<svg ...>...</svg>"
+                                        rows={4}
+                                        style={{ background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', color: '#fff', padding: '10px', width: '100%', fontFamily: 'monospace', fontSize: '11px' }}
+                                    ></textarea>
+                                </div>
+                                <div className="input-container full-width">
+                                    <label>Icono Footer / Global (SVG)</label>
+                                    <textarea 
+                                        name="icon_footer_svg" 
+                                        value={formData.icon_footer_svg} 
+                                        onChange={handleChange} 
+                                        placeholder="<svg ...>...</svg>"
+                                        rows={4}
+                                        style={{ background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', color: '#fff', padding: '10px', width: '100%', fontFamily: 'monospace', fontSize: '11px' }}
+                                    ></textarea>
                                 </div>
                             </div>
                         </section>

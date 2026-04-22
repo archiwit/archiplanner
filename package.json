@@ -1,5 +1,6 @@
 {
   "dependencies": {
-    "basic-ftp": "^5.2.2"
+    "basic-ftp": "^5.2.2",
+    "dotenv": "^17.4.2"
   }
 }

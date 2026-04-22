@@ -4,7 +4,7 @@ import {
     Trash2, Copy, Link, ExternalLink, MapPin, Mail, Layers, Star, 
     MessageSquare, Briefcase, LayoutDashboard, Clock, Grid, Check,
     FileText, ArrowRight, Play, Monitor, Tablet, Smartphone, Save, Eye,
-    ChevronRight, ChevronLeft, Globe, Search, Info
+    ChevronRight, ChevronLeft, Globe, Search, Info, User
 } from 'lucide-react';
 import MediaSelectorModal from './MediaSelectorModal';
 import paginasV4Service from '../../services/paginasV4Service';
@@ -566,15 +566,133 @@ const PropertyPanel = ({ activeElement, updateElement, onClose, deleteElement, d
                     </div>
                 )}
 
-                {/* IMAGE */}
-                {type === 'image' && (
-                    <div className="prop-group">
-                        <label>URL / Archivo</label>
-                        <div className="flex-row">
-                            <input type="text" value={config.src || ''} onChange={(e) => handleConfigChange('src', e.target.value)} />
-                            <button className="btn-small" onClick={() => { setSelectionTarget('src'); setIsMediaModalOpen(true); }}>Galería</button>
+                {/* INSTAGRAM */}
+                {type === 'INSTAGRAM' && (
+                    <div className="v4-panel-info-box">
+                        <div className="info-icon"><Camera size={20} /></div>
+                        <h4>Configuración de API</h4>
+                        <p>Este bloque se alimenta de la <strong>Instagram Graph API</strong> vinculada a tu cuenta Business.</p>
+                        <div className="v4-status-tag" style={{ background: 'rgba(95, 220, 199, 0.1)', color: '#5fdcc7', padding: '10px', borderRadius: '8px', fontSize: '11px', marginTop: '10px', border: '1px solid rgba(95, 220, 199, 0.2)' }}>
+                            ESTADO: CONECTADO (GRAPH API 2026)
+                        </div>
+                        <div className="mt-15">
+                            <button className="btn-v4-outline w-full text-xs" onClick={() => window.open('https://developers.facebook.com/', '_blank')}>
+                                <Settings size={12} className="mr-2" /> Gestionar App Meta
+                            </button>
                         </div>
                     </div>
+                )}
+
+                {/* PULSE DE MARCA */}
+                {type === 'PULSE' && (
+                    <>
+                        <div className="section-title"><Star size={14} /> Pilares de Marca (Pulse)</div>
+                        <div className="prop-group">
+                            <label>Etiqueta (Overline)</label>
+                            <input type="text" value={config.tag || ''} onChange={(e) => handleConfigChange('tag', e.target.value)} />
+                        </div>
+                        <div className="prop-group">
+                            <label>Título Principal</label>
+                            <input type="text" value={config.title || ''} onChange={(e) => handleConfigChange('title', e.target.value)} />
+                        </div>
+                        <div className="prop-group">
+                            <label>Frase de Cierre</label>
+                            <input type="text" value={config.closingPhrase || ''} onChange={(e) => handleConfigChange('closingPhrase', e.target.value)} />
+                        </div>
+                        <div className="prop-group">
+                            <label>Color de Fondo de Sección</label>
+                            <div className="flex-row">
+                                <input type="color" value={config.bgColor || '#000000'} onChange={(e) => handleConfigChange('bgColor', e.target.value)} style={{ width: '50px', padding: '0', height: '38px', cursor: 'pointer' }} />
+                                <input type="text" value={config.bgColor || '#000000'} onChange={(e) => handleConfigChange('bgColor', e.target.value)} style={{ flex: 1 }} />
+                            </div>
+                            {renderSystemSwatches('bgColor')}
+                        </div>
+
+                        <div className="prop-group">
+                            <label>Color de Ornamentos (SVG)</label>
+                            <div className="flex-row">
+                                <input type="color" value={config.svgColor || '#ff8484'} onChange={(e) => handleConfigChange('svgColor', e.target.value)} style={{ width: '50px', padding: '0', height: '38px', cursor: 'pointer' }} />
+                                <input type="text" value={config.svgColor || '#ff8484'} onChange={(e) => handleConfigChange('svgColor', e.target.value)} style={{ flex: 1 }} />
+                            </div>
+                            {renderSystemSwatches('svgColor')}
+                        </div>
+
+                        <div className="prop-group">
+                            <label>Color de Texto General</label>
+                            <div className="flex-row">
+                                <input type="color" value={config.textColor || '#ffffff'} onChange={(e) => handleConfigChange('textColor', e.target.value)} style={{ width: '50px', padding: '0', height: '38px', cursor: 'pointer' }} />
+                                <input type="text" value={config.textColor || '#ffffff'} onChange={(e) => handleConfigChange('textColor', e.target.value)} style={{ flex: 1 }} />
+                            </div>
+                            {renderSystemSwatches('textColor')}
+                        </div>
+
+                        <div className="prop-group">
+                            <label>Color de Título (dejar vacío para degradado)</label>
+                            <div className="flex-row">
+                                <input type="color" value={config.titleColor || '#ffffff'} onChange={(e) => handleConfigChange('titleColor', e.target.value)} style={{ width: '50px', padding: '0', height: '38px', cursor: 'pointer' }} />
+                                <input type="text" value={config.titleColor || ''} placeholder="Ej: #ffffff" onChange={(e) => handleConfigChange('titleColor', e.target.value)} style={{ flex: 1 }} />
+                            </div>
+                            {renderSystemSwatches('titleColor')}
+                        </div>
+                    </>
+                )}
+
+                {/* SERVICIOS MODULARES V4 */}
+                {(type === 'services-grid-v4' || type === 'services-corporate-v4') && (
+                    <>
+                        <div className="section-title"><Grid size={14} /> Configuración de Servicios</div>
+                        <div className="prop-group">
+                            <label>Categoría a Mostrar</label>
+                            <select value={config.category || 'principales'} onChange={(e) => handleConfigChange('category', e.target.value)}>
+                                <option value="todos">Todos los servicios</option>
+                                <option value="principales">Principales / Hitos</option>
+                                <option value="sociales">Sociales / Familiares</option>
+                                <option value="corporativos">Corporativos / Business</option>
+                            </select>
+                        </div>
+
+                        {type === 'services-grid-v4' && (
+                            <div className="prop-group">
+                                <label>Variante de Diseño</label>
+                                <select value={config.variant || 'classic'} onChange={(e) => handleConfigChange('variant', e.target.value)}>
+                                    <option value="classic">Clásico (Tarjetas Editoriales)</option>
+                                    <option value="delicate">Delicado (Iconografía/Círculos)</option>
+                                </select>
+                            </div>
+                        )}
+
+                        <div className="prop-group">
+                            <label>Etiqueta de Sección (Tag)</label>
+                            <input type="text" value={config.tag || ''} placeholder="Ej: Expertise" onChange={(e) => handleConfigChange('tag', e.target.value)} />
+                        </div>
+
+                        <div className="prop-group">
+                            <label>Título de Sección</label>
+                            <input type="text" value={config.title || ''} placeholder="Ej: Nuestros Servicios" onChange={(e) => handleConfigChange('title', e.target.value)} />
+                        </div>
+
+                        <div className="prop-row-toggle">
+                            <label>Centrar Encabezado</label>
+                            <input type="checkbox" checked={config.centered || false} onChange={(e) => handleConfigChange('centered', e.target.checked)} />
+                        </div>
+                    </>
+                )}
+
+                {/* IMAGE */}
+                {type === 'image' && (
+                    <>
+                        <div className="prop-group">
+                            <label>URL / Archivo</label>
+                            <div className="flex-row">
+                                <input type="text" value={config.media_path || config.src || ''} onChange={(e) => handleConfigChange('media_path', e.target.value)} />
+                                <button className="btn-small" onClick={() => { setSelectionTarget('media_path'); setIsMediaModalOpen(true); }}>Galería</button>
+                            </div>
+                        </div>
+                        <div className="prop-group">
+                            <label>Título / Alt Text</label>
+                            <input type="text" value={config.titulo || ''} onChange={(e) => handleConfigChange('titulo', e.target.value)} />
+                        </div>
+                    </>
                 )}
 
                 {/* CARD V4 */}
@@ -797,6 +915,73 @@ const PropertyPanel = ({ activeElement, updateElement, onClose, deleteElement, d
                         </div>
                     </div>
                 )}
+
+                {/* FOUNDER CTA V4 */}
+                {type === 'founder-cta-v4' && (
+                    <div className="mt-10">
+                        <div className="section-title"><User size={14} /> CTA de Fundadora</div>
+                        
+                        <div className="prop-group">
+                            <label>Imagen del Fundador</label>
+                            <div className="flex-row">
+                                <input type="text" value={config.image || ''} onChange={(e) => handleConfigChange('image', e.target.value)} />
+                                <button className="btn-small" onClick={() => { setSelectionTarget('image'); setIsMediaModalOpen(true); }}>Galería</button>
+                            </div>
+                        </div>
+
+                        <div className="prop-group">
+                            <label>Posición de la Imagen</label>
+                            <select value={config.imagePosition || 'left'} onChange={(e) => handleConfigChange('imagePosition', e.target.value)}>
+                                <option value="left">Imagen a la Izquierda</option>
+                                <option value="right">Imagen a la Derecha</option>
+                            </select>
+                        </div>
+
+                        <div className="prop-group">
+                            <label>Cita Inspiradora (Trust Quote)</label>
+                            <textarea rows="5" value={config.quote || ''} onChange={(e) => handleConfigChange('quote', e.target.value)} />
+                        </div>
+
+                        <div className="prop-grid-2">
+                            <div className="prop-group">
+                                <label>Nombre</label>
+                                <input type="text" value={config.founderName || ''} onChange={(e) => handleConfigChange('founderName', e.target.value)} />
+                            </div>
+                            <div className="prop-group">
+                                <label>Cargo / Rol</label>
+                                <input type="text" value={config.founderRole || ''} onChange={(e) => handleConfigChange('founderRole', e.target.value)} />
+                            </div>
+                        </div>
+
+                        <div className="section-title mt-20"><ArrowRight size={14} /> Botón de Acción</div>
+                        <div className="prop-group">
+                            <label>Etiqueta del Botón</label>
+                            <input type="text" value={config.btnLabel || ''} onChange={(e) => handleConfigChange('btnLabel', e.target.value)} />
+                        </div>
+                        <div className="prop-group">
+                            <label>Enlace / Destino</label>
+                            <select value={config.btnLink || ''} onChange={(e) => handleConfigChange('btnLink', e.target.value)}>
+                                <option value="">Selecciona una página...</option>
+                                {availablePages.map(p => (
+                                    <option key={p.id} value={`/p/${p.slug}`}>{p.nombre}</option>
+                                ))}
+                                <option value="/contacto">Formulario de Contacto</option>
+                            </select>
+                            <input type="text" className="mt-10" placeholder="O pega una URL externa..." value={config.btnLink || ''} onChange={(e) => handleConfigChange('btnLink', e.target.value)} />
+                        </div>
+
+                        <div className="prop-grid-2 mt-20">
+                            <div className="prop-group">
+                                <label>Fondo de Bloque</label>
+                                <input type="color" value={config.bgColor || '#121212'} onChange={(e) => handleConfigChange('bgColor', e.target.value)} />
+                            </div>
+                            <div className="prop-group">
+                                <label>Color Acento</label>
+                                <input type="color" value={config.accentColor || '#ff8484'} onChange={(e) => handleConfigChange('accentColor', e.target.value)} />
+                            </div>
+                        </div>
+                    </div>
+                )}
             </div>
         );
     };
@@ -981,6 +1166,44 @@ const PropertyPanel = ({ activeElement, updateElement, onClose, deleteElement, d
                                 <option value="vertical">Vertical (Imagen Arriba)</option>
                                 <option value="horizontal-left">Horizontal (Imagen Izquierda)</option>
                                 <option value="horizontal-right">Horizontal (Imagen Derecha)</option>
+                            </select>
+                        </div>
+                    </div>
+                )}
+
+                {/* IMAGE-SPECIFIC STYLE */}
+                {type === 'image' && (
+                    <div className="mt-30">
+                        <div className="section-title"><ImageIcon size={14} /> Ajustes de Imagen</div>
+                        <div className="prop-group">
+                            <label>Proporción (Aspect Ratio)</label>
+                            <select value={config.aspectRatio || 'auto'} onChange={(e) => handleConfigChange('aspectRatio', e.target.value)}>
+                                <option value="auto">Automático</option>
+                                <option value="1/1">1:1 (Cuadrado)</option>
+                                <option value="4/3">4:3 (Estándar)</option>
+                                <option value="16/9">16:9 (Panorámico)</option>
+                                <option value="9/16">9:16 (Vertical/Historia)</option>
+                            </select>
+                        </div>
+                        <div className="prop-group">
+                            <label>Ajuste (Object Fit)</label>
+                            <select value={config.objectFit || 'cover'} onChange={(e) => handleConfigChange('objectFit', e.target.value)}>
+                                <option value="cover">Cubrir (Recortar)</option>
+                                <option value="contain">Contener (Completa)</option>
+                                <option value="fill">Rellenar</option>
+                            </select>
+                        </div>
+                        <div className="prop-group">
+                            <label>Radio de Borde (px/%/vw)</label>
+                            <input type="text" value={config.borderRadius || '0px'} onChange={(e) => handleConfigChange('borderRadius', e.target.value)} />
+                        </div>
+                        <div className="prop-group">
+                            <label>Sombra (Box Shadow)</label>
+                            <select value={config.boxShadow || 'none'} onChange={(e) => handleConfigChange('boxShadow', e.target.value)}>
+                                <option value="none">Ninguna</option>
+                                <option value="0 10px 30px rgba(0,0,0,0.1)">Suave</option>
+                                <option value="0 20px 40px rgba(0,0,0,0.3)">Premium</option>
+                                <option value="0 30px 60px rgba(0,0,0,0.5)">Profunda</option>
                             </select>
                         </div>
                     </div>

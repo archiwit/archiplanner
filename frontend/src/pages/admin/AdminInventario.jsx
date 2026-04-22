@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import api from '../../services/api';
-import { Plus, Edit2, Trash2, X, Search, Package, DollarSign } from 'lucide-react';
+import { Plus, Edit2, Trash2, X, Search, Package, DollarSign, Filter, ChevronDown as ChevronDownIcon, ChevronUp as ChevronUpIcon } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
 import DynamicForm from '../../components/ui/DynamicForm/DynamicForm';
-import { UPLOADS_URL } from '../../config';
+import { getUploadUrl } from '../../config';
+import '../style/AdminInventario.css';
 
 // Categorías simplificadas (6)
 const CATEGORIAS = [
@@ -16,14 +18,15 @@ const CATEGORIAS = [
     { value: 'otros', label: 'Otros', gradient: 'linear-gradient(135deg, #B2BEC3 0%, #636E72 100%)', icon: '📦' }
 ];
 
-const UNIDADES_MEDIDA = [
-    { value: 'unidad', label: 'Unidad' },
-    { value: 'hora', label: 'Hora' },
-    { value: 'dia', label: 'Día / Jornada' },
-    { value: 'evento', label: 'Evento completo' }
-];
+const ABREV_UNIDADES = {
+    'unidad': 'C/U',
+    'hora': '/H',
+    'dia': '/D',
+    'evento': '/EV'
+};
 
 const AdminInventario = () => {
+    const { user } = useAuth();
     const [articulos, setArticulos] = useState([]);
     const [proveedores, setProveedores] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -32,6 +35,14 @@ const AdminInventario = () => {
     const [filtroActivo, setFiltroActivo] = useState('todas');
     const [busqueda, setBusqueda] = useState('');
     const [formData, setFormData] = useState(null);
+    const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+    const [showFilters, setShowFilters] = useState(window.innerWidth > 768);
+
+    useEffect(() => {
+        const handleResize = () => setIsMobile(window.innerWidth <= 768);
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
 
     const fetchArticulos = async () => {
         try {
@@ -187,160 +198,103 @@ const AdminInventario = () => {
         return () => window.removeEventListener('keydown', handleKeys);
     }, []);
 
+    const userRol = user?.rol?.toLowerCase() || '';
+    const isReadOnly = userRol === 'asesor_arriendos';
+
     return (
-        <div className="admin-inventario">
-            {/* Header */}
-            <div style={{
-                marginBottom: '32px',
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                flexWrap: 'wrap',
-                gap: '16px'
-            }}>
+        <div className="admin-page-container fade-in">
+            {/* Standard Header (V4.7 Unification) */}
+            <div className={`admin-header-flex ${isMobile ? 'mobile-stack' : ''}`} style={{ marginBottom: isMobile ? '10px' : '30px' }}>
                 <div>
-                    <h2 style={{ margin: '0 0 4px 0', fontSize: '22px', fontWeight: '600' }}>Inventario</h2>
-                    <p style={{ margin: 0, color: 'var(--color-text-dim)', fontSize: '13px' }}>
-                        {totalArticulos} artículos • {totalProveedores} proveedores
-                    </p>
+                    <h1 className="admin-title">Inventario</h1>
+                    {!isMobile && <p className="admin-subtitle">{totalArticulos} artículos • {totalProveedores} proveedores</p>}
                 </div>
-                <button
-                    className="btn btn-primary"
-                    onClick={() => handleOpenModal(null)}
-                    style={{
-                        background: 'var(--color-tertiary)',
-                        border: 'none',
-                        padding: '10px 18px',
-                        borderRadius: '8px',
-                        color: '#000',
-                        fontWeight: '600',
-                        fontSize: '13px',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '8px'
-                    }}
-                >
-                    <Plus size={16} />
-                    Nuevo
-                </button>
+                
+                {isMobile && (
+                    <>
+                        <button 
+                            className={`admin-mobile-templates-trigger ${showFilters ? 'active' : ''}`}
+                            onClick={() => setShowFilters(!showFilters)}
+                            title="Filtros"
+                        >
+                            <Filter size={22} />
+                        </button>
+                        {!isReadOnly && (
+                            <button 
+                                className="admin-mobile-add-trigger" 
+                                onClick={() => handleOpenModal(null)}
+                                title="Nuevo Artículo"
+                            >
+                                <Plus size={22} />
+                            </button>
+                        )}
+                    </>
+                )}
+
+                {!isMobile && (
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                        <button 
+                            className={`btn-icon-tooltip ${showFilters ? 'active' : ''}`}
+                            onClick={() => setShowFilters(!showFilters)}
+                            title="Filtros"
+                        >
+                            <Filter size={18} />
+                        </button>
+                        {!isReadOnly && (
+                            <button 
+                                className="btn-icon-tooltip primary" 
+                                onClick={() => handleOpenModal(null)}
+                                title="Nuevo Artículo"
+                            >
+                                <Plus size={18} />
+                            </button>
+                        )}
+                    </div>
+                )}
             </div>
 
+
             {/* Búsqueda */}
-            <div style={{
-                position: 'relative',
-                marginBottom: '24px'
-            }}>
-                <Search
-                    size={16}
-                    style={{
-                        position: 'absolute',
-                        left: '14px',
-                        top: '50%',
-                        transform: 'translateY(-50%)',
-                        color: 'var(--color-text-dim)'
-                    }}
-                />
+            <div className="search-container">
+                <Search className="search-icon" size={18} />
                 <input
                     type="text"
                     placeholder="Buscar por nombre o proveedor..."
                     value={busqueda}
                     onChange={(e) => setBusqueda(e.target.value)}
-                    style={{
-                        width: '100%',
-                        background: 'rgba(255,255,255,0.03)',
-                        border: '1px solid rgba(255,255,255,0.08)',
-                        borderRadius: '8px',
-                        padding: '11px 14px 11px 40px',
-                        color: 'var(--color-text)',
-                        fontSize: '13px',
-                        outline: 'none'
-                    }}
                 />
             </div>
 
-            {/* Filtros */}
-            <div style={{
-                display: 'flex',
-                gap: '8px',
-                marginBottom: '28px',
-                flexWrap: 'wrap'
-            }}>
-                <button
-                    onClick={() => setFiltroActivo('todas')}
-                    style={{
-                        padding: '8px 14px',
-                        borderRadius: '6px',
-                        border: filtroActivo === 'todas'
-                            ? '1px solid var(--color-tertiary)'
-                            : '1px solid rgba(255,255,255,0.08)',
-                        background: filtroActivo === 'todas'
-                            ? 'rgba(95, 220, 127, 0.12)'
-                            : 'rgba(255,255,255,0.02)',
-                        color: filtroActivo === 'todas'
-                            ? 'var(--color-tertiary)'
-                            : 'var(--color-text-dim)',
-                        cursor: 'pointer',
-                        fontSize: '12px',
-                        fontWeight: filtroActivo === 'todas' ? '600' : '500',
-                        transition: 'all 0.2s'
-                    }}
+            {/* Filtros Colapsables (Oculto control duplicado) */}
+            {/* El control de filtros ahora está en la cabecera */}
+
+            <div className={`filters-grid ${showFilters ? 'show' : ''}`}>
+                <div 
+                    className={`filter-chip ${filtroActivo === 'todas' ? 'active' : ''}`}
+                    onClick={() => { setFiltroActivo('todas'); if(isMobile) setShowFilters(false); }}
                 >
                     Todos ({totalArticulos})
-                </button>
+                </div>
                 {CATEGORIAS.map(cat => {
                     const count = porCategoriaUnificada[cat.value]?.length || 0;
                     return (
-                        <button
+                        <div
                             key={cat.value}
-                            onClick={() => setFiltroActivo(cat.value)}
-                            style={{
-                                padding: '8px 14px',
-                                borderRadius: '6px',
-                                border: filtroActivo === cat.value
-                                    ? `1px solid ${cat.gradient.includes('#5FDC7F') ? 'var(--color-tertiary)' : 'rgba(255,255,255,0.2)'}`
-                                    : '1px solid rgba(255,255,255,0.08)',
-                                background: filtroActivo === cat.value
-                                    ? 'rgba(255,255,255,0.05)'
-                                    : 'rgba(255,255,255,0.02)',
-                                color: filtroActivo === cat.value
-                                    ? '#fff'
-                                    : 'var(--color-text-dim)',
-                                cursor: 'pointer',
-                                fontSize: '12px',
-                                fontWeight: filtroActivo === cat.value ? '600' : '500',
-                                transition: 'all 0.2s'
-                            }}
+                            className={`filter-chip ${filtroActivo === cat.value ? 'active' : ''}`}
+                            onClick={() => { setFiltroActivo(cat.value); if(isMobile) setShowFilters(false); }}
                         >
                             {cat.label} ({count})
-                        </button>
+                        </div>
                     );
                 })}
-                {/* Dynamically show tabs for other categories found */}
                 {categoriasExtra.map(cat => (
-                    <button
+                    <div
                         key={cat}
-                        onClick={() => setFiltroActivo(cat)}
-                        style={{
-                            padding: '8px 14px',
-                            borderRadius: '6px',
-                            border: filtroActivo === cat
-                                ? '1px solid var(--color-primary)'
-                                : '1px solid rgba(255,255,255,0.08)',
-                            background: filtroActivo === cat
-                                ? 'rgba(255, 132, 132, 0.12)'
-                                : 'rgba(255,255,255,0.02)',
-                            color: filtroActivo === cat
-                                ? 'var(--color-primary)'
-                                : 'var(--color-text-dim)',
-                            cursor: 'pointer',
-                            fontSize: '12px',
-                            fontWeight: '600',
-                            transition: 'all 0.2s'
-                        }}
+                        className={`filter-chip ${filtroActivo === cat ? 'active' : ''}`}
+                        onClick={() => { setFiltroActivo(cat); if(isMobile) setShowFilters(false); }}
                     >
                         {cat.toUpperCase()} ({porCategoriaUnificada[cat]?.length || 0})
-                    </button>
+                    </div>
                 ))}
             </div>
 
@@ -508,7 +462,12 @@ const AdminInventario = () => {
                                         name: 'uni_medida',
                                         label: 'Unidad',
                                         type: 'select',
-                                        options: UNIDADES_MEDIDA,
+                                        options: [
+                                            { value: 'unidad', label: 'Unidad' },
+                                            { value: 'hora', label: 'Hora' },
+                                            { value: 'dia', label: 'Día / Jornada' },
+                                            { value: 'evento', label: 'Evento completo' }
+                                        ],
                                         required: true
                                     },
                                     { name: 'nota', label: 'Notas', type: 'textarea', placeholder: ' ', rows: 2, fullWidth: true }
@@ -528,189 +487,47 @@ const AdminInventario = () => {
     function renderCard(art) {
         const catInfo = CATEGORIAS.find(c => c.value === art.categoria) || CATEGORIAS[5];
         return (
-            <div
-                key={art.id}
-                style={{
-                    background: 'rgba(255,255,255,0.02)',
-                    borderRadius: '8px',
-                    border: '1px solid rgba(255,255,255,0.06)',
-                    padding: '12px',
-                    transition: 'all 0.2s',
-                    position: 'relative'
-                }}
-                onMouseEnter={(e) => {
-                    e.currentTarget.style.borderColor = 'rgba(255,255,255,0.12)';
-                    e.currentTarget.style.background = 'rgba(255,255,255,0.03)';
-                }}
-            >
-                {/* Imagen */}
-                <div style={{
-                    height: '100px',
-                    borderRadius: '6px',
-                    overflow: 'hidden',
-                    marginBottom: '10px',
-                    background: 'rgba(0,0,0,0.3)',
-                    position: 'relative'
-                }}>
+            <div key={art.id} className="art-card">
+                <div className="art-card-image">
                     {art.foto ? (
-                        <img
-                            src={`${UPLOADS_URL}${art.foto}`}
-                            alt={art.nombre}
-                            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                        />
+                        <img src={getUploadUrl(art.foto)} alt={art.nombre} />
                     ) : (
-                        <div style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            height: '100%',
-                            color: 'rgba(255,255,255,0.15)'
-                        }}>
-                            <Package size={24} />
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: 'rgba(255,255,255,0.1)' }}>
+                            <Package size={32} />
                         </div>
                     )}
-                    {/* Categoría badge pequeño */}
-                    <span style={{
-                        position: 'absolute',
-                        top: '6px',
-                        left: '6px',
-                        background: 'rgba(0,0,0,0.7)',
-                        padding: '3px 6px',
-                        borderRadius: '4px',
-                        fontSize: '9px',
-                        fontWeight: '600',
-                        color: '#fff',
-                        textTransform: 'uppercase'
-                    }}>
-                        {catInfo.label}
-                    </span>
-                </div>
-
-                {/* Nombre */}
-                <p style={{
-                    margin: '0 0 8px 0',
-                    fontSize: '12px',
-                    fontWeight: '500',
-                    color: 'var(--color-text)',
-                    whiteSpace: 'nowrap',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis'
-                }}>
-                    {art.nombre}
-                </p>
-
-                {/* Precio y Costo */}
-                <div style={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: '4px',
-                    marginBottom: '12px'
-                }}>
-                    <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px' }}>
-                        <span style={{
-                            fontWeight: '800',
-                            fontSize: '15px',
-                            color: 'var(--color-tertiary)',
-                            letterSpacing: '-0.5px'
-                        }}>
-                            ${Number(art.precio_u).toLocaleString('es-CO')}
-                        </span>
-                    </div>
-                    <div style={{ display: 'flex', gap: '8px' }}>
-                        <span style={{
-                            fontSize: '9px',
-                            color: 'rgba(255,255,100,0.6)',
-                            background: 'rgba(255,255,100,0.08)',
-                            padding: '2px 6px',
-                            borderRadius: '4px',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '3px',
-                            border: '1px solid rgba(255,255,100,0.1)'
-                        }} title="Costo Interno">
-                            <DollarSign size={8} />
-                            {Number(art.costo_u).toLocaleString('es-CO')}
-                        </span>
-                    </div>
-                </div>
-
-                {/* Proveedor */}
-                <div style={{ marginBottom: '12px' }}>
-                    <span style={{
-                        fontSize: '10px',
-                        fontWeight: '600',
-                        color: art.nombre_proveedor === 'ArchiPlanner' ? 'var(--color-primary)' : 'var(--color-text-dim)',
-                        background: art.nombre_proveedor === 'ArchiPlanner' ? 'rgba(212, 175, 55, 0.15)' : 'rgba(255,255,255,0.03)',
-                        padding: '3px 8px',
-                        borderRadius: '4px',
-                        display: 'inline-block',
-                        border: art.nombre_proveedor === 'ArchiPlanner' ? '1px solid rgba(212, 175, 55, 0.3)' : '1px solid rgba(255,255,255,0.05)',
-                        maxWidth: '100%',
-                        whiteSpace: 'nowrap',
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis'
-                    }}>
-                        {art.nombre_proveedor}
-                    </span>
-                </div>
-
-                {/* Footer: Unidad y Botones */}
-                <div style={{ 
-                    display: 'flex', 
-                    justifyContent: 'space-between', 
-                    alignItems: 'center',
-                    paddingTop: '10px',
-                    borderTop: '1px solid rgba(255,255,255,0.05)'
-                }}>
-                    <span style={{
-                        fontSize: '10px',
-                        color: 'var(--color-text-dim)',
-                        fontWeight: '500',
-                        textTransform: 'lowercase',
-                        opacity: 0.7
-                    }}>
-                        / {art.uni_medida}
-                    </span>
                     
-                    <div style={{ display: 'flex', gap: '6px' }}>
-                        <button
-                            onClick={() => handleOpenModal(art)}
-                            style={{
-                                background: 'rgba(255,255,255,0.05)',
-                                border: 'none',
-                                width: '28px',
-                                height: '28px',
-                                borderRadius: '6px',
-                                color: 'var(--color-text)',
-                                cursor: 'pointer',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                transition: 'all 0.2s'
-                            }}
-                            title="Editar"
-                        >
-                            <Edit2 size={12} />
-                        </button>
-                        <button
-                            onClick={() => handleDelete(art.id)}
-                            style={{
-                                background: 'rgba(255, 100, 100, 0.1)',
-                                border: 'none',
-                                width: '28px',
-                                height: '28px',
-                                borderRadius: '6px',
-                                color: 'rgba(255,100,100,0.8)',
-                                cursor: 'pointer',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                transition: 'all 0.2s'
-                            }}
-                            title="Eliminar"
-                        >
-                            <Trash2 size={12} />
-                        </button>
+                    {/* Floating Actions */}
+                    {!isReadOnly && (
+                        <div className="art-card-actions">
+                            <button className="art-action-btn edit" onClick={() => handleOpenModal(art)}>
+                                <Edit2 size={12} />
+                            </button>
+                            <button className="art-action-btn delete" onClick={() => handleDelete(art.id)}>
+                                <Trash2 size={12} />
+                            </button>
+                        </div>
+                    )}
+
+
+                    <span className="art-category-badge">{catInfo.label}</span>
+                    <span className="art-provider-badge">{art.nombre_proveedor || 'S/P'}</span>
+                </div>
+
+                {/* Content */}
+                <h4 className="art-name">{art.nombre}</h4>
+
+                <div className="art-finance-row">
+                    <span className="art-cost" title="Costo Interno">
+                        $ {Number(art.costo_u || 0).toLocaleString('es-CO')}
+                    </span>
+                    <div className="art-price-container">
+                        <span className="art-price">
+                            ${Number(art.precio_u || 0).toLocaleString('es-CO')}
+                        </span>
+                        <span className="art-unit">
+                            {ABREV_UNIDADES[art.uni_medida] || '/UND'}
+                        </span>
                     </div>
                 </div>
             </div>

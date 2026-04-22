@@ -21,7 +21,6 @@ const AdminServiciosWeb = () => {
         seccion: 'principales',
         visible: 1,
         orden: 0,
-        icono_svg: '',
         imagen: null
     });
     const [previewImage, setPreviewImage] = useState(null);
@@ -56,7 +55,6 @@ const AdminServiciosWeb = () => {
                 seccion: servicio.seccion,
                 visible: servicio.visible,
                 orden: servicio.orden,
-                icono_svg: servicio.icono_svg || '',
                 imagen: null,
                 imagen_path: servicio.imagen
             });
@@ -72,7 +70,6 @@ const AdminServiciosWeb = () => {
                 seccion: 'principales',
                 visible: 1,
                 orden: servicios.length + 1,
-                icono_svg: '',
                 imagen: null
             });
             setPreviewImage(null);
@@ -156,9 +153,13 @@ const AdminServiciosWeb = () => {
                     <h1>Gestión de Áreas y Servicios</h1>
                     <p>Configura las experiencias que se muestran en la página principal.</p>
                 </div>
-                <Button onClick={() => handleOpenModal()} className="btn-primary">
-                    <Plus size={18} /> Nueva Área
-                </Button>
+                <button 
+                    onClick={() => handleOpenModal()} 
+                    className="btn-icon-tooltip primary"
+                    title="Nueva Área"
+                >
+                    <Plus size={22} />
+                </button>
             </header>
 
             <div className="admin-grid-premium">

@@ -148,69 +148,113 @@
 /* ========================================
    BARRA DE ACCIONES (NO IMPRIMIR)
    ======================================== */
+/* ========================================
+   BARRA DE ACCIONES MINIMALISTA
+   ======================================== */
 .quotation-actions {
     position: fixed;
-    display: flex;
-    right: -80px;
-    top: 60px;
-    gap: var(--spacing-md);
-    margin-bottom: var(--spacing-xl);
-    width: var(--letter-width);
-    max-width: 100%;
+    bottom: 30px;
+    right: 30px;
     z-index: 1000;
 }
 
-.quotation-actions .btn {
-    display: inline-flex;
+.actions-cluster {
+    display: flex;
     align-items: center;
-    gap: var(--spacing-sm);
-    padding: 12px 24px;
+    gap: 12px;
+    background: rgba(26, 26, 28, 0.8);
+    backdrop-filter: blur(20px);
+    padding: 8px;
+    border-radius: 100px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+}
+
+.action-circle-group {
+    display: flex;
+    gap: 8px;
+}
+
+.circle-btn {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     border: none;
     cursor: pointer;
-    border-radius: 8px;
-    font-family: var(--font-family);
-    font-size: 14px;
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    background: #fff;
+    color: #000;
+}
+
+.circle-btn:hover {
+    transform: scale(1.1) translateY(-2px);
+    box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+}
+
+.circle-btn.back { background: rgba(255,255,255,0.05); color: #fff; border: 1px solid rgba(255,255,255,0.1); }
+.circle-btn.edit { background: var(--color-primary); color: #000; }
+
+.expandable-actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding-left: 8px;
+    border-left: 1px solid rgba(255,255,255,0.1);
+}
+
+.action-icon-btn {
+    height: 40px;
+    padding: 0 16px;
+    border-radius: 20px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 13px;
     font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
 }
 
-.quotation-actions .btn:active {
-    transform: scale(0.97);
+.action-icon-btn span {
+    font-size: 12px;
+    max-width: 0;
+    overflow: hidden;
+    transition: all 0.3s ease;
+    white-space: nowrap;
+    opacity: 0;
 }
 
-.btn-back {
-    background: var(--color-white);
-    color: var(--color-text-dark);
-    border: 1px solid var(--color-border-medium) !important;
-}
-
-.btn-back:hover {
-    background: var(--color-bg-page);
-}
-
-.btn-print {
-    background: linear-gradient(135deg, var(--color-primary) 0%, #ff6b6b 100%);
-    color: #121212;
-}
-
-.btn-print:hover {
+.action-icon-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
     transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(255, 132, 132, 0.4);
-    filter: brightness(1.1);
 }
 
-.btn-whatsapp {
-    background: #25D366;
-    color: white;
+.action-icon-btn:hover span {
+    max-width: 100px;
+    opacity: 1;
 }
 
-.btn-whatsapp:hover {
-    background: #128C7E;
-    transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(37, 211, 102, 0.3);
+.action-icon-btn.whatsapp:hover { color: #25D366; border-color: rgba(37, 211, 102, 0.2); background: rgba(37, 211, 102, 0.1); }
+.action-icon-btn.survey:hover { color: #D4AF37; border-color: rgba(212, 175, 55, 0.2); background: rgba(212, 175, 55, 0.1); }
+.action-icon-btn.planner:hover { color: var(--color-primary); border-color: rgba(183, 110, 121, 0.2); background: rgba(183, 110, 121, 0.1); }
+
+@media (max-width: 768px) {
+    .quotation-actions {
+        bottom: 20px;
+        right: 10px;
+        left: 10px;
+        display: flex;
+        justify-content: center;
+    }
+    .action-icon-btn span {
+        display: none;
+    }
 }
 
 @media print {

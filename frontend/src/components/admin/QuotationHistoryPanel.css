@@ -144,13 +144,18 @@
     padding: 8px 12px;
 }
 
-.comment-input-wrapper input {
+.comment-input-wrapper textarea {
     flex: 1;
     background: transparent;
     border: none;
     color: #fff;
     font-size: 13px;
     padding: 8px;
+    resize: none;
+    font-family: inherit;
+    min-height: 36px;
+    max-height: 150px;
+    overflow-y: auto;
 }
 
 .comment-input-wrapper button {

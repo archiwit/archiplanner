@@ -100,8 +100,8 @@ const Row = ({ id, children, config = {}, onEdit }) => {
             </div>
             
             <style dangerouslySetInnerHTML={{ __html: `
-                .builder-row-wrapper { transition: outline 0.2s ease, all 0.3s ease-out; cursor: pointer; }
-                .builder-row-wrapper:hover { outline: 2px solid #ff8484; outline-offset: -2px; }
+                .builder-row-wrapper { transition: outline 0.2s ease, all 0.3s ease-out; }
+                /* Removed hover outline for public production view */
                 
                 /* ANIMATIONS */
                 .anim-fade-in { animation: v4-fade-in 0.8s ease forwards; }

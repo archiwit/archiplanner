@@ -8,6 +8,7 @@ import EditorialTestimonials from './Tesimonios';
 import StoryGallery from './StoryGallery';
 import ServiceBlock from './blocks/ServiceBlock';
 import SectionHeroModern from './SectionHeroModern';
+import InstagramFeed from './InstagramFeed';
 import { UPLOADS_URL } from '../../config';
 
 /**
@@ -165,10 +166,32 @@ const BlockRenderer = ({ section, ctas = {}, content = {}, servicios = {}, isNes
                 return <div className="html-content" dangerouslySetInnerHTML={{ __html: meta.html }} />;
 
             case 'IMAGE':
-                const imgSrc = meta.media_path?.startsWith('http') ? meta.media_path : `${UPLOADS_URL}${meta.media_path || meta.img}`;
+                const rawPath = meta.media_path || meta.img || meta.src || meta.url;
+                const imgSrc = rawPath?.startsWith('http') ? rawPath : `${UPLOADS_URL}${rawPath}`;
+                
                 return (
-                    <div className="v3-image-wrapper" style={{ borderRadius: styles.borderRadius, overflow: 'hidden' }}>
-                        <img src={imgSrc} alt={meta.titulo} style={{ width: '100%', height: 'auto', display: 'block' }} />
+                    <div className="v3-image-wrapper" style={{ 
+                        borderRadius: styles.borderRadius, 
+                        overflow: 'hidden',
+                        boxShadow: styles.boxShadow,
+                        margin: styles.margin,
+                        opacity: styles.opacity,
+                        border: styles.border,
+                        aspectRatio: styles.aspectRatio,
+                        height: styles.height || 'auto'
+                    }}>
+                        <img 
+                            src={imgSrc} 
+                            alt={meta.titulo || 'Image'} 
+                            style={{ 
+                                width: '100%', 
+                                height: '100%', 
+                                display: 'block',
+                                objectFit: styles.objectFit || 'cover',
+                                objectPosition: styles.objectPosition || 'center',
+                                filter: styles.filter
+                            }} 
+                        />
                     </div>
                 );
 
@@ -199,6 +222,7 @@ const BlockRenderer = ({ section, ctas = {}, content = {}, servicios = {}, isNes
             case 'VALORES': return <SectionValues />;
             case 'PULSE': return <SectionPulse {...meta} />;
             case 'SERVICIOS': return <SectionFeatured principales={servicios.principales} sociales={servicios.sociales} />;
+            case 'INSTAGRAM': return <InstagramFeed />;
 
             default:
                 return <div className="debug-label">Component: {section.tipo}</div>;

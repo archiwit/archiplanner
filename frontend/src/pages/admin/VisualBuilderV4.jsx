@@ -11,7 +11,7 @@ import {
     Trash2, Copy, Move, Settings, Search, X, MapPin, Mail, Layers as Layers2,
     MousePointer2, Monitor, Tablet, Smartphone, Save, Eye, Star, Info,
     CheckCircle, MessageSquare, Briefcase, Users, LayoutDashboard, Play,
-    CreditCard, Grid, ArrowRight
+    CreditCard, Grid, ArrowRight, Camera, User
 } from 'lucide-react';
 import {
     DndContext,
@@ -38,6 +38,9 @@ import BuilderColumn from '../../components/builder/Column';
 import PropertyPanel from '../../components/builder/PropertyPanel';
 import EditorialTestimonials from '../../components/ui/Tesimonios';
 import SectionPulse from '../../components/ui/SectionPulse';
+import FounderCtaV4 from '../../components/ui/FounderCtaV4';
+import InstagramFeed from '../../components/ui/InstagramFeed';
+import ContactSectionV4 from '../../components/ui/ContactSectionV4';
 import galeriaService from '../../services/galeriaService';
 
 // --- Error Boundary for Canvas Stability ---
@@ -247,7 +250,12 @@ const COMPONENT_PALETTE = [
     { type: 'testimonios', label: 'Testimonios', icon: <MessageSquare size={18} />, description: 'Slider de testimonios de clientes.', defaultConfig: {} },
     { type: 'cta-phone-v4', label: 'CTA Phone V4', icon: <Smartphone size={18} />, description: 'CTA editorial con mockup de teléfono y video.', defaultConfig: { title: '¿Listo para elevar tu evento?', hook: 'EMPIEZA AHORA', closure: 'Diseñamos y planificamos cada detalle para que tú solo disfrutes. Tu visión, nuestra magia.', buttonLabel: 'Reserva tu fecha mágica', actionType: 'whatsapp', whatsappMessage: 'Hola, me interesa ArchiPlanner para mi evento', customPhone: '', phoneVideo: '', bgColor: '#121212', accentColor: '#e87c7c' } },
     { type: 'form', label: 'Formulario V4', icon: <FileText size={18} />, description: 'Captación de leads premium.', defaultConfig: { title: 'DÉJANOS TU VISIÓN', buttonLabel: 'ENVIAR MENSAJE' } },
-    { type: 'PULSE', label: 'Pulse de Marca', icon: <Star size={18} />, description: 'Sección premium de pilares estratégicos con estética Oro Rosa.', defaultConfig: { title: 'El Pulse de cada Evento', tag: 'VIVIMOS EL MÉTODO', closingPhrase: 'Vivimos el pulse de cada evento...' } },
+    { type: 'PULSE', label: 'Pulse de Marca', icon: <Star size={18} />, description: 'Sección premium de pilares estratégicos con estética Oro Rosa.', defaultConfig: { title: 'El Pulse de cada Evento', tag: 'VIVIMOS EL MÉTODO', closingPhrase: 'Vivimos el pulse de cada evento...', bgColor: '#000000', svgColor: '#ff8484', textColor: '#ffffff', titleColor: '' } },
+    { type: 'services-grid-v4', label: 'Grilla Servicios', icon: <Grid size={18} />, description: 'Muestra servicios en bloque Clásico o Delicado.', defaultConfig: { title: 'Nuestros Servicios', tag: 'Expertise', category: 'principales', variant: 'classic', centered: false } },
+    { type: 'services-corporate-v4', label: 'Diseño Corporativo', icon: <LayoutDashboard size={18} />, description: 'Layout asimétrico 1+2 para servicios empresariales.', defaultConfig: { title: 'Eventos Corporativos', tag: 'Empresariales', category: 'corporativos' } },
+    { type: 'founder-cta-v4', label: 'Cita Fundadora', icon: <User size={18} />, description: 'CTA con foto, degradado y cita de confianza.', defaultConfig: { quote: '"Nuestra pasión es transformar sueños en realidades inolvidables, con la seguridad y experiencia que mereces."', founderName: 'Nombre Fundadora', founderRole: 'CEO & Founder', image: '', imagePosition: 'left', btnLabel: 'Agenda una Entrevista', btnLink: '/contacto', bgColor: '#121212', accentColor: '#ff8484' } },
+    { type: 'INSTAGRAM', label: 'Feed Instagram', icon: <Camera size={18} />, description: 'Módulo de posts recientes de Instagram Business.', defaultConfig: { title: '@ARCHI.PLANNER' } },
+    { type: 'contact-v4', label: 'Contacto Premium', icon: <Mail size={18} />, description: 'Página de contacto completa con Hero, Info y Formulario.', defaultConfig: { heroTagline: 'Experiencias de Lujo', heroTitle: 'Hablemos de tu <br/><span>Próximo Hito</span>', infoTagline: 'Exclusividad', infoTitle: 'Conversemos', infoDescription: 'Déjanos acompañarte en la creación de una experiencia inolvidable. Estamos listos para elevar tu visión y convertir tu próximo hito en algo legendario.', formTitle: 'Envíanos un mensaje', submitText: 'Solicitar Asesoría Exclusiva' } },
 ];
 
 const VisualBuilderV4 = () => {
@@ -259,7 +267,7 @@ const VisualBuilderV4 = () => {
     const [loading, setLoading] = useState(true);
     const [activeElement, setActiveElement] = useState(null);
     const [viewport, setViewport] = useState('desktop');
-    const [activeTab, setActiveTab] = useState('layers');
+    const [activeTab, setActiveTab] = useState('elements');
     const [stories, setStories] = useState([]);
     const [allServices, setAllServices] = useState([]);
     const [allEvents, setAllEvents] = useState([]);
@@ -440,6 +448,18 @@ const VisualBuilderV4 = () => {
         }
     };
 
+    useEffect(() => {
+        const fetchInitialData = async () => {
+            try {
+                const sRes = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/servicios`).then(r => r.json());
+                setAllServices(sRes || []);
+            } catch (err) {
+                console.error("Error fetching services for builder:", err);
+            }
+        };
+        fetchInitialData();
+    }, []);
+
     const fetchPage = async () => {
         try {
             // Fetch System Config for branding
@@ -470,7 +490,18 @@ const VisualBuilderV4 = () => {
 
             const data = await paginasV4Service.getById(id);
             setPage(data);
-            setContent(Array.isArray(data.content) ? data.content : []);
+            
+            // Critical Fix: Ensure content is parsed if it's a string from the DB
+            let loadedContent = data.content;
+            if (typeof loadedContent === 'string') {
+                try {
+                    loadedContent = JSON.parse(loadedContent);
+                } catch (e) {
+                    console.error("Error parsing page content:", e);
+                    loadedContent = [];
+                }
+            }
+            setContent(Array.isArray(loadedContent) ? loadedContent : []);
 
             // Ensure style_config exists
             if (!data.style_config) {
@@ -699,7 +730,8 @@ const VisualBuilderV4 = () => {
             'hero-marquee': { images: [], height: '500px' },
             'hero-modern': { titulo: 'Saint Antönien', subtitulo: 'Majestic events', media_path: '' },
             'cta-phone-v4': { title: '¿Listo para elevar tu evento?', hook: 'EMPIEZA AHORA', closure: 'Diseñamos y planificamos cada detalle para que tú solo disfrutes. Tu visión, nuestra magia.', buttonLabel: 'Reserva tu fecha mágica', link: '#', phoneVideo: '', bgColor: '#121212', accentColor: '#e87c7c' },
-            'PULSE': { title: 'El Pulse de cada Evento', tag: 'VIVIMOS EL MÉTODO', closingPhrase: 'Vivimos el pulse de cada evento...' }
+            'PULSE': { title: 'El Pulse de cada Evento', tag: 'VIVIMOS EL MÉTODO', closingPhrase: 'Vivimos el pulse de cada evento...', bgColor: '#000000', svgColor: '#ff8484', textColor: '#ffffff', titleColor: '' },
+            'INSTAGRAM': { title: '@ARCHI.PLANNER' }
         };
 
         const compId = `comp-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
@@ -948,16 +980,7 @@ const VisualBuilderV4 = () => {
                     fontWeight: config.fontWeight || '400',
                     fontFamily: config.fontFamily || 'inherit'
                 }} dangerouslySetInnerHTML={{ __html: config.content }} />;
-            case 'gallery':
-                return (
-                    <div className="v4-gallery-block p-20">
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px' }}>
-                            {[1, 2, 3, 4, 5, 6, 7, 8].map(i => (
-                                <div key={i} style={{ aspectRatio: '1/1', background: '#f5f5f5', borderRadius: '15px' }}></div>
-                            ))}
-                        </div>
-                    </div>
-                );
+
             case 'features':
                 return (
                     <div className="v4-features-block p-60" style={{ background: '#000', color: 'white' }}>
@@ -1000,6 +1023,30 @@ const VisualBuilderV4 = () => {
                                 {config.buttonLabel}
                             </button>
                         )}
+                    </div>
+                );
+            case 'image':
+                return (
+                    <div className="v4-image-render-preview" style={{ 
+                        aspectRatio: config.aspectRatio || 'auto',
+                        overflow: 'hidden',
+                        borderRadius: config.borderRadius || '12px',
+                        boxShadow: config.boxShadow || 'none',
+                        border: '1px solid rgba(255,255,255,0.05)'
+                    }}>
+                        <img 
+                            src={resolveMediaPath(config.media_path || config.src)} 
+                            alt={config.titulo || 'Imagen'} 
+                            style={{ 
+                                width: '100%', 
+                                height: '100%', 
+                                objectFit: config.objectFit || 'cover',
+                                display: 'block'
+                            }} 
+                            onError={(e) => {
+                                e.target.src = 'https://via.placeholder.com/800x600?text=Error+de+Imagen';
+                            }}
+                        />
                     </div>
                 );
             case 'stories':
@@ -1046,25 +1093,35 @@ const VisualBuilderV4 = () => {
                             {config.title || 'Contáctanos'} 
                         </h3>
                         <div className="form-v4-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
-                            <div className="form-field" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                                <label style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '1px', color: 'rgba(255,255,255,0.5)', fontWeight: '700' }}>Nombre Completo</label>
-                                <input type="text" className="dense-input" disabled value="[Vista Previa]" />
+                            <div className="form-field" style={{ display: 'flex', flexDirection: 'column', position: 'relative' }}>
+                                <input type="text" className="dense-input" disabled value=" " style={{ paddingTop: '24px' }} />
+                                <label style={{ position: 'absolute', left: '20px', top: '8px', fontSize: '9px', textTransform: 'uppercase', letterSpacing: '1px', color: '#ff8484', fontWeight: '700' }}>Nombre Completo *</label>
                             </div>
-                            <div className="form-field" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                                <label style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '1px', color: 'rgba(255,255,255,0.5)', fontWeight: '700' }}>Email</label>
-                                <input type="text" className="dense-input" disabled value="[Vista Previa]" />
+                            <div className="form-field" style={{ display: 'flex', flexDirection: 'column', position: 'relative' }}>
+                                <input type="text" className="dense-input" disabled value=" " style={{ paddingTop: '24px' }} />
+                                <label style={{ position: 'absolute', left: '20px', top: '8px', fontSize: '9px', textTransform: 'uppercase', letterSpacing: '1px', color: '#ff8484', fontWeight: '700' }}>Correo Electrónico *</label>
                             </div>
-                            <div className="form-field full" style={{ gridColumn: 'span 2', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                                <label style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '1px', color: 'rgba(255,255,255,0.5)', fontWeight: '700' }}>Mensaje</label>
-                                <textarea className="dense-input" disabled value="[Vista Previa]" rows={4}></textarea>
+                            <div className="form-field full" style={{ gridColumn: 'span 2', display: 'flex', flexDirection: 'column', position: 'relative' }}>
+                                <textarea className="dense-input" disabled value=" " rows={3} style={{ paddingTop: '24px' }}></textarea>
+                                <label style={{ position: 'absolute', left: '20px', top: '8px', fontSize: '9px', textTransform: 'uppercase', letterSpacing: '1px', color: '#ff8484', fontWeight: '700' }}>Mensaje *</label>
                             </div>
                             <button className="btn-render btn-v4 btn-v4-primary full" style={{ gridColumn: 'span 2' }}>
-                                {config.buttonLabel || 'Enviar'}
+                                {config.buttonLabel || 'Solicitar Asesoría'}
                             </button>
                         </div>
-                        <div style={{ marginTop: '15px', fontSize: '10px', color: '#666', textAlign: 'center' }}>* Los campos están deshabilitados en el modo edición.</div>
+                        <div style={{ marginTop: '15px', fontSize: '10px', color: '#666', textAlign: 'center' }}>* Estilos de etiqueta flotante activos en vista pública.</div>
                     </div>
                 );
+            case 'services-grid-v4':
+                return <ServicesGridV4 {...config} services={allServices} />;
+            case 'services-corporate-v4':
+                return <ServicesCorporateV4 {...config} services={allServices} />;
+            case 'founder-cta-v4':
+                return <FounderCtaV4 {...config} />;
+            case 'INSTAGRAM':
+                return <InstagramFeed />;
+            case 'contact-v4':
+                return <ContactSectionV4 config={config} />;
             case 'testimonios': return <EditorialTestimonials />;
             default:
                 return (
@@ -1231,7 +1288,7 @@ const VisualBuilderV4 = () => {
                         <div className="v4-sidebar-header">
                             <div className="s-icons">
                                 <button className={activeTab === 'elements' ? 'active' : ''} onClick={() => setActiveTab('elements')}><Plus size={20} /></button>
-                                <button className={activeTab === 'navigator' ? 'active' : ''} onClick={() => setActiveTab('navigator')}><Layers size={20} /></button>
+                                <button className={activeTab === 'layers' ? 'active' : ''} onClick={() => setActiveTab('layers')}><Layers size={20} /></button>
                                 <button className={activeTab === 'seo' ? 'active' : ''} onClick={() => setActiveTab('seo')}><Globe size={20} /></button>
                                 <button className={activeTab === 'settings' ? 'active' : ''} onClick={() => setActiveTab('settings')}><Settings size={20} /></button>
                             </div>
@@ -1248,7 +1305,7 @@ const VisualBuilderV4 = () => {
                                     </div>
                                 </div>
                             )}
-                            {activeTab === 'navigator' && (
+                            {activeTab === 'layers' && (
                                 <div className="s-pane">
                                     <h3>Navegador de Capas</h3>
                                     <div className="s-layers-tree">
@@ -1316,12 +1373,12 @@ const VisualBuilderV4 = () => {
                                         <div className="s-color-picker-row">
                                             <input
                                                 type="color"
-                                                value={page?.style_config?.canvasBg || '#FFFFFF'}
+                                                value={page?.style_config?.canvasBg || '#121212'}
                                                 onChange={e => updateCanvasBg(e.target.value)}
                                             />
                                             <input
                                                 type="text"
-                                                value={page?.style_config?.canvasBg || '#FFFFFF'}
+                                                value={page?.style_config?.canvasBg || '#121212'}
                                                 onChange={e => updateCanvasBg(e.target.value)}
                                             />
                                         </div>
@@ -1342,7 +1399,7 @@ const VisualBuilderV4 = () => {
                                         <div className="s-color-picker-row">
                                             <input
                                                 type="color"
-                                                value={page?.style_config?.canvasText || '#121212'}
+                                                value={page?.style_config?.canvasText || '#FFFFFF'}
                                                 onChange={e => setPage({
                                                     ...page,
                                                     style_config: { ...page.style_config, canvasText: e.target.value }
@@ -1350,7 +1407,7 @@ const VisualBuilderV4 = () => {
                                             />
                                             <input
                                                 type="text"
-                                                value={page?.style_config?.canvasText || '#121212'}
+                                                value={page?.style_config?.canvasText || '#FFFFFF'}
                                                 onChange={e => setPage({
                                                     ...page,
                                                     style_config: { ...page.style_config, canvasText: e.target.value }
@@ -1382,8 +1439,8 @@ const VisualBuilderV4 = () => {
                     {/* CANVAS AREA */}
                     <div className="v4-canvas-container">
                         <div className="v4-canvas-paper" style={{
-                            background: page?.style_config?.canvasBg || '#FFFFFF',
-                            color: page?.style_config?.canvasText || '#121212'
+                            background: page?.style_config?.canvasBg || '#121212',
+                            color: page?.style_config?.canvasText || '#FFFFFF'
                         }}>
                             <CanvasErrorBoundary>
                                 {content.length === 0 ? (
