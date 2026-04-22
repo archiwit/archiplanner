@@ -265,7 +265,7 @@ const AdminContrato = () => {
                                         ? getUploadUrl(config.logo_horizontal_path)
                                         : (config?.logo_cuadrado_path
                                             ? getUploadUrl(config.logo_cuadrado_path)
-                                            : `${window.location.origin}/images/cotizacion/ArchiPlanner-Logo.svg`))
+                                            : '/placeholder.png'))
                             }
                             alt="Logo"
                         />
@@ -379,7 +379,7 @@ const AdminContrato = () => {
                         </div>
                         <div className="footer-item">
                             <Globe size={12} style={{ marginRight: '5px' }} />
-                            <span>{config?.web || 'www.archiplanner.com.co'}</span>
+                            <span>{config?.web || 'ArchiPlanner'}</span>
                         </div>
                     </div>
 
