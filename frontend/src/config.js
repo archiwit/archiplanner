@@ -7,7 +7,7 @@ export const API_BASE_URL = isProd
     : `http://127.0.0.1:${PORT}/api`;
 
 export const UPLOADS_URL = isProd 
-    ? 'https://archiplanner.com.co/api' 
+    ? 'https://archiplanner.com.co' 
     : 'http://127.0.0.1:5001';
 
 /**
