@@ -201,7 +201,7 @@ const SortableItem = ({
                         <label style={{ left: '50%', transform: 'translate(-50%, -50%)', whiteSpace: 'nowrap', fontSize: '9px' }}>C/U</label>
                     </div>
                     <div className="form-field is-floating" style={{ flex: '1 1 45%', marginBottom: 0, minWidth: 0 }}>
-                        <div className="dense-input" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '42px', fontWeight: '800', color: 'var(--color-primary)', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,132,132,0.2)', borderRadius: '12px', padding: '11px 5px 0', boxSizing: 'border-box' }}>
+                        <div className="dense-input" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '52px', fontWeight: '800', color: 'var(--color-primary)', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,132,132,0.2)', borderRadius: '12px', padding: '11px 5px 0', boxSizing: 'border-box' }}>
                             <span style={{ color: 'var(--color-primary)', filter: 'brightness(1.2)', whiteSpace: 'nowrap', fontSize: (det.cantidad * det.precio_u) > 9999999 ? '11px' : '13px' }}>$ {smartFormat(det.cantidad * det.precio_u)}</span>
                         </div>
                         <label style={{ left: '50%', transform: 'translate(-50%, -50%)', whiteSpace: 'nowrap', fontSize: '9px' }}>TOTAL</label>
@@ -775,6 +775,7 @@ const AdminCotizacionForm = ({ claseOverride }) => {
         notas: '',
         notas_entrega: '',
         notas_devolucion: '',
+        empresa_id: user?.conf_id || 1,
         mostrar_precios: true,
         detalles: []
     });
@@ -810,7 +811,7 @@ const AdminCotizacionForm = ({ claseOverride }) => {
                     // Format dates and times for inputs
                     setFormData({
                         ...coti,
-                        clase: coti.clase || 'evento', // v5.3: Asegurar que no sea NULL
+                        clase: coti.clase || 'evento', 
                         fcoti: coti.fcoti ? coti.fcoti.split('T')[0] : '',
                         fevent: coti.fevent ? coti.fevent.split('T')[0] : '',
                         fevent_fin: coti.fevent_fin ? coti.fevent_fin.split('T')[0] : '',
@@ -818,6 +819,7 @@ const AdminCotizacionForm = ({ claseOverride }) => {
                         monto_final: Number(coti.monto_final || coti.total || 0),
                         total_tipo: coti.total_tipo || 'calculado',
                         paleta_colores: coti.paleta_colores || '',
+                        empresa_id: coti.empresa_id || coti.conf_id || (cliente[0] && cliente[0].conf_id) || 1,
                         detalles: (coti.detalles || []).map(d => {
                             const master = rRes.data.find(r => 
                                 (d.art_id && String(r.art_id) === String(d.art_id)) || 
@@ -846,6 +848,7 @@ const AdminCotizacionForm = ({ claseOverride }) => {
                             num_arriendo: nextArr,
                             clase: claseOverride || 'evento',
                             conf_id: activeEmpresa?.id || user?.conf_id || 1,
+                            empresa_id: activeEmpresa?.id || user?.conf_id || 1,
                             mostrar_precios: true
                         }));
                     } catch (e) {
@@ -1212,10 +1215,17 @@ const AdminCotizacionForm = ({ claseOverride }) => {
     // Handlers
     const handleInputChange = (e) => {
         const { name, value, type, checked } = e.target;
-        setFormData(prev => ({
-            ...prev,
-            [name]: type === 'checkbox' ? checked : value
-        }));
+        setFormData(prev => {
+            const newState = {
+                ...prev,
+                [name]: type === 'checkbox' ? checked : value
+            };
+            // v5.3: Sincronizar empresa_id si cambia la marca/conf_id
+            if (name === 'conf_id') {
+                newState.empresa_id = value;
+            }
+            return newState;
+        });
     };
 
     // Auto-sync "Por Persona" quantities
@@ -1435,6 +1445,7 @@ const AdminCotizacionForm = ({ claseOverride }) => {
         e.preventDefault();
         const payload = {
             ...formData,
+            empresa_id: formData.empresa_id || formData.conf_id || 1,
             subt: subtotals.saleTotal,
             iva: subtotals.ivaValue,
             total: subtotals.grandTotal,

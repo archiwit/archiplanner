@@ -4,13 +4,14 @@ import useImage from 'use-image';
 import {
     Plus, Save, Trash2, RotateCw, Move,
     Maximize, Minimize, Square, Circle as CircleIcon,
-    Layers, Search, Image as ImageIcon, Ruler, List, Users, Info, Copy, Palette, X, ChevronDown, ChevronUp, Package, ClipboardList, Monitor, Map, ExternalLink, Edit2, Tag, Grid
+    Layers, Search, Image as ImageIcon, Ruler, List, Users, Info, Copy, Palette, X, ChevronDown, ChevronUp, ChevronLeft, Package, ClipboardList, Monitor, Map, ExternalLink, Edit2, Tag, Grid, GlassWater, Utensils, Flower, Disc, Focus, Footprints
 } from 'lucide-react';
 import layoutService from '../../../services/layoutService';
 import invitadoService from '../../../services/invitadoService';
 import DynamicForm from '../../ui/DynamicForm/DynamicForm';
 import { AdminButton, AdminIconButton } from '../../ui/AdminFormFields';
 import Swal from 'sweetalert2';
+import ThreeSpatialDesigner from './ThreeSpatialDesigner';
 
 const TOOLBOX_CATEGORIES = [
     {
@@ -49,8 +50,9 @@ const TOOLBOX_CATEGORIES = [
             { type: 'farola', label: 'Farola / Luz', icon: 'lantern', ancho: 0.5, largo: 0.5, color: '#f39c12' },
             { type: 'arreglo-floral', label: 'Arreglo Floral', icon: 'flower-arrangement', diametro: 0.8, color: '#27ae60' },
             { type: 'jardinera-1', label: 'Jardinera 1Cara', icon: 'planter-1', diametro: 0.8, color: '#27ae60' },
-            { type: 'jardinera-2', label: 'Jardinera 2Caras', icon: 'planter-2', diametro: 0.8, color: '#27ae60' },
-            { type: 'espejo-decorativo', label: 'Espejo Decorativo', icon: 'mirror-decor', ancho: 1.5, largo: 0.1, color: '#ecf0f1' }
+            { type: 'lampara', label: 'Lámpara Araña', icon: 'lantern', ancho: 0.8, largo: 0.8, color: '#D4AF37' },
+            { type: 'puerta', label: 'Puerta de Entrada', icon: 'door', ancho: 1.5, largo: 0.2, color: '#5d4037' },
+            { type: 'barra-coctel', label: 'Barra de Cócteles', icon: 'martini', ancho: 1.8, largo: 0.8, color: '#e0e0e0' }
         ]
     },
     {
@@ -305,6 +307,8 @@ const SpatialDesigner = ({ cotId, userRol, onToggleFullscreen }) => {
     const [elements, setElements] = useState([]);
     const [selectedIds, setSelectedIds] = useState([]);
     const [isFullscreen, setIsFullscreen] = useState(false);
+    const [viewMode, setViewMode] = useState('2d'); // '2d' or '3d'
+    const [isWalking, setIsWalking] = useState(false);
     const [isEditorCollapsed, setIsEditorCollapsed] = useState(false);
     const [showObsModal, setShowObsModal] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
@@ -312,9 +316,25 @@ const SpatialDesigner = ({ cotId, userRol, onToggleFullscreen }) => {
     const [activeTab, setActiveTab] = useState('general');
     const [guides, setGuides] = useState([]);
     const [windowSize, setWindowSize] = useState({ width: window.innerWidth, height: window.innerHeight });
+    const [room3DConfig, setRoom3DConfig] = useState({ height: 4, floorType: 'ceramic', showWalls: true, wallColor: '#ffffff' });
     const [scale, setScale] = useState(1);
     const [loading, setLoading] = useState(false);
     const [canvasSize, setCanvasSize] = useState({ width: 800, height: 600 });
+
+    // V7.5: CARGA AUTOMÁTICA DE CONFIGURACIÓN 3D
+    useEffect(() => {
+        if (activeLayout) {
+            try {
+                const config = typeof activeLayout.config_json === 'string' 
+                    ? JSON.parse(activeLayout.config_json || '{}') 
+                    : (activeLayout.config_json || {});
+                
+                if (config.room3D) {
+                    setRoom3DConfig(prev => ({ ...prev, ...config.room3D }));
+                }
+            } catch (e) { console.error("Error parsing layout config:", e); }
+        }
+    }, [activeLayout?.id]);
 
     // Selection Marquee & Hover state
     const [selectionRect, setSelectionRect] = useState(null);
@@ -331,7 +351,9 @@ const SpatialDesigner = ({ cotId, userRol, onToggleFullscreen }) => {
     const trRef = useRef();
     const containerRef = useRef();
     const canvasContainerRef = useRef();
+    const threeRef = useRef();
     const [bgImage] = useImage(activeLayout?.fondo_url || '');
+    const [isExplorerOpen, setIsExplorerOpen] = useState(true); // V9.0: Explorador de Escena
 
     // Responsive Canvas Handling
     useEffect(() => {
@@ -435,6 +457,51 @@ const SpatialDesigner = ({ cotId, userRol, onToggleFullscreen }) => {
         }, 150);
     };
 
+    const updateElementAndInventory = (id, newConfig) => {
+        const el = elements.find(e => e.id === id);
+        if (!el) return;
+
+        let inventory = [...(el.config_json.inventory || [])];
+        const numSeats = newConfig.numSeatsLong || el.config_json.numSeatsLong || 0;
+
+        const syncItem = (flag, name, qty) => {
+            const index = inventory.findIndex(item => item.nombre === name);
+            if (flag !== false) {
+                if (index === -1) inventory.push({ id: Date.now() + Math.random(), cant: qty, nombre: name });
+                else inventory[index].cant = qty;
+            } else {
+                if (index !== -1) inventory.splice(index, 1);
+            }
+        };
+
+        // Mobiliario Base (Mesa y Sillas) siempre sincronizados
+        syncItem(true, 'Mesa ' + (el.name || el.tipo), 1);
+        syncItem(numSeats > 0, 'Sillas (' + (el.config_json.chairStyle || 'Estándar') + ')', numSeats);
+
+        if ('showPlates' in newConfig) syncItem(newConfig.showPlates, 'Plato Base / Servilleta', numSeats);
+        
+        // Copas Independientes
+        if ('showWaterGlass' in newConfig) syncItem(newConfig.showWaterGlass, 'Copa de Agua', numSeats);
+        if ('showWineGlass' in newConfig) syncItem(newConfig.showWineGlass, 'Copa de Vino', numSeats);
+        if ('showSodaGlass' in newConfig) syncItem(newConfig.showSodaGlass, 'Vaso de Gaseosa', numSeats);
+        
+        if ('showCutlery' in newConfig) syncItem(newConfig.showCutlery, 'Juego de Cubiertos', numSeats);
+        if ('showCenterpiece' in newConfig) syncItem(newConfig.showCenterpiece, 'Centro de Mesa', 1);
+
+        // Si cambian las sillas, actualizamos todo lo que depende de ellas
+        if ('numSeatsLong' in newConfig) {
+            const ns = newConfig.numSeatsLong;
+            syncItem(ns > 0, 'Sillas (' + (el.config_json.chairStyle || 'Estándar') + ')', ns);
+            if (el.config_json.showPlates !== false) syncItem(true, 'Plato Base / Servilleta', ns);
+            if (el.config_json.showWaterGlass !== false) syncItem(true, 'Copa de Agua', ns);
+            if (el.config_json.showWineGlass !== false) syncItem(true, 'Copa de Vino', ns);
+            if (el.config_json.showSodaGlass !== false) syncItem(true, 'Vaso de Gaseosa', ns);
+            if (el.config_json.showCutlery !== false) syncItem(true, 'Juego de Cubiertos', ns);
+        }
+
+        updateElement(id, { config_json: { ...el.config_json, ...newConfig, inventory } });
+    };
+
     const fetchLayouts = async () => {
         try {
             const data = await layoutService.getByEvent(cotId);
@@ -467,6 +534,15 @@ const SpatialDesigner = ({ cotId, userRol, onToggleFullscreen }) => {
                 config_json: typeof e.config_json === 'string' ? JSON.parse(e.config_json) : (e.config_json || { inventory: [] })
             }));
             setElements(parsed);
+            
+            // Cargar configuración 3D desde el layout
+            if (layout.config_json) {
+                const layoutConfig = typeof layout.config_json === 'string' ? JSON.parse(layout.config_json) : layout.config_json;
+                if (layoutConfig.room3D) setRoom3DConfig(layoutConfig.room3D);
+                else setRoom3DConfig({ height: 4, floorType: 'ceramic', showWalls: true, wallColor: '#ffffff' });
+            } else {
+                setRoom3DConfig({ height: 4, floorType: 'ceramic', showWalls: true, wallColor: '#ffffff' });
+            }
         } catch (err) { console.error(err); }
     };
 
@@ -556,15 +632,29 @@ const SpatialDesigner = ({ cotId, userRol, onToggleFullscreen }) => {
         try {
             const layoutId = activeLayout.id || activeLayout.layout_id;
             const updatedMaterials = JSON.stringify(globalInventory);
+            
+            // V7.4: PERSISTENCIA INTELIGENTE (Fusión de config_json)
+            const currentConfig = typeof activeLayout.config_json === 'string' 
+                ? JSON.parse(activeLayout.config_json || '{}') 
+                : (activeLayout.config_json || {});
+                
+            const updatedConfig = {
+                ...currentConfig,
+                room3D: room3DConfig // Guardamos Tipo de Suelo, Paredes, etc.
+            };
+
             await layoutService.saveElements(layoutId, elements);
             await layoutService.save({ 
                 ...activeLayout, 
                 notas_montaje: globalNotes, 
-                materiales_globales: updatedMaterials 
+                materiales_globales: updatedMaterials,
+                config_json: JSON.stringify(updatedConfig)
             });
             Swal.fire({ icon: 'success', title: 'Diseño Guardado', background: '#1a1a1a', timer: 1500, target: containerRef.current || document.body });
-        } catch (err) { Swal.fire({ icon: 'error', title: 'Error al guardar', target: containerRef.current || document.body }); }
-        finally { setLoading(false); }
+        } catch (err) { 
+            console.error("Error al guardar:", err);
+            Swal.fire({ icon: 'error', title: 'Error al guardar', target: containerRef.current || document.body }); 
+        } finally { setLoading(false); }
     };
 
     const addGlobalInventoryItem = () => {
@@ -870,7 +960,7 @@ const SpatialDesigner = ({ cotId, userRol, onToggleFullscreen }) => {
         return seats;
     };
 
-    const selectedEl = elements.find(e => selectedIds[0] === e.id);
+    const selectedEl = elements.find(e => String(selectedIds[0]) === String(e.id));
 
     return (
         <div className="spatial-designer-v4" ref={containerRef}>
@@ -963,7 +1053,7 @@ const SpatialDesigner = ({ cotId, userRol, onToggleFullscreen }) => {
                             </div>
                         </div>
 
-                        <div className="nav-center hero-nav-center">
+                        <div className="nav-center hero-nav-center" style={{ opacity: viewMode === '3d' ? 0 : 1, pointerEvents: viewMode === '3d' ? 'none' : 'all' }}>
                             <div className="zoom-controls-premium">
                                 <button onClick={() => handleZoom(-1)} title="Alejar"><Minimize size={18} /></button>
                                 <span className="zoom-value" onClick={handleCenterView}>{(scale * 100).toFixed(0)}%</span>
@@ -975,6 +1065,9 @@ const SpatialDesigner = ({ cotId, userRol, onToggleFullscreen }) => {
                             <div className="nav-actions-group">
                                 <button className="btn-icon-v4-premium" onClick={() => setShowObsModal(true)} title="Notas y Observaciones">
                                     <ClipboardList size={22} />
+                                </button>
+                                <button className="btn-icon-v4-premium" onClick={() => setViewMode(viewMode === '2d' ? '3d' : '2d')} title={viewMode === '2d' ? 'Ver en 3D' : 'Volver a 2D'}>
+                                    {viewMode === '2d' ? <Monitor size={22} /> : <Layers size={22} />}
                                 </button>
                                 <button
                                     className={`btn-icon-v4-premium btn-save-only ${loading ? 'loading' : ''}`}
@@ -1013,13 +1106,26 @@ const SpatialDesigner = ({ cotId, userRol, onToggleFullscreen }) => {
                         </aside>
 
                         <div className="designer-canvas-container" ref={canvasContainerRef} onMouseDown={e => {
-                            if (e.target === e.target.getStage()) {
+                            if (viewMode === '3d') return;
+                            if (e.target && typeof e.target.getStage === 'function' && e.target === e.target.getStage()) {
                                 setIsSelecting(true);
                                 const pos = e.target.getStage().getPointerPosition();
                                 setSelectionRect({ x: pos.x, y: pos.y, w: 0, h: 0 });
                                 setSelectedIds([]);
                             }
                         }}>
+                            {viewMode === '3d' && (
+                                <div className="three-toolbar-v5 animate-slide-down">
+                                    <button className="three-tool-btn" onClick={() => threeRef.current?.recenterCamera()} title="Vista General">
+                                        <Maximize size={16} /> <span>Recentrar</span>
+                                    </button>
+                                    <div className="three-divider" />
+                                    <button className={`three-tool-btn ${isWalking ? 'active' : ''}`} onClick={() => { setIsWalking(!isWalking); threeRef.current?.toggleWalkMode(); }} title="Caminar por el salón">
+                                        <Footprints size={16} /> <span>{isWalking ? 'Detener Paseo' : 'Caminar (WASD)'}</span>
+                                    </button>
+                                </div>
+                            )}
+                            {viewMode === '2d' ? (
                             <Stage ref={stageRef} width={canvasSize.width} height={canvasSize.height} draggable={!isSelecting}
                                 onMouseMove={e => {
                                     if (isSelecting && selectionRect) {
@@ -1081,14 +1187,62 @@ const SpatialDesigner = ({ cotId, userRol, onToggleFullscreen }) => {
                                     {selectionRect && <Rect x={selectionRect.x} y={selectionRect.y} width={selectionRect.w} height={selectionRect.h} fill="rgba(183, 110, 121, 0.2)" stroke="#ff8484" strokeWidth={1} />}
                                 </Layer>
                             </Stage>
-                            {hoverInfo && <div className="canvas-hover-badge" style={{ position: 'absolute', left: '50%', bottom: '20px', transform: 'translateX(-50%)' }}><strong>{hoverInfo.label}</strong>: {hoverInfo.w}m x {hoverInfo.h}m</div>}
+                            ) : (
+                                <div style={{ width: '100%', height: '100%', position: 'relative' }}>
+                                    {/* V9.0: EXPLORADOR DE ESCENA FLOTANTE */}
+                                    <div className={`scene-explorer-floating ${isExplorerOpen ? 'open' : 'collapsed'}`}>
+                                        <header className="explorer-header" onClick={() => setIsExplorerOpen(!isExplorerOpen)}>
+                                            <div className="header-meta">
+                                                <Layers size={14} />
+                                                <span>ESCENA</span>
+                                                <span className="count-badge">{elements.length}</span>
+                                            </div>
+                                            <ChevronLeft size={16} className={`toggle-icon ${isExplorerOpen ? '' : 'rotated'}`} />
+                                        </header>
+                                        {isExplorerOpen && (
+                                            <div className="explorer-content custom-scrollbar">
+                                                {elements.map(el => (
+                                                    <div 
+                                                        key={el.id} 
+                                                        className={`explorer-item ${selectedIds[0] === el.id ? 'active' : ''}`}
+                                                        onClick={() => setSelectedIds([el.id])}
+                                                    >
+                                                        <div className="item-icon-circle">
+                                                            <div className="inner-dot" style={{ background: el.color || el.config_json?.color || '#ffd700' }} />
+                                                        </div>
+                                                        <span className="item-name">{el.name || el.tipo?.toUpperCase() || 'Mesa'}</span>
+                                                        {selectedIds[0] === el.id && <div className="active-dot" />}
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    <ThreeSpatialDesigner 
+                                        ref={threeRef}
+                                        elements={elements} 
+                                        roomConfig={{ 
+                                            width: activeLayout?.ancho_metros || 20, 
+                                            length: activeLayout?.largo_metros || 20,
+                                            ...room3DConfig
+                                        }}
+                                        svgDataBank={ELEMENT_SVG_DATA}
+                                        selectedId={selectedIds[0]}
+                                        onSelect={(id) => setSelectedIds(id ? [id] : [])}
+                                        onUpdateElement={(id, data) => updateElement(id, data)}
+                                    />
+                                </div>
+                            )}
+                            {hoverInfo && viewMode === '2d' && <div className="canvas-hover-badge" style={{ position: 'absolute', left: '50%', bottom: '20px', transform: 'translateX(-50%)' }}><strong>{hoverInfo.label}</strong>: {hoverInfo.w}m x {hoverInfo.h}m</div>}
                         </div>
 
-                        {selectedIds.length > 0 && (
-                            <aside className="designer-properties-sidebar">
+                        <aside className="designer-properties-sidebar">
+                            {selectedIds.length > 0 && selectedIds[0] ? (
+                                <>
                                 <div className="sidebar-header" style={{ padding: '20px', borderBottom: '1px solid rgba(255,255,255,0.05)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                     <div><small>{selectedIds.length === 1 ? (selectedEl?.tipo?.toUpperCase() || 'SELECTOR') : `${selectedIds.length} ITEMS`}</small><h4>{selectedIds.length === 1 ? (selectedEl?.label || '...') : 'Selección'}</h4></div>
                                     <div style={{ display: 'flex', gap: '8px' }}>
+                                        {viewMode === '3d' && <button className="tool-btn-premium highlight" onClick={() => threeRef.current?.focusOnSelected()} title="Enfocar"><Focus size={16} /></button>}
                                         <button className="tool-btn-premium" onClick={duplicateSelected} title="Duplicar"><Copy size={16} /></button>
                                         <button className="tool-btn-premium" onClick={removeSelected} title="Eliminar"><Trash2 size={16} /></button>
                                         <button className="tool-btn-premium" onClick={() => setSelectedIds([])}><X size={16} /></button>
@@ -1134,7 +1288,7 @@ const SpatialDesigner = ({ cotId, userRol, onToggleFullscreen }) => {
                                             </div>
 
                                             <div className="dim-fields-v5">
-                                                {selectedEl.tipo.includes('redonda') || selectedEl.tipo.includes('ponque') || selectedEl.tipo.includes('coctel') ? (
+                                                {String(selectedEl.tipo).includes('redonda') || String(selectedEl.tipo).includes('ponque') || String(selectedEl.tipo).includes('coctel') || selectedEl.label?.toLowerCase().includes('redonda') ? (
                                                     <div className="input-v5-wrapper">
                                                         <input
                                                             type="number" step="0.1"
@@ -1161,6 +1315,145 @@ const SpatialDesigner = ({ cotId, userRol, onToggleFullscreen }) => {
                                                 )}
                                             </div>
 
+                                            {(selectedEl.tipo.includes('mesa') || selectedEl.tipo.includes('coctel') || selectedEl.tipo.includes('ponque')) && (
+                                                <div className="tableware-section-v5 mt-20">
+                                                    <label className="section-label-mini">ESTILO DE MENAJE (3D)</label>
+                                                    <div className="config-grid-v5" style={{ gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' }}>
+                                                        <div className={`config-tile mini ${selectedEl.config_json.showPlates !== false ? 'active' : ''}`} 
+                                                            onClick={() => updateElementAndInventory(selectedEl.id, { showPlates: selectedEl.config_json.showPlates === false ? true : false })}>
+                                                            <Disc size={16} /> <small>Platos</small>
+                                                        </div>
+                                                        <div className={`config-tile mini ${selectedEl.config_json.showWaterGlass !== false ? 'active' : ''}`}
+                                                            onClick={() => updateElementAndInventory(selectedEl.id, { showWaterGlass: selectedEl.config_json.showWaterGlass === false ? true : false })}>
+                                                            <GlassWater size={16} /> <small>C. Agua</small>
+                                                        </div>
+                                                        <div className={`config-tile mini ${selectedEl.config_json.showWineGlass !== false ? 'active' : ''}`}
+                                                            onClick={() => updateElementAndInventory(selectedEl.id, { showWineGlass: selectedEl.config_json.showWineGlass === false ? true : false })}>
+                                                            <GlassWater size={16} /> <small>C. Vino</small>
+                                                        </div>
+                                                        <div className={`config-tile mini ${selectedEl.config_json.showSodaGlass ? 'active' : ''}`}
+                                                            onClick={() => updateElementAndInventory(selectedEl.id, { showSodaGlass: !selectedEl.config_json.showSodaGlass })}>
+                                                            <GlassWater size={16} /> <small>V. Gaseosa</small>
+                                                        </div>
+                                                        <div className={`config-tile mini ${selectedEl.config_json.showCutlery !== false ? 'active' : ''}`}
+                                                            onClick={() => updateElementAndInventory(selectedEl.id, { showCutlery: selectedEl.config_json.showCutlery === false ? true : false })}>
+                                                            <Utensils size={16} /> <small>Cubiertos</small>
+                                                        </div>
+                                                        <div className={`config-tile mini ${selectedEl.config_json.showCenterpiece !== false ? 'active' : ''}`}
+                                                            onClick={() => updateElementAndInventory(selectedEl.id, { showCenterpiece: selectedEl.config_json.showCenterpiece === false ? true : false })}>
+                                                            <Flower size={16} /> <small>Centros</small>
+                                                        </div>
+                                                    </div>
+
+                                                    <div className="centerpiece-advanced-props mt-15" style={{ background: 'rgba(0,0,0,0.2)', padding: '10px', borderRadius: '10px' }}>
+                                                        <div className="side-by-side">
+                                                            <div className="mini-color-pick">
+                                                                <input type="color" value={selectedEl.config_json.floralColor || '#ff8484'} onChange={e => updateElement(selectedEl.id, { config_json: { ...selectedEl.config_json, floralColor: e.target.value } })} />
+                                                                <small>FLORES</small>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                    {selectedEl.config_json.showCenterpiece !== false && (
+                                                        <div className="centerpiece-type-selector mt-10">
+                                                            <div className="config-grid-v5" style={{ gridTemplateColumns: 'repeat(3, 1fr)' }}>
+                                                                {['alto', 'bajo', 'vela'].map(t => (
+                                                                    <div key={t} className={`config-tile mini ${selectedEl.config_json.centerpieceType === t ? 'active' : ''}`}
+                                                                        onClick={() => updateElement(selectedEl.id, { config_json: { ...selectedEl.config_json, centerpieceType: t } })}>
+                                                                        <small>{t.toUpperCase()}</small>
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                        </div>
+                                                    )}
+
+                                                    <div className="chair-style-selector mt-15 p-15" style={{ background: 'rgba(0,0,0,0.2)', borderRadius: '15px' }}>
+                                                        <label className="section-label-mini">MODELO DE SILLA</label>
+                                                        <div className="config-grid-v5" style={{ gridTemplateColumns: 'repeat(3, 1fr)', marginTop: '8px' }}>
+                                                            <div className={`config-tile mini ${selectedEl.config_json.chairStyle === 'puff' || !selectedEl.config_json.chairStyle ? 'active' : ''}`}
+                                                                onClick={() => updateElement(selectedEl.id, { config_json: { ...selectedEl.config_json, chairStyle: 'puff' } })}>
+                                                                <small>PUFF</small>
+                                                            </div>
+                                                            <div className={`config-tile mini ${selectedEl.config_json.chairStyle === 'chavari' ? 'active' : ''}`}
+                                                                onClick={() => updateElement(selectedEl.id, { config_json: { ...selectedEl.config_json, chairStyle: 'chavari' } })}>
+                                                                <small>CHAVARI</small>
+                                                            </div>
+                                                            <div className={`config-tile mini ${selectedEl.config_json.chairStyle === 'cros' ? 'active' : ''}`}
+                                                                onClick={() => updateElement(selectedEl.id, { config_json: { ...selectedEl.config_json, chairStyle: 'cros' } })}>
+                                                                <small>CROS</small>
+                                                            </div>
+                                                        </div>
+
+                                                        {selectedEl.config_json.chairStyle === 'chavari' && (
+                                                            <div className="chair-materials-grid mt-10" style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', justifyContent: 'center' }}>
+                                                                {[
+                                                                    { name: 'Oro', color: '#d4af37' },
+                                                                    { name: 'Plata', color: '#c0c0c0' },
+                                                                    { name: 'Blanco', color: '#ffffff' },
+                                                                    { name: 'Negro', color: '#000000' },
+                                                                    { name: 'Cristal', color: 'crystal' }
+                                                                ].map(m => (
+                                                                    <div key={m.name} className="mini-color-pick"
+                                                                        onClick={() => updateElement(selectedEl.id, { config_json: { ...selectedEl.config_json, chairColor: m.color } })}
+                                                                        style={{ cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                                                                        <div style={{ width: '22px', height: '22px', borderRadius: '50%', background: m.color === 'crystal' ? 'rgba(255,255,255,0.2)' : m.color, border: selectedEl.config_json.chairColor === m.color ? '2px solid #d4af37' : '1px solid rgba(255,255,255,0.2)' }} title={m.name} />
+                                                                        <span style={{ fontSize: '7px', marginTop: '2px', opacity: 0.6 }}>{m.name}</span>
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                        )}
+
+                                                        {selectedEl.config_json.chairStyle === 'cros' && (
+                                                            <div className="chair-materials-grid mt-10" style={{ display: 'flex', gap: '15px', justifyContent: 'center' }}>
+                                                                <div className="mini-color-pick"
+                                                                    onClick={() => updateElement(selectedEl.id, { config_json: { ...selectedEl.config_json, chairColor: 'wood_light' } })}
+                                                                    style={{ cursor: 'pointer', textAlign: 'center' }}>
+                                                                    <div style={{ width: '35px', height: '22px', borderRadius: '4px', background: '#ba8c63', border: selectedEl.config_json.chairColor === 'wood_light' ? '2px solid #d4af37' : '1px solid transparent' }} />
+                                                                    <span style={{ fontSize: '7px', display: 'block', marginTop: '2px' }}>CLARA</span>
+                                                                </div>
+                                                                <div className="mini-color-pick"
+                                                                    onClick={() => updateElement(selectedEl.id, { config_json: { ...selectedEl.config_json, chairColor: 'wood_dark' } })}
+                                                                    style={{ cursor: 'pointer', textAlign: 'center' }}>
+                                                                    <div style={{ width: '35px', height: '22px', borderRadius: '4px', background: '#5d4037', border: selectedEl.config_json.chairColor === 'wood_dark' ? '2px solid #d4af37' : '1px solid transparent' }} />
+                                                                    <span style={{ fontSize: '7px', display: 'block', marginTop: '2px' }}>OSCURA</span>
+                                                                </div>
+                                                            </div>
+                                                        )}
+                                                    </div>
+
+                                                    <div className="tableware-colors-grid mt-15" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px' }}>
+                                                        <div className="mini-color-pick">
+                                                            <input type="color" value={selectedEl.config_json.tablewareColor || '#ffffff'} onChange={e => updateElement(selectedEl.id, { config_json: { ...selectedEl.config_json, tablewareColor: e.target.value } })} title="Color Vajilla" />
+                                                            <small>Vajilla</small>
+                                                        </div>
+                                                        <div className="mini-color-pick">
+                                                            <input type="color" value={selectedEl.config_json.napkinColor || selectedEl.config_json.color} onChange={e => updateElement(selectedEl.id, { config_json: { ...selectedEl.config_json, napkinColor: e.target.value } })} title="Color Servilleta" />
+                                                            <small>Servill.</small>
+                                                        </div>
+                                                        <div className="mini-color-pick">
+                                                            <input type="color" value={selectedEl.config_json.cutleryColor || '#aaaaaa'} onChange={e => updateElement(selectedEl.id, { config_json: { ...selectedEl.config_json, cutleryColor: e.target.value } })} title="Color Cubiertos" />
+                                                            <small>Cubier.</small>
+                                                        </div>
+                                                        <div className="mini-color-pick">
+                                                            <input type="color" value={selectedEl.config_json.waterGlassColor || '#ffffff'} onChange={e => updateElement(selectedEl.id, { config_json: { ...selectedEl.config_json, waterGlassColor: e.target.value } })} title="Color Copa Agua" />
+                                                            <small>C.Agua</small>
+                                                        </div>
+                                                        <div className="mini-color-pick">
+                                                            <input type="color" value={selectedEl.config_json.wineGlassColor || '#ffffff'} onChange={e => updateElement(selectedEl.id, { config_json: { ...selectedEl.config_json, wineGlassColor: e.target.value } })} title="Color Copa Vino" />
+                                                            <small>C.Vino</small>
+                                                        </div>
+                                                        <div className="mini-color-pick">
+                                                            <input type="color" value={selectedEl.config_json.sodaGlassColor || '#ffffff'} onChange={e => updateElement(selectedEl.id, { config_json: { ...selectedEl.config_json, sodaGlassColor: e.target.value } })} title="Color Vaso Gaseosa" />
+                                                            <small>C.Gas</small>
+                                                        </div>
+                                                        <div className="mini-color-pick">
+                                                            <input type="color" value={selectedEl.config_json.chairColor || '#333333'} onChange={e => updateElement(selectedEl.id, { config_json: { ...selectedEl.config_json, chairColor: e.target.value } })} title="Color General" />
+                                                            <small>Base</small>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            )}
+
                                             {(selectedEl.tipo.includes('mesa') || selectedEl.tipo.includes('ceremony')) && (
                                                 <div className="seat-config-premium">
                                                     <div className="seat-label-row">
@@ -1168,9 +1461,9 @@ const SpatialDesigner = ({ cotId, userRol, onToggleFullscreen }) => {
                                                         <span>{selectedEl.tipo.includes('rectangular') || selectedEl.tipo.includes('imperial') ? 'Puestos por Lado Largo' : 'Sillas Totales'}</span>
                                                     </div>
                                                     <div className="seat-stepper">
-                                                        <button className="step-btn" onClick={() => updateElement(selectedEl.id, { config_json: { ...selectedEl.config_json, numSeatsLong: Math.max(0, (selectedEl.config_json.numSeatsLong || 0) - 1) } })}>-</button>
+                                                        <button className="step-btn" onClick={() => updateElementAndInventory(selectedIds[0], { numSeatsLong: Math.max(0, (selectedEl.config_json.numSeatsLong || 0) - 1) })}>-</button>
                                                         <div className="count-display">{selectedEl.config_json.numSeatsLong || 0}</div>
-                                                        <button className="step-btn" onClick={() => updateElement(selectedEl.id, { config_json: { ...selectedEl.config_json, numSeatsLong: (selectedEl.config_json.numSeatsLong || 0) + 1 } })}>+</button>
+                                                        <button className="step-btn" onClick={() => updateElementAndInventory(selectedIds[0], { numSeatsLong: (selectedEl.config_json.numSeatsLong || 0) + 1 })}>+</button>
                                                     </div>
 
                                                     {(selectedEl.tipo.includes('rectangular') || selectedEl.tipo.includes('imperial')) && (
@@ -1189,6 +1482,37 @@ const SpatialDesigner = ({ cotId, userRol, onToggleFullscreen }) => {
                                                 </div>
                                             )}
 
+                                            {selectedEl.tipo === 'pista-baile' && (
+                                                <div className="dance-floor-props mt-20 p-15" style={{ background: 'rgba(0,0,0,0.2)', borderRadius: '15px' }}>
+                                                    <label className="section-label-mini">PISTA DE BAILE PREMIUM</label>
+                                                    <div className="input-v5-wrapper mt-10">
+                                                        <input 
+                                                            type="text" 
+                                                            className="input-v5" 
+                                                            placeholder="A & B" 
+                                                            value={selectedEl.config_json.danceFloorInitials || ''} 
+                                                            onChange={e => updateElement(selectedEl.id, { config_json: { ...selectedEl.config_json, danceFloorInitials: e.target.value } })} 
+                                                        />
+                                                        <label className="label-v5">Iniciales (Cursiva)</label>
+                                                    </div>
+                                                    <div className="side-by-side mt-10">
+                                                        <div className="input-v5-wrapper mini">
+                                                            <input 
+                                                                type="number" 
+                                                                className="input-v5" 
+                                                                value={selectedEl.config_json.danceFloorHeight || 10} 
+                                                                onChange={e => updateElement(selectedEl.id, { config_json: { ...selectedEl.config_json, danceFloorHeight: parseInt(e.target.value) } })} 
+                                                            />
+                                                            <label className="label-v5">Elevación (cm)</label>
+                                                        </div>
+                                                        <div className="mini-color-pick">
+                                                            <input type="color" value={selectedEl.config_json.danceFloorColor || '#111111'} onChange={e => updateElement(selectedEl.id, { config_json: { ...selectedEl.config_json, danceFloorColor: e.target.value } })} />
+                                                            <small>COLOR</small>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            )}
+                                            
                                             <div className="color-section-v5">
                                                 <label className="section-label">Estilo y Color</label>
                                                 <div className="color-grid-v5">
@@ -1228,28 +1552,78 @@ const SpatialDesigner = ({ cotId, userRol, onToggleFullscreen }) => {
                                                         <div className="empty-inventory">Sin artículos agregados</div>
                                                     ) : (
                                                         selectedEl.config_json.inventory.map(item => (
-                                                            <div key={item.id} className="inventory-row-v5">
-                                                                <input 
-                                                                   placeholder="Cant" 
-                                                                   className="inv-input cant" 
-                                                                   value={item.cant} 
-                                                                   onChange={e => updateInventoryItem(selectedEl.id, item.id, { cant: e.target.value })} 
-                                                                />
-                                                                <input 
-                                                                   placeholder="Artículo" 
-                                                                   className="inv-input" 
-                                                                   value={item.nombre} 
-                                                                   onChange={e => updateInventoryItem(selectedEl.id, item.id, { nombre: e.target.value })} 
-                                                                />
-                                                                <button className="inv-del-btn" title="Eliminar" onClick={() => removeInventoryItem(selectedEl.id, item.id)}>
-                                                                    <Trash2 size={12} />
-                                                                </button>
+                                                            <div key={item.id} className="inventory-row-v5-premium">
+                                                                <div className="inv-input-group">
+                                                                    <input 
+                                                                       type="text"
+                                                                       placeholder="0" 
+                                                                       className="inv-input-v5 cant" 
+                                                                       value={item.cant} 
+                                                                       onChange={e => updateInventoryItem(selectedEl.id, item.id, { cant: e.target.value })} 
+                                                                    />
+                                                                    <input 
+                                                                       type="text"
+                                                                       placeholder="Nombre del artículo..." 
+                                                                       className="inv-input-v5 name" 
+                                                                       value={item.nombre} 
+                                                                       onChange={e => updateInventoryItem(selectedEl.id, item.id, { nombre: e.target.value })} 
+                                                                    />
+                                                                    <button className="inv-delete-btn-v5" title="Eliminar" onClick={() => removeInventoryItem(selectedEl.id, item.id)}>
+                                                                        <Trash2 size={12} />
+                                                                    </button>
+                                                                </div>
                                                             </div>
                                                         ))
                                                     )}
                                                 </div>
 
-                                                <div className="obs-section-v5 mt-15">
+                                                {selectedEl.tipo === 'puerta' && (
+                                                <div className="grid grid-cols-2 gap-4 mt-10">
+                                                    <div className="config-section-v5">
+                                                        <label className="config-label-v5">Ancho (cm)</label>
+                                                        <input type="number" className="dense-input-v5" 
+                                                            value={selectedEl.config_json.doorWidth || 150}
+                                                            onChange={(e) => updateElement(selectedEl.id, { config_json: { ...selectedEl.config_json, doorWidth: parseInt(e.target.value) } })}
+                                                        />
+                                                    </div>
+                                                    <div className="config-section-v5">
+                                                        <label className="config-label-v5">Alto (cm)</label>
+                                                        <input type="number" className="dense-input-v5" 
+                                                            value={selectedEl.config_json.doorHeight || 220}
+                                                            onChange={(e) => updateElement(selectedEl.id, { config_json: { ...selectedEl.config_json, doorHeight: parseInt(e.target.value) } })}
+                                                        />
+                                                    </div>
+                                                </div>
+                                            )}
+
+                                            {selectedEl.tipo === 'barra-coctel' && (
+                                                <div className="grid grid-cols-2 gap-4 mt-10">
+                                                    <div className="config-section-v5">
+                                                        <label className="config-label-v5">Ancho Total (cm)</label>
+                                                        <input type="number" className="dense-input-v5" 
+                                                            value={selectedEl.config_json.width || 250}
+                                                            onChange={(e) => updateElement(selectedEl.id, { config_json: { ...selectedEl.config_json, width: parseInt(e.target.value) } })}
+                                                        />
+                                                    </div>
+                                                    <div className="config-section-v5">
+                                                        <label className="config-label-v5">Fondo (cm)</label>
+                                                        <input type="number" className="dense-input-v5" 
+                                                            value={selectedEl.config_json.height || 80}
+                                                            onChange={(e) => updateElement(selectedEl.id, { config_json: { ...selectedEl.config_json, height: parseInt(e.target.value) } })}
+                                                        />
+                                                    </div>
+                                                    <div className="config-section-v5 col-span-2">
+                                                        <label className="config-label-v5">Altura Barra (cm)</label>
+                                                        <input type="range" min="80" max="140" step="5" className="flex-1 accent-indigo-500"
+                                                            value={selectedEl.config_json.barHeight || 110}
+                                                            onChange={(e) => updateElement(selectedEl.id, { config_json: { ...selectedEl.config_json, barHeight: parseInt(e.target.value) } })}
+                                                        />
+                                                        <span className="text-xs text-indigo-300 ml-2">{selectedEl.config_json.barHeight || 110} cm</span>
+                                                    </div>
+                                                </div>
+                                            )}
+
+                                            <div className="obs-section-v5 mt-15">
                                                     <label className="section-label-mini"><Info size={12} /> NOTAS ADICIONALES</label>
                                                     <textarea
                                                         className="textarea-v5-premium"
@@ -1263,8 +1637,100 @@ const SpatialDesigner = ({ cotId, userRol, onToggleFullscreen }) => {
                                         </div>
                                     )}
                                 </div>
-                            </aside>
-                        )}
+                                </>
+                            ) : (
+                                <>
+                                <div className="sidebar-header" style={{ padding: '20px', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                                    <small>ESTRUCTURA 3D</small>
+                                    <h4>Configuración de Sala</h4>
+                                </div>
+                                <div className="sidebar-scroll premium-scroll" style={{ padding: '20px' }}>
+                                    <div className="prop-group animate-fade-in">
+                                        <div className="side-by-side">
+                                            <div className="input-v5-wrapper mini">
+                                                <input
+                                                    type="number"
+                                                    className="input-v5"
+                                                    value={activeLayout?.ancho_metros || 20}
+                                                    onChange={e => setActiveLayout({ ...activeLayout, ancho_metros: parseFloat(e.target.value) })}
+                                                />
+                                                <label className="label-v5">Ancho (m)</label>
+                                            </div>
+                                            <div className="input-v5-wrapper mini">
+                                                <input
+                                                    type="number"
+                                                    className="input-v5"
+                                                    value={activeLayout?.largo_metros || 20}
+                                                    onChange={e => setActiveLayout({ ...activeLayout, largo_metros: parseFloat(e.target.value) })}
+                                                />
+                                                <label className="label-v5">Largo (m)</label>
+                                            </div>
+                                        </div>
+
+                                        <div className="input-v5-wrapper mt-10">
+                                            <input
+                                                type="number"
+                                                className="input-v5"
+                                                value={room3DConfig.height}
+                                                onChange={e => setRoom3DConfig({ ...room3DConfig, height: parseFloat(e.target.value) })}
+                                                placeholder=" "
+                                            />
+                                            <label className="label-v5">Altura de Paredes (m)</label>
+                                        </div>
+
+                                        <div className="color-section-v5 mt-10">
+                                            <label className="section-label">Color de Paredes</label>
+                                            <div className="color-grid-v5">
+                                                <div className="color-input-container">
+                                                    <input 
+                                                        type="color" 
+                                                        value={room3DConfig.wallColor || '#ffffff'} 
+                                                        onChange={e => setRoom3DConfig({ ...room3DConfig, wallColor: e.target.value })} 
+                                                    />
+                                                    <div className="color-preview-circle" style={{ background: room3DConfig.wallColor || '#ffffff' }} />
+                                                </div>
+                                                <div className="color-text-info">
+                                                    <span className="color-hex">{(room3DConfig.wallColor || '#FFFFFF').toUpperCase()}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div className="config-grid-v5">
+                                            <div className={`config-tile ${room3DConfig.showWalls ? 'active' : ''}`} onClick={() => setRoom3DConfig({ ...room3DConfig, showWalls: !room3DConfig.showWalls })}>
+                                                <Maximize size={16} />
+                                                <span>Ver Paredes</span>
+                                            </div>
+                                        </div>
+
+                                        <div className="color-section-v5 mt-20">
+                                            <label className="section-label">Tipo de Piso</label>
+                                            <div className="floor-type-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px', marginTop: '10px' }}>
+                                                {[
+                                                    { id: 'ceramic', label: 'Cerámica' },
+                                                    { id: 'grass', label: 'Grama' },
+                                                    { id: 'wood', label: 'Madera' }
+                                                ].map(type => (
+                                                    <div key={type.id} 
+                                                        className={`config-tile ${room3DConfig.floorType === type.id ? 'active' : ''}`}
+                                                        onClick={() => setRoom3DConfig({ ...room3DConfig, floorType: type.id })}
+                                                        style={{ height: '60px', padding: '10px' }}
+                                                    >
+                                                        <small style={{ fontSize: '9px', textTransform: 'uppercase' }}>{type.label}</small>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+
+                                        <div className="obs-section-v5 mt-20">
+                                            <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.5)', fontStyle: 'italic' }}>
+                                                * Estas configuraciones afectan principalmente la visualización en el motor 3D de alta fidelidad.
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                                </>
+                            )}
+                        </aside>
                     </div>
                 </div>
             )}
@@ -1472,6 +1938,8 @@ const SpatialDesigner = ({ cotId, userRol, onToggleFullscreen }) => {
                 }
                 .btn-icon-v4-premium:hover { background: rgba(255,255,255,0.08); border-color: #ff8484; color: #ff8484; transform: translateY(-2px); }
                 
+                .divider-v { width: 1px; height: 30px; background: rgba(255,255,255,0.1); margin: 0 10px; }
+
                 .btn-save-only { background: rgba(183, 110, 121, 0.1); border-color: rgba(183, 110, 121, 0.2); color: #ff8484; }
                 .btn-save-only:hover { background: #ff8484; color: #fff; box-shadow: 0 0 20px rgba(183, 110, 121, 0.4); }
                 

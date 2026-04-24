@@ -31,7 +31,10 @@ export const getUploadUrl = (path) => {
     }
     
     // 3. Unir con la URL base asegurando que la ruta final use uploads/
-    const baseUrl = UPLOADS_URL.endsWith('/') ? UPLOADS_URL.slice(0, -1) : UPLOADS_URL;
+    // Usamos window.location.hostname para pruebas locales desde otros dispositivos
+    const currentHost = isLocal ? window.location.hostname : 'archiplanner-api.onrender.com';
+    const baseUrl = isLocal ? `http://${currentHost}:${PORT}` : 'https://archiplanner-api.onrender.com';
+    
     return `${baseUrl}/uploads/${cleanPath}`;
 };
 

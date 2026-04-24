@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../../services/api';
-import { 
+import {
     Plus, Search, FileText, Calendar, User, X,
-    MoreVertical, Edit2, Trash2, ExternalLink, 
+    MoreVertical, Edit2, Trash2, ExternalLink,
     CheckCircle2, Clock, FileWarning, Building2, Briefcase
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
@@ -20,6 +20,8 @@ const AdminCotizaciones = () => {
     const [filterEvento, setFilterEvento] = useState('all');
     const [filterFecha, setFilterFecha] = useState('');
 
+    const inputRef = useRef(null);
+
     const isSuperuser = user?.rol?.toLowerCase() === 'admin' || user?.rol?.toLowerCase() === 'superuser';
     const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
 
@@ -31,6 +33,12 @@ const AdminCotizaciones = () => {
 
     useEffect(() => {
         fetchCotizaciones();
+    }, []);
+
+    useEffect(() => {
+        if (inputRef.current) {
+            inputRef.current.style.setProperty('padding-left', '30px', 'important');
+        }
     }, []);
 
     // Alt + N for New Quotation
@@ -67,7 +75,7 @@ const AdminCotizaciones = () => {
     };
 
     const getStatusIcon = (status) => {
-        switch(status?.toLowerCase()) {
+        switch (status?.toLowerCase()) {
             case 'aprobado': return <CheckCircle2 size={14} className="text-success" />;
             case 'borrador': return <Clock size={14} className="text-warning" />;
             case 'rechazado': return <FileWarning size={14} className="text-danger" />;
@@ -82,11 +90,11 @@ const AdminCotizaciones = () => {
         if (!isAdmin && Number(c.u_id) !== Number(user?.id)) return false;
 
         const sTerm = (listSearchTerm || '').toLowerCase();
-        const matchesSearch = !sTerm || 
-            (c.num || '').toString().toLowerCase().includes(sTerm) || 
+        const matchesSearch = !sTerm ||
+            (c.num || '').toString().toLowerCase().includes(sTerm) ||
             `${c.cliente_nombre || ''} ${c.cliente_apellido || ''}`.toLowerCase().includes(sTerm) ||
             (c.nombre_empresa || '').toLowerCase().includes(sTerm);
-        
+
         const matchesStatus = filterStatus === 'all' || (c.estado || '').toLowerCase() === filterStatus.toLowerCase();
         const matchesEvento = filterEvento === 'all' || c.tipo_evento === filterEvento;
         const matchesFecha = !filterFecha || (c.fevent && c.fevent.toString().startsWith(filterFecha));
@@ -98,8 +106,8 @@ const AdminCotizaciones = () => {
         <div className="mobile-cards-container" style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
             {filtered.length > 0 ? (
                 filtered.map(c => (
-                    <div key={c.id} className="glass-panel" style={{ 
-                        padding: '12px 15px', 
+                    <div key={c.id} className="glass-panel" style={{
+                        padding: '12px 15px',
                         display: 'grid',
                         gridTemplateColumns: 'minmax(0, 1fr) auto',
                         gap: '6px 15px',
@@ -108,7 +116,7 @@ const AdminCotizaciones = () => {
                         {/* LEFT: ID & Profile Info */}
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                             <span style={{ fontWeight: '900', color: 'var(--color-primary)', fontSize: '13px', opacity: 0.8 }}>#{c.num || c.id}</span>
-                            
+
                             <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
                                 <div className="user-avatar-sm" style={{ width: '32px', height: '32px', borderRadius: '6px', background: 'rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                                     {c.logo_empresa ? (
@@ -127,7 +135,7 @@ const AdminCotizaciones = () => {
                             <span className={`status-badge ${c.estado?.toLowerCase()}`} style={{ fontSize: '9px', padding: '2px 8px', marginRight: '-4px' }}>
                                 {c.estado || 'Borrador'}
                             </span>
-                            
+
                             <div className="actions-flex-end" style={{ gap: '6px', marginRight: '-6px' }}>
                                 <button className="action-btn" onClick={() => window.open(`/admin/cotizaciones/${c.id}/view`, '_blank')} title="Ver" style={{ padding: '6px' }}>
                                     <ExternalLink size={16} />
@@ -145,15 +153,15 @@ const AdminCotizaciones = () => {
                         </div>
 
                         {/* FULL WIDTH BOTTOM: Date & Total */}
-                        <div style={{ 
-                            gridColumn: 'span 2', 
-                            display: 'flex', 
-                            justifyContent: 'space-between', 
-                            alignItems: 'center', 
-                            padding: '10px 12px', 
-                            background: 'rgba(255,255,255,0.02)', 
-                            borderRadius: '8px', 
-                            marginTop: '4px' 
+                        <div style={{
+                            gridColumn: 'span 2',
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            padding: '10px 12px',
+                            background: 'rgba(255,255,255,0.02)',
+                            borderRadius: '8px',
+                            marginTop: '4px'
                         }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '6px', opacity: 0.7, fontSize: '11px' }}>
                                 <Calendar size={12} />
@@ -179,7 +187,7 @@ const AdminCotizaciones = () => {
                     <h1 className="admin-title">Cotizaciones</h1>
                     {!isMobile && <p className="admin-subtitle">Gestión de presupuestos y propuestas</p>}
                 </div>
-                
+
                 {/* Floating Triggers for Mobile V4 */}
                 {isMobile && (
                     <>
@@ -209,13 +217,14 @@ const AdminCotizaciones = () => {
                     {!isMobile && <label>Buscar</label>}
                     <div className={isMobile ? 'search-input-wrapper-v4' : ''} style={{ position: 'relative' }}>
                         <Search size={isMobile ? 18 : 14} style={!isMobile ? { position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: 'var(--color-primary)' } : {}} />
-                        <input 
-                            type="text" 
-                            className="dense-input" 
-                            placeholder="Buscar por cliente o empresa..." 
-                            style={isMobile ? { width: '100%' } : { paddingLeft: '32px', width: '300px' }} 
-                            value={listSearchTerm} 
-                            onChange={(e) => setListSearchTerm(e.target.value)} 
+                        <input
+                            ref={inputRef}
+                            type="text"
+                            className="filter-input-dense"
+                            placeholder="Buscar por cliente o empresa..."
+                            style={isMobile ? { width: '100%', } : { width: '300px' }}
+                            value={listSearchTerm}
+                            onChange={(e) => setListSearchTerm(e.target.value)}
                         />
                     </div>
                 </div>
@@ -252,7 +261,12 @@ const AdminCotizaciones = () => {
                             </div>
                         </div>
 
-                        <button className="action-btn" onClick={() => { setListSearchTerm(''); setFilterStatus('all'); setFilterEvento('all'); setFilterFecha(''); }} title="Limpiar" style={{ height: '34px', background: 'rgba(255,132,132,0.1)', color: 'var(--color-primary)' }}>
+                        <button
+                            className="btn-icon-tooltip primary"
+                            onClick={() => { setListSearchTerm(''); setFilterStatus('all'); setFilterEvento('all'); setFilterFecha(''); }}
+                            title="Limpiar"
+                            style={{ height: '38px', minWidth: '38px' }}
+                        >
                             <X size={16} />
                         </button>
                     </>

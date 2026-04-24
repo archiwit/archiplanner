@@ -56,6 +56,8 @@ import GuestListManager from '../../components/admin/planner/GuestListManager';
 import SpatialDesigner from '../../components/admin/planner/SpatialDesigner';
 import EventBrief from '../../components/admin/planner/EventBrief';
 import KeyItemsManager from '../../components/admin/planner/KeyItemsManager';
+import { getUploadUrl, API_BASE_URL } from '../../config';
+import axios from 'axios';
 import CountdownTimer from '../../components/ui/CountdownTimer';
 
 const Novio = ({ size = 16, color = "currentColor" }) => (
@@ -244,7 +246,9 @@ const AdminEventPlanner = () => {
     useEffect(() => {
         const fetchBaseData = async () => {
             try {
-                const comps = await configService.getCompanies();
+                // Fixed: Using direct axios call to avoid ReferenceError: configService is not defined
+                const res = await axios.get(`${API_BASE_URL}/configuraciones`);
+                const comps = res.data;
                 setCompanies(Array.isArray(comps) ? comps : []);
             } catch (err) { console.error("Error loading companies:", err); }
         };
@@ -317,7 +321,7 @@ const AdminEventPlanner = () => {
             if (keyRes.status === 'fulfilled') setKeyItems(Array.isArray(keyRes.value) ? keyRes.value : []);
             
             if (meetRes.status === 'fulfilled') {
-                const meetingTypes = ['reunion', 'cita', 'visita', 'llamada', 'evento', 'otro'];
+                const meetingTypes = ['reunion', 'reunión', 'cita', 'visita', 'llamada', 'evento', 'actividad', 'seguimiento', 'otro'];
                 const dataArray = Array.isArray(meetRes.value) ? meetRes.value : [];
                 const meetings = dataArray.filter(a => 
                     a.tipo && meetingTypes.includes(a.tipo.toLowerCase())
@@ -745,7 +749,7 @@ const AdminEventPlanner = () => {
                                 {selectedCompany && (
                                     <div className="planner-company-branding">
                                         <img 
-                                            src={selectedCompany.logo?.startsWith('http') ? selectedCompany.logo : `${API_URL.replace('/api','')}${selectedCompany.logo}`} 
+                                            src={getUploadUrl(selectedCompany.logo)} 
                                             alt={selectedCompany.nombre}
                                             className="planner-mini-logo"
                                             onError={(e) => e.target.style.display = 'none'}

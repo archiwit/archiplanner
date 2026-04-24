@@ -89,13 +89,12 @@ const SearchableDropdown = ({
             onClick={(e) => e.stopPropagation()}
         >
             <div className="dropdown-search-wrapper" style={{ position: 'relative', marginBottom: '12px' }}>
-                <Search size={14} style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', opacity: 0.5, color: '#fff' }} />
                 <input 
                     type="text"
                     autoFocus
                     className="dense-input"
                     style={{ 
-                        paddingLeft: '32px', 
+                        paddingLeft: '45px', 
                         height: '40px', 
                         fontSize: '14px', 
                         background: 'rgba(255,255,255,0.05)',
@@ -107,6 +106,7 @@ const SearchableDropdown = ({
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                 />
+                <Search size={14} style={{ position: 'absolute', left: '15px', top: '50%', transform: 'translateY(-50%)', opacity: 0.5, color: '#fff' }} />
             </div>
 
             <div className="dropdown-results" style={{ 
@@ -162,9 +162,10 @@ const SearchableDropdown = ({
                     justifyContent: 'space-between', 
                     alignItems: 'center', 
                     cursor: 'pointer',
-                    minHeight: '42px',
+                    height: '52px',
                     borderColor: isOpen ? 'var(--color-primary)' : 'rgba(255,255,255,0.1)',
-                    background: isOpen ? 'rgba(0,0,0,0.5)' : 'rgba(0,0,0,0.3)'
+                    background: isOpen ? 'rgba(0,0,0,0.5)' : 'rgba(0,0,0,0.3)',
+                    padding: '0 15px'
                 }}
             >
                 <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1, fontSize: '13px', color: selectedOption ? '#fff' : 'rgba(255,255,255,0.4)' }}>
