@@ -5,8 +5,13 @@ const db = require('../db');
  * Helper to get a configured OAuth2 client
  */
 const getClient = () => {
-    const redirectUri = process.env.GOOGLE_REDIRECT_URI || 'https://archiplanner.com.co/api/google/callback';
-    console.log(`[Google-Auth] Using Redirect URI: ${redirectUri}`);
+    // URL dinámica basada en el entorno
+    const isDev = process.env.NODE_ENV === 'development';
+    const redirectUri = isDev 
+        ? 'http://localhost:5001/api/google/callback' 
+        : (process.env.GOOGLE_REDIRECT_URI || 'https://archiplanner.com.co/api/google/callback');
+    
+    console.log(`[Google-Auth] Usando Redirect URI (${isDev ? 'DEV' : 'PROD'}): ${redirectUri}`);
     
     return new google.auth.OAuth2(
         process.env.GOOGLE_CLIENT_ID,
