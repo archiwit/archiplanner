@@ -119,22 +119,22 @@ app.get('/api/layouts/:cotId', async (req, res) => {
 });
 
 app.post('/api/layouts', async (req, res) => {
-    const { cot_id, nombre, ancho_metros, largo_metros, escala_px_metro, is_metric, fondo_url, notas_montaje, materiales_globales } = req.body;
+    const { cot_id, nombre, ancho_metros, largo_metros, escala_px_metro, is_metric, fondo_url, notas_montaje, materiales_globales, config_json } = req.body;
     try {
         const [result] = await db.query(
-            'INSERT INTO event_layouts (cot_id, nombre, ancho_metros, largo_metros, escala_px_metro, is_metric, fondo_url, notas_montaje, materiales_globales) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
-            [cot_id, nombre, ancho_metros, largo_metros, escala_px_metro, is_metric, fondo_url, notas_montaje, materiales_globales]
+            'INSERT INTO event_layouts (cot_id, nombre, ancho_metros, largo_metros, escala_px_metro, is_metric, fondo_url, notas_montaje, materiales_globales, config_json) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+            [cot_id, nombre, ancho_metros, largo_metros, escala_px_metro, is_metric, fondo_url, notas_montaje, materiales_globales, config_json]
         );
         res.json({ success: true, id: result.insertId });
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
 app.put('/api/layouts/:id', async (req, res) => {
-    const { nombre, ancho_metros, largo_metros, escala_px_metro, is_metric, fondo_url, notas_montaje, materiales_globales } = req.body;
+    const { nombre, ancho_metros, largo_metros, escala_px_metro, is_metric, fondo_url, notas_montaje, materiales_globales, config_json } = req.body;
     try {
         await db.query(
-            'UPDATE event_layouts SET nombre=?, ancho_metros=?, largo_metros=?, escala_px_metro=?, is_metric=?, fondo_url=?, notas_montaje=?, materiales_globales=? WHERE id=?',
-            [nombre, ancho_metros, largo_metros, escala_px_metro, is_metric, fondo_url, notas_montaje, materiales_globales, req.params.id]
+            'UPDATE event_layouts SET nombre=?, ancho_metros=?, largo_metros=?, escala_px_metro=?, is_metric=?, fondo_url=?, notas_montaje=?, materiales_globales=?, config_json=? WHERE id=?',
+            [nombre, ancho_metros, largo_metros, escala_px_metro, is_metric, fondo_url, notas_montaje, materiales_globales, config_json, req.params.id]
         );
         res.json({ success: true });
     } catch (err) { res.status(500).json({ error: err.message }); }
@@ -1300,7 +1300,7 @@ app.post('/api/cotizaciones', async (req, res) => {
         conf_id, num, cli_id, u_id, fcoti, fevent, fevent_fin, num_adultos, num_ninos, 
         hora_inicio, hora_fin, lugar, loc_id, tematica, tipo_evento, 
         paleta_colores, subt, iva, aplica_iva, mostrar_precios, total, total_tipo, monto_final, 
-        estado, notas, detalles, notas_entrega, notas_devolucion 
+        estado, notas, detalles, notas_entrega, notas_devolucion, empresa_id 
     } = req.body;
 
     const connection = await db.getConnection();
@@ -1401,7 +1401,7 @@ app.put('/api/cotizaciones/:id', async (req, res) => {
         conf_id, num, cli_id, u_id, fcoti, fevent, fevent_fin, num_adultos, num_ninos, 
         hora_inicio, hora_fin, lugar, loc_id, tematica, tipo_evento, 
         paleta_colores, subt, iva, aplica_iva, mostrar_precios, total, total_tipo, monto_final, 
-        estado, notas, detalles 
+        estado, notas, detalles, empresa_id 
     } = req.body;
 
     const connection = await db.getConnection();
@@ -1453,7 +1453,7 @@ app.put('/api/cotizaciones/:id', async (req, res) => {
             req.body.notas || '',
             req.body.notas_entrega || '',
             req.body.notas_devolucion || '',
-            parseInt(req.body.empresa_id) || null,
+            parseInt(empresa_id) || null,
             req.params.id
         ]);
 
@@ -1779,12 +1779,18 @@ app.put('/api/config', async (req, res) => {
 });
 
 // Handle Logo Uploads (Multipath)
+// Handle Logo Uploads (Multipath) - Updated to be consistent with main config route
 app.put('/api/config/logo', upload.single('logo'), async (req, res) => {
     if (!req.file) return res.status(400).json({ error: 'No hay archivo.' });
     const { type, id } = req.body; 
-    const isHorizontal = type === 'horizontal';
-    const filePath = `/uploads/company/${req.file.filename}`;
-    const dbField = isHorizontal ? 'logo_horizontal_path' : 'logo_cuadrado_path';
+    
+    // Validamos el campo de la DB según el tipo de logo
+    let dbField = 'logo_cuadrado_path';
+    if (type === 'horizontal') dbField = 'logo_horizontal_path';
+    else if (type === 'black') dbField = 'logo_black_path';
+    
+    // Usamos el mismo formato de ruta que el resto del sistema (config/)
+    const filePath = `config/${req.file.filename}`;
 
     try {
         if (id) {
@@ -1794,6 +1800,7 @@ app.put('/api/config/logo', upload.single('logo'), async (req, res) => {
         }
         res.json({ success: true, path: filePath });
     } catch (err) {
+        console.error('Error updating logo:', err);
         res.status(500).json({ error: err.message });
     }
 });

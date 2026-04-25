@@ -316,7 +316,7 @@ const SpatialDesigner = ({ cotId, userRol, onToggleFullscreen }) => {
     const [activeTab, setActiveTab] = useState('general');
     const [guides, setGuides] = useState([]);
     const [windowSize, setWindowSize] = useState({ width: window.innerWidth, height: window.innerHeight });
-    const [room3DConfig, setRoom3DConfig] = useState({ height: 4, floorType: 'ceramic', showWalls: true, wallColor: '#ffffff' });
+    const [room3DConfig, setRoom3DConfig] = useState({ height: 4, floorType: 'ceramic', floorColor: '#fcfcfc', showWalls: true, wallColor: '#ffffff' });
     const [scale, setScale] = useState(1);
     const [loading, setLoading] = useState(false);
     const [canvasSize, setCanvasSize] = useState({ width: 800, height: 600 });
@@ -538,10 +538,13 @@ const SpatialDesigner = ({ cotId, userRol, onToggleFullscreen }) => {
             // Cargar configuración 3D desde el layout
             if (layout.config_json) {
                 const layoutConfig = typeof layout.config_json === 'string' ? JSON.parse(layout.config_json) : layout.config_json;
-                if (layoutConfig.room3D) setRoom3DConfig(layoutConfig.room3D);
-                else setRoom3DConfig({ height: 4, floorType: 'ceramic', showWalls: true, wallColor: '#ffffff' });
+                if (layoutConfig.room3D) setRoom3DConfig({
+                    ...layoutConfig.room3D,
+                    floorColor: layoutConfig.room3D.floorColor || (layoutConfig.room3D.floorType === 'ceramic' ? '#fcfcfc' : '#5c4033')
+                });
+                else setRoom3DConfig({ height: 4, floorType: 'ceramic', floorColor: '#fcfcfc', showWalls: true, wallColor: '#ffffff' });
             } else {
-                setRoom3DConfig({ height: 4, floorType: 'ceramic', showWalls: true, wallColor: '#ffffff' });
+                setRoom3DConfig({ height: 4, floorType: 'ceramic', floorColor: '#fcfcfc', showWalls: true, wallColor: '#ffffff' });
             }
         } catch (err) { console.error(err); }
     };
@@ -650,6 +653,18 @@ const SpatialDesigner = ({ cotId, userRol, onToggleFullscreen }) => {
                 materiales_globales: updatedMaterials,
                 config_json: JSON.stringify(updatedConfig)
             });
+
+            // Actualizar estado local para reflejar los cambios guardados inmediatamente
+            setActiveLayout(prev => ({
+                ...prev,
+                notas_montaje: globalNotes,
+                materiales_globales: updatedMaterials,
+                config_json: JSON.stringify(updatedConfig)
+            }));
+            
+            // Refrescar la lista de layouts para que el selector esté sincronizado
+            fetchLayouts();
+
             Swal.fire({ icon: 'success', title: 'Diseño Guardado', background: '#1a1a1a', timer: 1500, target: containerRef.current || document.body });
         } catch (err) { 
             console.error("Error al guardar:", err);
@@ -1719,7 +1734,23 @@ const SpatialDesigner = ({ cotId, userRol, onToggleFullscreen }) => {
                                                     </div>
                                                 ))}
                                             </div>
+
+                                            <label className="section-label mt-20">Color del Suelo</label>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginTop: '10px' }}>
+                                                <div className="color-picker-v5">
+                                                    <input 
+                                                        type="color" 
+                                                        value={room3DConfig.floorColor || '#5c4033'} 
+                                                        onChange={e => setRoom3DConfig({ ...room3DConfig, floorColor: e.target.value })} 
+                                                    />
+                                                    <div className="color-preview-circle" style={{ background: room3DConfig.floorColor || '#5c4033' }} />
+                                                </div>
+                                                <div className="color-text-info">
+                                                    <span className="color-hex">{(room3DConfig.floorColor || '#5C4033').toUpperCase()}</span>
+                                                </div>
+                                            </div>
                                         </div>
+
 
                                         <div className="obs-section-v5 mt-20">
                                             <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.5)', fontStyle: 'italic' }}>
@@ -1739,7 +1770,7 @@ const SpatialDesigner = ({ cotId, userRol, onToggleFullscreen }) => {
                 <div className="modal-overlay" onClick={(e) => e.target === e.currentTarget && setShowLayoutModal(false)}>
                     <div className="modal-content modal-medium glass-panel slide-up">
                         <div className="modal-header">
-                            <div className="header-icon"><Map size={20} /></div>
+                            <div className="header-icon"><Map size={24} /></div>
                             <h3>{editingLayout ? 'Configurar Área' : 'Nueva Área de Diseño'}</h3>
                             <button className="btn-close-modal" onClick={() => setShowLayoutModal(false)}><X size={20} /></button>
                         </div>
@@ -1974,8 +2005,10 @@ const SpatialDesigner = ({ cotId, userRol, onToggleFullscreen }) => {
                 .prop-group label { display: block; font-size: 11px; opacity: 0.5; margin-bottom: 8px; text-transform: uppercase; }
                 .prop-group input[type="text"], .prop-group input[type="number"] { width: 100%; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.05); border-radius: 6px; padding: 8px; color: #fff; outline: none; margin-bottom: 15px; }
                 .toggle-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
-                .tool-btn-premium { background: rgba(255,255,255,0.05); border: none; color: #fff; padding: 8px; border-radius: 8px; cursor: pointer; transition: 0.2s; }
-                .tool-btn-premium:hover { background: #ff8484; color: #fff; }
+                .tool-btn-premium { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08); color: #fff; width: 34px; height: 34px; display: flex; align-items: center; justify-content: center; border-radius: 8px; cursor: pointer; transition: 0.2s; }
+                .tool-btn-premium svg { width: 16px; height: 16px; }
+                .tool-btn-premium:hover { background: #ff8484; color: #fff; transform: translateY(-2px); }
+                .tool-btn-premium.highlight { background: rgba(255,132,132,0.15); border-color: #ff8484; color: #ff8484; }
                 .align-grid button { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05); color: #fff; padding: 6px; font-size: 10px; border-radius: 4px; cursor: pointer; }
                 .align-grid button:hover { background: #ff8484; }
                 .canvas-hover-badge { background: rgba(0,0,0,0.8); padding: 8px 16px; border-radius: 20px; border: 1px solid #ff8484; color: #fff; font-size: 12px; pointer-events: none; -webkit-backdrop-filter: blur(4px); }

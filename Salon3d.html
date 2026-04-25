@@ -1,0 +1,1779 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Planificador de Salón - Final</title>
+    <style>
+        :root {
+            --bg-dark: #121212;
+            --bg-panel: #1e1e1e;
+            --bg-item: #2c2c2c;
+            --text-main: #ffffff;
+            --text-muted: #aaaaaa;
+            --accent: #3b82f6;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            overflow: hidden;
+            font-family: 'Segoe UI', Roboto, sans-serif;
+            background-color: #000;
+            /* Fallback negro puro */
+            color: var(--text-main);
+            display: flex;
+            height: 100vh;
+            width: 100vw;
+        }
+
+        /* --- SIDEBAR --- */
+        #sidebar {
+            width: 360px;
+            background-color: var(--bg-panel);
+            border-right: 1px solid #333;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+            z-index: 10;
+            flex-shrink: 0;
+            height: 100%;
+        }
+
+        .room-config {
+            background: #252525;
+            padding: 15px;
+            border-bottom: 1px solid #444;
+        }
+
+        .room-config h3 {
+            margin: 0 0 10px 0;
+            font-size: 0.9rem;
+            color: var(--accent);
+        }
+
+        .config-row {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .config-input {
+            flex: 1;
+            background: #333;
+            border: 1px solid #444;
+            color: white;
+            padding: 6px;
+            border-radius: 4px;
+        }
+
+        .btn-apply {
+            width: 100%;
+            background: var(--accent);
+            border: none;
+            color: white;
+            padding: 6px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .category-title {
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-muted);
+            padding: 15px 20px 5px;
+            border-bottom: 1px solid #333;
+            margin-top: 10px;
+        }
+
+        .category-title:first-child {
+            margin-top: 0;
+        }
+
+        .items-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            padding: 15px;
+        }
+
+        .item-btn {
+            background-color: var(--bg-item);
+            border: 1px solid transparent;
+            color: var(--text-main);
+            padding: 10px;
+            border-radius: 6px;
+            cursor: grab;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            font-size: 0.75rem;
+            transition: all 0.2s;
+            user-select: none;
+        }
+
+        .item-btn:hover {
+            background-color: #3d3d3d;
+            border-color: var(--accent);
+        }
+
+        .item-btn:active {
+            cursor: grabbing;
+        }
+
+        .item-icon {
+            font-size: 1.5rem;
+            margin-bottom: 5px;
+            color: var(--accent);
+        }
+
+        /* --- CANVAS --- */
+        #canvas-container {
+            flex-grow: 1;
+            position: relative;
+            background: #000;
+            /* Fallback */
+            background-image: radial-gradient(circle at center, #2a2a2a, #000000);
+            overflow: hidden;
+            min-width: 0;
+            min-height: 0;
+            /* Color de emergencia para indicar errores o carga */
+            background-color: #000;
+        }
+
+        /* --- UI OVERLAY --- */
+        #ui-overlay {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            width: 360px;
+            background: rgba(30, 30, 30, 0.98);
+            backdrop-filter: blur(10px);
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid #444;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            display: none;
+            animation: slideIn 0.3s ease-out;
+            max-height: 85vh;
+            overflow-y: auto;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .ui-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            border-bottom: 1px solid #444;
+            padding-bottom: 10px;
+        }
+
+        .ui-title {
+            font-weight: bold;
+            color: var(--accent);
+        }
+
+        .ui-row {
+            margin-bottom: 12px;
+        }
+
+        .ui-label {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-bottom: 4px;
+            display: block;
+        }
+
+        input[type="text"],
+        input[type="number"],
+        select,
+        textarea {
+            width: 100%;
+            padding: 8px;
+            background: #333;
+            border: 1px solid #444;
+            color: white;
+            border-radius: 4px;
+            font-family: inherit;
+        }
+
+        input[type="color"] {
+            width: 100%;
+            height: 35px;
+            border: none;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+
+        input:disabled,
+        select:disabled,
+        textarea: disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        button.ui-btn {
+            width: 100%;
+            padding: 8px;
+            background: var(--accent);
+            border: none;
+            color: white;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 600;
+            margin-top: 5px;
+        }
+
+        button.ui-btn:hover {
+            background: var(--accent-hover);
+        }
+
+        button.ui-btn.danger {
+            background: #ef4444;
+            margin-top: 10px;
+        }
+
+        button.ui-btn.secondary {
+            background: #555;
+        }
+
+        button.ui-btn.success {
+            background: var(--accent);
+        }
+
+        button.ui-btn.success:hover {
+            background: #059669;
+        }
+
+        .top-bar {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 50px;
+            background: rgba(0, 0, 0, 0.7);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 20px;
+            pointer-events: none;
+            z-index: 5;
+        }
+
+        .top-bar>* {
+            pointer-events: auto;
+        }
+
+        .span-info {
+            color: #fff;
+            font-size: 0.9rem;
+            font-weight: bold;
+        }
+
+        .btn-center {
+            background: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            margin-left: 10px;
+        }
+
+        .btn-center:hover {
+            background: var(--accent);
+            border-color: var(--accent);
+        }
+
+        .inv-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 5px;
+            background: #333;
+            padding: 10px;
+            border-radius: 4px;
+        }
+
+        .chair-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 5px;
+            background: #222;
+            padding: 10px;
+            border-radius: 4px;
+        }
+
+        .status-toast {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(200, 50, 50, 1);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 20px;
+            pointer-events: none;
+            transition: opacity 0.3s;
+            z-index: 100;
+            font-weight: bold;
+        }
+    </style>
+
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+            }
+        }
+    </script>
+</head>
+
+<body>
+
+    <!-- Panel Lateral -->
+    <aside id="sidebar">
+        <div class="room-config">
+            <h3>🏗️ Estructura del Salón</h3>
+            <div class="config-row">
+                <input type="number" id="room-w" class="config-input" value="40" placeholder="Ancho">
+                <input type="number" id="room-l" class="config-input" value="60" placeholder="Largo">
+            </div>
+            <div class="config-row">
+                <input type="number" id="room-h" class="input-w" placeholder="Altura">
+                <input type="color" id="room-color" class="input-w" value="#e5e7eb">
+            </div>
+
+            <div class="config-row" style="align-items:center;">
+                <label><input type="checkbox" id="chk-walls" checked> Ver Paredes</label>
+                <label><input type="checkbox" id="chk-grid" checked> Ver Rejilla</label>
+            </div>
+
+            <div class="config-row">
+                <div class="ui-label">Material del Piso</div>
+                <select id="sel-floor-mat" style="flex:1;">
+                    <option value="ceramic">Cerámica</option>
+                    <option value="grass">Césped / Jardín</option>
+                    <option value="wood">Madera</option>
+                </select>
+                <input type="color" id="col-floor" class="input-w" value="#333333">
+            </div>
+
+            <button class="btn-apply" id="btn-update-room">Aplicar Cambios</button>
+        </div>
+
+        <div class="category-title">ESTRUCTURA</div>
+        <div class="items-grid">
+            <div class="item-btn" draggable="true" data-type="column">
+                <div class="item-icon">🏛️</div>Columna
+            </div>
+            <div class="item-btn" draggable="true" data-type="dance_floor">
+                <div class="item-icon">💃</div>Pista Baile
+            </div>
+            <div class="item-btn" draggable="true" data-type="stage">
+                <div class="item-icon">🎤</div>Escenario
+            </div>
+            <div class="item-btn" draggable="true" data-type="pool">
+                <div class="item-icon">🏊</div>Piscina
+            </div>
+        </div>
+
+        <div class="category-title">MESAS Y BANQUETES</div>
+        <div class="items-grid">
+            <div class="item-btn" draggable="true" data-type="table_round">
+                <div class="item-icon">⚪</div>Redonda
+            </div>
+            <div class="item-btn" draggable="true" data-type="table_rect">
+                <div class="item-icon">⬜</div>Rectangular
+            </div>
+            <div class="item-btn" draggable="true" data-type="table_honor">
+                <div class="item-icon">🎓</div>Mesa Honor
+            </div>
+            <div class="item-btn" draggable="true" data-type="table_cake">
+                <div class="item-icon">🎂</div>Mesa Ponqué
+            </div>
+            <div class="item-btn" draggable="true" data-type="table_imperial">
+                <div class="item-icon">👑</div>Imperial
+            </div>
+            <div class="item-btn" draggable="true" data-type="table_cocktail">
+                <div class="item-icon">🍸</div>Mesa Coctelera
+            </div>
+        </div>
+
+        <div class="category-title">ZONAS Y ENTORNOS</div>
+        <div class="items-grid">
+            <div class="item-btn" draggable="true" data-type="lounge">
+                <div class="item-icon">🛋️</div>Sala Lounge
+            </div>
+            <div class="item-btn" draggable="true" data-type="divan">
+                <div class="item-icon">🛋️</div>Diván / Sofá
+            </div>
+            <div class="item-btn" draggable="true" data-type="chair_ceremony">
+                <div class="item-icon">🪑</div>Sillas Ceremonia
+            </div>
+            <div class="item-btn" draggable="true" data-type="rug">
+                <div class="item-icon">🟫</div>Alfombra / Tapete
+            </div>
+        </div>
+
+        <div class="category-title">ELEMENTOS ESPECIALES</div>
+        <div class="items-grid">
+            <div class="item-btn" draggable="true" data-type="welcome_spot">
+                <div class="item-icon">👋</div>Spot Bienvenida
+            </div>
+            <div class="item-btn" draggable="true" data-type="main_stage">
+                <div class="item-icon">🎤</div>Spot Principal
+            </div>
+            <div class="item-btn" draggable="true" data-type="altar_arch">
+                <div class="item-icon">⛪</div>Altar / Arco
+            </div>
+            <div class="item-btn" draggable="true" data-type="easel">
+                <div class="item-icon">🖼️</div>Caballete Bienvenida
+            </div>
+            <div class="item-btn" draggable="true" data-type="lamp_post">
+                <div class="item-icon">💡</div>Farola / Luz
+            </div>
+            <div class="item-btn" draggable="true" data-type="flowers">
+                <div class="item-icon">🌸</div>Arreglo Floral
+            </div>
+            <div class="item-btn" draggable="true" data-type="planter_1">
+                <div class="item-icon">🪴</div>Jardineria 1 Cara
+            </div>
+            <div class="item-btn" draggable="true" data-type="planter_2">
+                <div class="item-icon">🪴</div>Jardineria 2 Caras
+            </div>
+            <div class="item-btn" draggable="true" data-type="mirror_deco">
+                <div class="item-icon">🪞</div>Espejo Decorativo
+            </div>
+            <div class="item-btn" draggable="true" data-type="photo_booth">
+                <div class="item-icon">📷</div>Cabina Espejo
+            </div>
+            <div class="item-btn" draggable="true" data-type="cam_360">
+                <div class="item-icon">🎥</div>Cámara 360
+            </div>
+        </div>
+
+        <div class="category-title">SERVICIOS Y MÁS</div>
+        <div class="items-grid">
+            <div class="item-btn" draggable="true" data-type="cart_water">
+                <div class="item-icon">🥤</div>Carreta Agua
+            </div>
+            <div class="item-btn" draggable="true" data-type="buffet">
+                <div class="item-icon">🍽️</div>Buffet
+            </div>
+            <div class="item-btn" draggable="true" data-type="dj_booth">
+                <div class="item-icon">🎧</div>Control DJ
+            </div>
+            <div class="item-btn" draggable="true" data-type="bath_zone">
+                <div class="item-icon">🚻</div>Baños
+            </div>
+            <div class="item-btn" draggable="true" data-type="inflatable">
+                <div class="item-icon">🏰</div>Inflable
+            </div>
+            <div class="item-btn" draggable="true" data-type="bull">
+                <div class="item-icon">🐂</div>Toro Mecánico
+            </div>
+            <div class="item-btn" draggable="true" data-type="car_snack">
+                <div class="item-icon">🥤</div>Carreta Snacks
+            </div>
+        </div>
+    </aside>
+
+    <!-- Área 3D -->
+    <div id="canvas-container" ondragover="event.preventDefault()" ondrop="window.handleDrop(event)">
+
+        <div class="top-bar">
+            <span class="span-info" id="room-status">Salón: 40m x 60m</span>
+            <div style="display:flex;">
+                <button class="btn-center" id="btn-reset-cam">🎯 Vista General</button>
+                <button class="btn-center" id="btn-focus-cam">👁️ Enfocar</button>
+            </div>
+        </div>
+
+        <!-- Mensajes de Estado -->
+        <div id="status-toast" class="status-toast">Cargando 3D...</div>
+
+        <!-- Panel de Edición Flotante -->
+        <div id="ui-overlay">
+            <div class="ui-header">
+                <span class="ui-title" id="ui-item-name">Editar</span>
+                <span style="cursor:pointer;" id="btn-deselect">✕</span>
+            </div>
+
+            <div class="ui-row">
+                <div class="ui-label">Notas / Etiqueta</div>
+                <textarea id="inp-note" rows="1" placeholder="Ej: VIP, Menú Vegetariano..."></textarea>
+            </div>
+
+            <div class="ui-row">
+                <div class="ui-label">Ancho (m)</div>
+                <input type="number" id="inp-w" step="0.1" onchange="updateDimensions()">
+            </div>
+            <div class="ui-row">
+                <div class="ui-label">Profundo (m)</div>
+                <input type="number" id="inp-d" step="0.1" onchange="updateDimensions()">
+            </div>
+            <div class="ui-row">
+                <div class="ui-label">Altura (m)</div>
+                <input type="number" id="inp-h" step="0.1" onchange="updateDimensions()">
+            </div>
+            <div class="ui-row">
+                <div class="ui-label">Rotación (Grados)</div>
+                <input type="number" id="inp-rot" step="15" value="0" onchange="updateTransform()">
+            </div>
+
+            <div id="ui-color" class="ui-row">
+                <div class="ui-label">Color Principal</div>
+                <input type="color" id="inp-color" oninput="updateColor()">
+            </div>
+
+            <!-- CONFIGURACIÓN SILLAS -->
+            <div id="ui-chairs" class="ui-row" style="background:#222; padding:10px; border-radius:4px;">
+                <div class="ui-label" style="color:#fff; font-weight:bold;">Sillas / Puestos</div>
+
+                <!-- Redonda -->
+                <div id="chairs-round" style="display:none;">
+                    <div class="inv-grid">
+                        <span>Total:</span> <input type="number" id="inp-chair-count" value="0"
+                            onchange="updateChairs()">
+                        <span>Color:</span> <input type="color" id="inp-chair-color" value="#ffffff"
+                            onchange="updateChairs()">
+                    </div>
+                </div>
+
+                <!-- Rectangular -->
+                <div id="chairs-rect" style="display:none;">
+                    <div class="chair-grid">
+                        <div><label>Arriba:</label> <input type="number" id="inp-c-top" value="0"
+                                onchange="updateChairs()">
+                            <div><label>Abajo:</label> <input type="number" id="inp-c-bot" value="0"
+                                    onchange="updateChairs()">
+                                <div><label>Izquierda:</label> <input type="number" id="inp-c-left" value="0"
+                                        onchange="updateChairs()">
+                                    <div><label>Derecha:</label> <input type="number" id="c-right" value="0"
+                                            onchange="updateChairs()">
+                                    </div>
+                                    <div style="margin-top:5px;">
+                                        <span>Color:</span> <input type="color" id="inp-chair-color-rect"
+                                            value="#ffffff" style="width:50px;" onchange="updateChairs()">
+                                    </div>
+                                </div>
+
+                            </div>
+
+                            <!-- INVENTARIO (Vajilla) -->
+                            <div id="ui-inventory" class="ui-row"
+                                style="background:#2a2a2a; padding:10px; border-radius:4px;">
+                                <div class="ui-label" style="color:var(--accent); font-weight:bold;">Vajilla (Por
+                                    Puesto)</div>
+                                <div class="inv-grid">
+                                    <label>Platos</label> <input type="number" id="inv-plates" min="0" value="0"
+                                        onchange="updateInventory()">
+                                    <label>Cubiertos</label> <input type="number" id="inv-cutlery" min="0" value="0"
+                                        onchange="updateInventory()">
+                                    <label>Agua</label> <input type="number" id="inv-water" min="0" value="0"
+                                        onchange="updateInventory()">
+                                    <label>Champaña</label> <input type="number" id="inv-wine" min="0" value="0"
+                                        onchange="updateInventory()">
+                                </div>
+                                <div class="ui-row" style="margin-top:5px;">
+                                    <label><input type="checkbox" id="chk-gold" onchange="updateInventory()"> Estilo
+                                        Dorado</label>
+                                    <select id="sel-centerpiece" style="flex:1; font-size:0.8rem;"
+                                        onchange="updateInventory()">
+                                        <option value="none">Centro: Ninguno</option>
+                                        <option value="low">Centro: Bajo (Flores)</option>
+                                        <option value="high">Centro: Alto (Candelabro)</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div style="margin-top:15px;">
+                                <button class="ui-btn secondary" id="btn-duplicate">Duplicar</button>
+                                <button class="ui-btn danger" id="btn-delete">Eliminar</button>
+                            </div>
+                        </div>
+
+                        <script type="module">
+                            import * as THREE from 'three';
+                            import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+                            import { TransformControls } from 'three/addons/controls/TransformControls.js';
+
+                            let scene, camera, renderer, orbit, transformControl;
+                            let roomGroup, gridHelper, floorMesh, wallMesh;
+                            let objects = [], selectedObject = null;
+                            let roomDims = { w: 40, l: 60, h: 6 };
+
+                            const mats = {
+                                floor: new THREE.MeshStandardMaterial({ color: 0x333333, roughness: 0.8 }),
+                                wall: new THREE.MeshStandardMaterial({ color: 0xe5e7eb, side: THREE.BackSide }),
+                                cloth: new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.6 }),
+                                metal: new THREE.MeshStandardMaterial({ color: 0x555555, metalness: 0.8, roughness: 0.2 }),
+                                wood: new THREE.MeshStandardMaterial({ color: 0x5D4037 }),
+                                gold: new THREE.MeshStandardMaterial({ color: 0xFFD700, metalness: 0.9, roughness: 0.1 }),
+                                grass: new THREE.MeshStandardMaterial({ color: 0x2d5a27, roughness: 1 }),
+                                glass: new THREE.MeshPhysicalMaterial({ color: 0xffffff, transmission: 0.9, opacity: 1, roughness: 0 }),
+                                wine: new THREE.MeshPhysicalMaterial({ color: 0xcc4400, transmission: 0.5, opacity: 1, roughness: 0 }),
+                                water: new THREE.MeshPhysicalMaterial({ color: 0xaaddff, transmission: 0.6, opacity: 1, roughness: 0 }),
+                                mirror: new THREE.MeshStandardMaterial({ color: 0xffffff, metalness: 1, roughness: 0 }),
+                                plant: new THREE.MeshStandardMaterial({ color: 0x228B22 }),
+                                plate: new THREE.MeshStandardMaterial({ color: 0xffffff })
+                            };
+
+                            // --- ESTADO FALLSAFE ---
+                            window.onload = function () {
+                                showToast("Inicializando 3D...", 2000); // Mensaje inmediato
+                                init().then(() => {
+                                    // Si llegamos aquí sin error, ocultar el mensaje de carga
+                                    setTimeout(() => {
+                                        const t = document.getElementById('status-toast');
+                                        t.style.opacity = '0';
+                                    }, 3000);
+                                }).catch(err => {
+                                    console.error(err);
+                                    showToast("Error cargando bibliotecas. Revisa la consola.");
+                                });
+                            };
+
+                            function init() {
+                                scene = new THREE.Scene();
+                                scene.background = new THREE.Color(0x000000); // Fondo negro limpio
+                                scene.fog = new THREE.Fog(0x000000, 0x000000, 0.1); // Niebla suave para dar profundidad
+                                scene.fog.near = 20;
+
+                                // Cámara alejada para ver todo
+                                camera = new THREE.PerspectiveCamera(45, (window.innerWidth - 360) / window.innerHeight, 0.1, 2000);
+                                camera.position.set(0, 80, 100);
+
+                                const container = document.getElementById('canvas-container');
+                                if (!container) return alert("Error: No se encontró el div 'canvas-container'. Revisa el código HTML.");
+
+                                try {
+                                    renderer = new THREE.WebGLRenderer({ antialias: true });
+                                    renderer.setSize(container.clientWidth, container.clientHeight);
+                                    renderer.shadowMap.enabled = true;
+                                    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+                                    container.appendChild(renderer.domElement);
+
+                                    const ambLight = new THREE.AmbientLight(0xffffff, 0.5); // Luz ambiental decente
+                                    scene.add(ambLight);
+
+                                    // Luz Direccional intensa para ver todo claro
+                                    const dirLight = new THREE.DirectionalLight(0xffffff, 1.0); // Más intensa
+                                    dirLight.position.set(20, 50, 20);
+                                    dirLight.castShadow = true;
+                                    dirLight.shadow.mapSize.set(2048, 2048);
+                                    scene.add(dirLight);
+
+                                    createRoom();
+
+                                    const grid = new THREE.GridHelper(100, 100);
+                                    grid.position.y = 0.01;
+                                    scene.add(grid);
+
+                                    orbit = new OrbitControls(camera, renderer.domElement);
+                                    orbit.target.set(0, 0, 0);
+                                    orbit.enableDamping = true;
+                                    orbit.dampingFactor = 0.05;
+                                    orbit.maxPolarAngle = Math.PI / 1.9; // Evitar ir abajo del piso
+
+                                    transformControl = new TransformControls(camera, renderer.domElement);
+                                    transformControl.addEventListener('change', () => {
+                                        if (selectedObject) updateUIFromObject(selectedObject);
+                                    });
+                                    transformControl.addEventListener('dragging-changed', (event) => {
+                                        orbit.enabled = !event.value;
+                                        if (!event.value && selectedObject) enforceCollision(selectedObject);
+                                    });
+                                    scene.add(transformControl);
+
+                                    setupEventListeners();
+                                    window.addEventListener('resize', onResize);
+                                    renderer.domElement.addEventListener('pointerdown', onPointerDown);
+
+                                    animate();
+                                } catch (err) {
+                                    console.error(err);
+                                    alert("Error crítico al inicializar Three.js. Asegúrate de abrir el archivo con Live Server.");
+                                }
+                            }
+
+                            function createRoom() {
+                                if (roomGroup) scene.remove(roomGroup);
+                                roomGroup = new THREE.Group();
+
+                                const floorGeo = new THREE.PlaneGeometry(roomDims.w, roomDims.l);
+                                floorMesh = new THREE.Mesh(floorGeo, mats.floor.clone());
+                                floorMesh.rotation.x = -Math.PI / 2;
+                                floorMesh.receiveShadow = true;
+                                roomGroup.add(floorMesh);
+
+                                const wallGeo = new THREE.BoxGeometry(roomDims.w, roomDims.h, roomDims.l);
+                                wallMesh = new THREE.Mesh(wallGeo, mats.wall.clone());
+                                wallMesh.position.y = roomDims.h / 2;
+                                wallMesh.receiveShadow = true;
+                                wallMesh.visible = document.getElementById('chk-walls').checked;
+                                roomGroup.add(wallMesh);
+
+                                scene.add(roomGroup);
+                                document.getElementById('room-status').innerText = `Salón: ${roomDims.w}m x ${roomDims.l}m`;
+                            }
+
+                            function resetCamera() {
+                                camera.position.set(0, Math.max(40, roomDims.w), roomDims.l + 20);
+                                camera.lookAt(0, 0, 0);
+                                orbit.target.set(0, 0, 0);
+                                orbit.update();
+                            }
+
+                            function setupEventListeners() {
+                                document.getElementById('btn-update-room').addEventListener('click', () => {
+                                    roomDims.w = parseFloat(document.getElementById('room-w').value);
+                                    roomDims.l = parseFloat(document.getElementById('room-l').value);
+                                    roomDims.h = parseFloat(document.getElementById('room-h').value);
+
+                                    // Paredes y Grid
+                                    mats.wall.color.set(document.getElementById('room-color').value);
+                                    wallMesh.visible = document.getElementById('chk-walls').checked;
+                                    gridHelper.visible = document.getElementById('chk-grid').checked;
+
+                                    // Piso Material
+                                    const matType = document.getElementById('sel-floor-mat').value;
+                                    const col = document.getElementById('col-floor').value;
+
+                                    if (matType === 'grass') {
+                                        mats.grass.color.set(col);
+                                        floorMesh.material = mats.grass;
+                                    } else if (matType === 'wood') {
+                                        mats.wood.color.set(col);
+                                        floorMesh.material = mats.wood;
+                                    } else {
+                                        mats.floor.color.set(col);
+                                        floorMesh.material = mats.floor;
+                                    }
+
+                                    createRoom();
+                                });
+
+                                document.getElementById('btn-reset-cam').addEventListener('click', resetCamera);
+
+                                document.getElementById('btn-focus-cam').addEventListener('click', () => {
+                                    if (selectedObject) {
+                                        const box = new THREE.Box3().setFromObject(selectedObject);
+                                        const size = new THREE.Vector3();
+                                        box.getSize(size);
+                                        const center = new THREE.Vector3();
+                                        box.getCenter(center);
+
+                                        const startTarget = orbit.target.clone();
+                                        const endTarget = center;
+                                        const startPos = camera.position.clone();
+                                        const dist = Math.max(size.x, size.y, size.z) * 4;
+
+                                        const dir = startPos.clone().sub(startTarget).normalize();
+                                        const endPos = endTarget.clone().add(dir.multiplyScalar(dist));
+
+                                        let t = 0;
+                                        const anim = () => {
+                                            t += 0.1;
+                                            if (t > 1) t = 1;
+                                            orbit.target.lerpVectors(startTarget, endTarget, t);
+                                            camera.position.lerpVectors(startPos, endPos, t);
+                                            orbit.update();
+                                            if (t < 1) requestAnimationFrame(anim);
+                                        };
+                                        anim();
+                                    }
+                                });
+
+                                document.querySelectorAll('.item-btn').forEach(btn => {
+                                    btn.addEventListener('click', () => {
+                                        createItem(btn.getAttribute('data-type'), 0, 0);
+                                    });
+                                    btn.addEventListener('dragstart', (e) => {
+                                        e.dataTransfer.setData('type', btn.getAttribute('data-type'));
+                                    });
+                                });
+
+                                // Edición
+                                document.getElementById('btn-deselect').addEventListener('click', deselect);
+                                document.getElementById('btn-duplicate').addEventListener('click', duplicateSelected);
+                                document.getElementById('btn-delete').addEventListener('click', deleteSelected);
+
+                                ['inp-w', 'inp-d', 'inp-h'].forEach(id => document.getElementById(id).addEventListener('input', updateDimensions));
+                                document.getElementById('inp-rot').addEventListener('input', updateTransform);
+                                document.getElementById('inp-color').addEventListener('input', updateColor);
+                                document.getElementById('inp-note').addEventListener('input', (e) => { if (selectedObject) selectedObject.userData.note = e.target.value; });
+
+                                document.getElementById('inp-chair-count').addEventListener('input', updateChairs);
+                                document.getElementById('inp-chair-color').addEventListener('input', updateChairs);
+                                ['inp-c-top', 'inp-c-bot', 'inp-c-left', 'inp-c-right'].forEach(id => document.getElementById(id).addEventListener('input', updateChairs));
+                                document.getElementById('inp-chair-color-rect').addEventListener('input', updateChairs);
+
+                                // Inventario
+                                ['inv-plates', 'inv-cutlery', 'inv-water', 'inv-wine', 'sel-centerpiece'].forEach(id => {
+                                    document.getElementById(id).addEventListener('change', updateInventory);
+                                });
+                                document.getElementById('chk-gold').addEventListener('change', updateInventory);
+                            }
+
+                            window.handleDrop = (e) => {
+                                e.preventDefault();
+                                const type = e.dataTransfer.getData('type');
+                                if (!type) return;
+                                const rect = renderer.domElement.getBoundingClientRect();
+                                const vec = new THREE.Vector3((e.clientX - rect.left) / rect.width * 2 - 1, -(e.clientY - rect.top) / rect.height * 2 + 1, 0.5);
+                                vec.unproject(camera);
+                                vec.sub(camera.position).normalize();
+                                const pos = camera.position.clone().add(vec.multiplyScalar(-camera.position.y / vec.y));
+                                createItem(type, pos.x, pos.z);
+                            };
+
+                            // --- FÁBRICA DE OBJETOS ---
+                            function createItem(type, x, z) {
+                                const group = new THREE.Group();
+                                group.position.set(x, 0, z);
+                                let data = { type: type, dims: { x: 1, y: 1, z: 1 }, originalDims: { x: 1, y: 1, z: 1 }, note: '' };
+
+                                if (type.startsWith('table')) {
+                                    let w = 1.2, d = 1.2, r = 0.6;
+                                    if (type === 'table_rect') { w = 1.8; d = 0.9; }
+                                    if (type === 'table_honor') { w = 4.0; d = 1.5; r = 2.0; }
+                                    if (type === 'table_imperial') { w = 2.5; d = 1.5; r = 1.2; }
+                                    if (type === 'table_cocktail') { w = 0.6; d = 0.6; r = 0.3; }
+                                    if (type === 'table_cake') { w = 1.0; d = 1.0; r = 0.5; }
+
+                                    let geo;
+                                    // Altura de la mesa (Top de silla + Grosor)
+                                    const h_mesa = 0.4;
+                                    // Altura visual de la mesa (Centro)
+                                    const h_visual = 0.8;
+
+                                    if (type.includes('round') || type === 'table_cocktail' || type === 'table_cake' || type === 'table_honor' || type === 'table_imperial') {
+                                        geo = new THREE.CylinderGeometry(r, r, h_mesa, 32);
+                                    } else {
+                                        geo = new THREE.BoxGeometry(w, h_mesa, d);
+                                    }
+
+                                    const manto = new THREE.Mesh(geo, mats.cloth.clone());
+                                    manto.position.y = h_mesa / 2;
+                                    manto.castShadow = true;
+                                    manto.receiveShadow = true;
+                                    group.add(manto);
+                                    data.clothMesh = manto;
+
+                                    if (type === 'table_rect') data.originalDims = { x: w, y: h_mesa, z: d };
+                                    else data.originalDims = { x: r * 2, y: h_mesa, z: r * 2 };
+
+                                    data.chairs = [];
+                                    // Configurar por defecto
+                                    data.config = {
+                                        chairsTotal: (type === 'table_honor' || type === 'table_imperial') ? 10 : 4,
+                                        chairColor: '#ffffff'
+                                    };
+                                    data.inventory = { plates: 0, cutlery: 0, water: 0, wine: 0, gold: false, center: 'none' };
+
+                                    updateChairsLogic(group, data);
+                                    if (type === 'table_cake') {
+                                        const cake = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.5, 0.4), mats.plate.clone());
+                                        cake.material.color.set(0xffcccb);
+                                        cake.position.y = h_mesa; // Encima de la mesa
+                                        group.add(cake);
+                                    }
+                                }
+
+                                // --- NUEVOS OBJETOS ---
+                                else if (type === 'chair_ceremony') {
+                                    // Grupo de sillas pre-fabricadas (no editar posiciones)
+                                    for (let i = -1; i <= 1; i++) {
+                                        const chair = new THREE.Group();
+                                        const seat = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.05, 0.5), mats.cloth.clone());
+                                        const back = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.5, 0.05), mats.cloth.clone());
+                                        back.position.set(0, 0.3, -0.2);
+                                        const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.5), mats.metal);
+                                        leg.position.set(0, -0.25, 0);
+                                        chair.add(seat, back, leg);
+                                        chair.position.set(i * 0.6, 0, 0);
+                                        group.add(chair);
+                                        data.chairs.push(chair);
+                                    }
+                                    data.config = { chairsTotal: 3, chairColor: '#ffffff' };
+                                    data.hasChairs = false; // No usar lógica de vajilla dinámica para este objeto estático
+                                    data.clothMesh = group.children[0].children[0]; // Asiento
+                                    data.originalDims = { x: 1.8, y: 0.6, z: 0.6 };
+                                }
+                                else if (type === 'rug') {
+                                    const rug = new THREE.Mesh(new THREE.PlaneGeometry(2, 3), mats.cloth.clone());
+                                    rug.rotation.x = -Math.PI / 2;
+                                    rug.receiveShadow = true;
+                                    group.add(rug);
+                                    data.clothMesh = rug;
+                                    data.originalDims = { x: 2, y: 0.02, z: 3 };
+                                    data.hasChairs = false;
+                                }
+                                else if (type === 'easel') {
+                                    const wood = new THREE.Mesh(new THREE.BoxGeometry(0.05, 1.5, 1.0), mats.wood);
+                                    wood.position.set(0, 0.75, 0);
+                                    const board = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.8, 0.05), mats.cloth.clone());
+                                    board.position.set(0, 1.5, 0.51);
+                                    board.rotation.x = -0.2;
+                                    group.add(wood, board);
+                                    data.clothMesh = board;
+                                    data.originalDims = { x: 0.6, y: 1.5, z: 1.0 };
+                                    data.hasChairs = false;
+                                }
+                                else if (type === 'lamp_post') {
+                                    const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 4), mats.metal);
+                                    pole.position.y = 2;
+                                    const bulb = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.2, 0.3), mats.gold);
+                                    bulb.material.emissive = 0xffaa00; bulb.material.emissiveIntensity = 0.5;
+                                    bulb.position.y = 4;
+                                    group.add(pole, bulb);
+                                    data.clothMesh = bulb;
+                                    data.originalDims = { x: 0.3, y: 4.2, z: 0.3 };
+                                    data.hasChairs = false;
+                                    data.isCeiling = false;
+                                }
+                                else if (type === 'flowers') {
+                                    const pot = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.2, 0.5), mats.wood);
+                                    pot.position.y = 0.25;
+                                    const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.6), mats.metal);
+                                    stem.position.y = 0.8;
+                                    const bloom = new THREE.Mesh(new THREE.SphereGeometry(0.2), mats.plant);
+                                    bloom.position.y = 1.1;
+                                    group.add(pot, stem, bloom);
+                                    data.clothMesh = bloom;
+                                    data.originalDims = { x: 0.6, y: 1.1, z: 0.6 };
+                                    data.hasChairs = false;
+                                }
+                                else if (type === 'planter_1') {
+                                    const box = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.5, 0.4), mats.wood);
+                                    box.position.y = 0.25;
+                                    const plant = new THREE.Mesh(new THREE.ConeGeometry(0.2, 0.6, 8), mats.plant);
+                                    plant.position.set(0, 0.8, 0.15);
+                                    group.add(box, plant);
+                                    data.clothMesh = plant;
+                                    data.originalDims = { x: 0.4, y: 0.8, z: 0.4 };
+                                    data.hasChairs = false;
+                                }
+                                else if (type === 'planter_2') {
+                                    const box = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.6, 0.4), mats.wood);
+                                    box.position.y = 0.3;
+                                    const p1 = new THREE.Mesh(new THREE.ConeGeometry(0.2, 0.5, 8), mats.plant);
+                                    p1.position.set(-0.2, 0.7, 0.15);
+                                    const p2 = new THREE.Mesh(new THREE.ConeGeometry(0.2, 0.5, 8), mats.plant);
+                                    p2.position.set(0.2, 0.7, 0.15);
+                                    group.add(box, p1, p2);
+                                    data.clothMesh = box;
+                                    data.originalDims = { x: 0.8, y: 0.7, z: 0.4 };
+                                    data.hasChairs = false;
+                                }
+                                else if (type === 'mirror_deco') {
+                                    const frame = new THREE.Mesh(new THREE.BoxGeometry(1.2, 1.8, 0.1), mats.gold);
+                                    frame.position.y = 0.9;
+                                    const glass = new THREE.Mesh(new THREE.PlaneGeometry(1.0, 1.6), mats.mirror);
+                                    glass.position.set(0, 1.1, 0.06);
+                                    group.add(frame, glass);
+                                    data.clothMesh = frame;
+                                    data.originalDims = { x: 1.2, y: 1.8, z: 0.1 };
+                                    data.hasChairs = false;
+                                }
+                                else if (type === 'lounge') {
+                                    const table = new THREE.Mesh(new THREE.CylinderGeometry(0.6, 0.6, 0.4), mats.glass);
+                                    table.position.y = 0.6;
+                                    group.add(table);
+                                    const sofaGeo = new THREE.BoxGeometry(2, 0.6, 0.8);
+                                    const s1 = new THREE.Mesh(sofaGeo, mats.cloth.clone()); s1.position.set(0, 0.3, -1.2);
+                                    const s2 = new THREE.Mesh(sofaGeo, mats.cloth.clone()); s2.position.set(0, 0.3, 1.2);
+                                    group.add(s1, s2);
+                                    data.clothMesh = s1;
+                                    data.originalDims = { x: 2, y: 0.6, z: 2.4 };
+                                    data.hasChairs = false;
+                                }
+                                else if (type === 'divan') {
+                                    const b = new THREE.Mesh(new THREE.BoxGeometry(2, 0.5, 0.8), mats.cloth.clone());
+                                    b.position.y = 0.25;
+                                    const back = new THREE.Mesh(new THREE.BoxGeometry(2, 0.5, 0.2), mats.cloth.clone());
+                                    back.position.set(0, 0.5, -0.3);
+                                    group.add(b, back);
+                                    data.clothMesh = b;
+                                    data.originalDims = { x: 2, y: 0.5, z: 0.8 };
+                                    data.hasChairs = false;
+                                }
+                                else if (type === 'pool') {
+                                    const shape = new THREE.Shape();
+                                    shape.moveTo(-4, -3); shape.lineTo(4, -3); shape.lineTo(4, 3); shape.lineTo(-4, 3);
+                                    const hole = new THREE.Path();
+                                    hole.moveTo(-3, -2); hole.lineTo(3, -2); hole.lineTo(3, 2); hole.lineTo(-3, 2);
+                                    shape.holes.push(hole);
+                                    const pool = new THREE.Mesh(new THREE.ExtrudeGeometry(shape, { depth: 1.5, bevelEnabled: false }), mats.metal);
+                                    pool.rotation.x = -Math.PI / 2;
+                                    pool.position.y = 1.5;
+                                    pool.receiveShadow = true;
+                                    group.add(pool);
+                                    const water = new THREE.Mesh(new THREE.PlaneGeometry(6, 4), mats.water);
+                                    water.rotation.x = -Math.PI / 2;
+                                    water.position.y = 1.45;
+                                    group.add(water);
+                                    data.originalDims = { x: 8, y: 1.5, z: 6 };
+                                    data.hasChairs = false;
+                                }
+                                else if (type === 'welcome_spot') {
+                                    const base = new THREE.Mesh(new THREE.BoxGeometry(1, 0.1, 2), mats.wood); base.position.y = 1.6;
+                                    const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 2), mats.gold);
+                                    pole.position.set(0, 1, 1);
+                                    const sign = new THREE.Mesh(new THREE.BoxGeometry(1, 0.6, 0.05), mats.cloth.clone());
+                                    sign.position.set(0, 2, 2);
+                                    group.add(base, pole, sign);
+                                    data.clothMesh = sign;
+                                    data.originalDims = { x: 1, y: 2.6, z: 2 };
+                                    data.hasChairs = false;
+                                }
+                                else if (type === 'main_stage') {
+                                    const stage = new THREE.Mesh(new THREE.BoxGeometry(6, 0.6, 4), new THREE.MeshStandardMaterial({ color: 0x222222 }));
+                                    stage.position.y = 0.3;
+                                    group.add(stage);
+                                    const spk = new THREE.Mesh(new THREE.BoxGeometry(0.6, 1.0, 0.5), mats.metal);
+                                    spk.position.set(3, 1.1, 2);
+                                    group.add(spk);
+                                    const spk2 = spk.clone(); spk2.position.set(-3, 1.1, 2);
+                                    group.add(spk2);
+                                    data.clothMesh = stage;
+                                    data.originalDims = { x: 6, y: 0.6, z: 4 };
+                                    data.hasChairs = false;
+                                }
+                                else if (type === 'altar_arch') {
+                                    const arch = new THREE.Mesh(new THREE.TorusGeometry(1.5, 0.1, 16, 30, Math.PI), mats.gold);
+                                    arch.rotation.x = Math.PI / 2;
+                                    arch.position.y = 2.5;
+                                    group.add(arch);
+                                    const col1 = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 3), mats.gold);
+                                    col1.position.set(-1.4, 1.5, 0);
+                                    const col2 = col1.clone(); col2.position.set(1.4, 1.5, 0);
+                                    group.add(col1, col2);
+                                    data.originalDims = { x: 2.8, y: 3, z: 0.1 };
+                                    data.hasChairs = false;
+                                }
+                                else if (type === 'cart_water') {
+                                    const body = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.8, 0.5), mats.wood);
+                                    body.position.y = 0.6;
+                                    const wheels = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.1), mats.metal);
+                                    wheels.rotation.z = Math.PI / 2; wheels.position.set(0, 0.1, 0.2);
+                                    group.add(body, wheels);
+                                    const b1 = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.2), mats.glass); b1.position.set(0.2, 1.1, 0);
+                                    group.add(b1);
+                                    data.clothMesh = body;
+                                    data.originalDims = { x: 0.8, y: 1.2, z: 0.5 };
+                                    data.hasChairs = false;
+                                }
+                                else if (type === 'buffet') {
+                                    const table = new THREE.Mesh(new THREE.BoxGeometry(3, 1, 1), mats.wood);
+                                    table.position.y = 0.5;
+                                    group.add(table);
+                                    for (let i = -1; i <= 1; i += 0.5) {
+                                        const p = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.2, 0.02), mats.cloth.clone());
+                                        p.position.set(i, 1.05, 0);
+                                        group.add(p);
+                                    }
+                                    data.clothMesh = table;
+                                    data.originalDims = { x: 3, y: 1, z: 1 };
+                                    data.hasChairs = false;
+                                }
+                                else if (type === 'photo_booth') {
+                                    const box = new THREE.Mesh(new THREE.BoxGeometry(1.2, 1.8, 1.2), mats.metal);
+                                    box.position.y = 0.9;
+                                    const screen = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 0.05), mats.mirror);
+                                    screen.position.set(0, 1.1, 0.6);
+                                    group.add(box, screen);
+                                    data.clothMesh = box;
+                                    data.originalDims = { x: 1.2, y: 1.8, z: 1.2 };
+                                    data.hasChairs = false;
+                                }
+                                else if (type === 'cam_360') {
+                                    data.isCeiling = true;
+                                    const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 1), mats.metal);
+                                    pole.position.set(0, 3, 0);
+                                    const cam = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.2, 0.2), mats.cloth.clone());
+                                    cam.position.set(0, 3.5, 0);
+                                    group.add(pole, cam);
+                                    data.clothMesh = cam;
+                                    data.originalDims = { x: 0.6, y: 3.5, z: 0.6 };
+                                    group.position.y = roomDims.h - 3.5; // Fijado al techo
+                                    data.hasChairs = false;
+                                }
+                                else if (type === 'dj_booth') {
+                                    const table = new THREE.Mesh(new THREE.BoxGeometry(1.5, 1, 0.8), mats.metal);
+                                    table.position.y = 0.5;
+                                    group.add(table);
+                                    const mixer = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.2, 0.3), mats.cloth.clone()); mixer.material.color.set(0x222222);
+                                    mixer.position.set(0, 1.1, 0);
+                                    group.add(mixer);
+                                    data.clothMesh = table;
+                                    data.originalDims = { x: 1.5, y: 1.1, z: 0.8 };
+                                    data.hasChairs = false;
+                                }
+                                else if (type === 'bath_zone') {
+                                    const floor = new THREE.Mesh(new THREE.BoxGeometry(2, 0.1, 2), mats.floor);
+                                    floor.position.y = 1.5;
+                                    const walls = new THREE.Mesh(new THREE.BoxGeometry(2.1, 2.5, 2.1), mats.cloth.clone());
+                                    walls.position.y = 1.25;
+                                    walls.material.color.set(0xdddddd);
+                                    group.add(floor, walls);
+                                    data.clothMesh = floor;
+                                    data.originalDims = { x: 2, y: 2.6, z: 2 };
+                                    data.hasChairs = false;
+                                }
+                                else if (type === 'inflatable') {
+                                    const t = new THREE.Mesh(new THREE.ConeGeometry(1.5, 3, 4), mats.cloth.clone());
+                                    t.material.color.set(0x3b82f6);
+                                    t.position.y = 1.5;
+                                    group.add(t);
+                                    data.clothMesh = t;
+                                    data.originalDims = { x: 3, y: 3, z: 3 };
+                                    data.hasChairs = false;
+                                }
+                                else if (type === 'bull') {
+                                    const base = new THREE.Mesh(new THREE.CylinderGeometry(1, 1, 0.3), mats.metal);
+                                    base.position.y = 0.15;
+                                    const body = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.8, 2), mats.cloth.clone());
+                                    body.material.color.set(0x111111);
+                                    body.position.y = 1.3;
+                                    const head = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.5, 0.6), mats.cloth.clone());
+                                    head.position.set(0, 2.5, 0);
+                                    group.add(base, body, head);
+                                    data.clothMesh = body;
+                                    data.originalDims = { x: 2, y: 2.8, z: 2 };
+                                    data.hasChairs = false;
+                                }
+                                else if (type === 'stage') {
+                                    const stage = new THREE.Mesh(new THREE.BoxGeometry(6, 0.6, 4), new THREE.MeshStandardMaterial({ color: 0x222222 }));
+                                    stage.position.y = 0.3;
+                                    group.add(stage);
+                                    data.clothMesh = stage;
+                                    data.originalDims = { x: 6, y: 0.6, z: 4 };
+                                    data.hasChairs = false;
+                                }
+                                else if (type === 'dance_floor') {
+                                    const floor = new THREE.Mesh(new THREE.BoxGeometry(6, 0.02, 6), mats.floor);
+                                    floor.position.y = 0.01;
+                                    floor.material.color.set(0x111111);
+                                    group.add(floor);
+                                    data.clothMesh = floor;
+                                    data.originalDims = { x: 6, y: 0.02, z: 6 };
+                                    data.hasChairs = false;
+                                }
+                                else if (type === 'car_snack') {
+                                    // Carreta Snacks: Contiene botellas y aperitivos
+                                    const cart = new THREE.Mesh(new THREE.BoxGeometry(1.0, 1.0, 1.6), mats.wood);
+                                    cart.position.y = 0.8;
+                                    const wheels = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.1), mats.metal);
+                                    wheels.rotation.z = Math.PI / 2; wheels.position.set(0, 0.1, 0.2);
+                                    cart.add(wheels);
+
+                                    // Botellas decorativas (Snacks)
+                                    const s1 = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.5, 0.8), mats.cloth.clone());
+                                    s1.position.set(0.8, 1.35, 0);
+                                    const s2 = s1.clone(); s2.position.set(-1.0, 1.35, 0);
+                                    cart.add(s1, s2);
+
+                                    // Carritos / Botellas
+                                    const treatGeo = new THREE.BoxGeometry(0.4, 0.2, 0.4);
+                                    const treatMat = mats.cloth;
+
+                                    // Crear un carrito en la parte trasera
+                                    const treat = new THREE.Mesh(treatGeo, treatMat);
+                                    treat.rotation.z = Math.PI / 2;
+                                    treat.position.set(0, 1.15, 0.8);
+                                    cart.add(treat);
+
+                                    // Carrito al lado
+                                    const treat2 = treat.clone();
+                                    treat2.position.set(1.2, 1.15, 0.8);
+                                    cart.add(treat2);
+
+                                    data.clothMesh = s1; // Silla s1 es el clothMesh principal
+                                    data.originalDims = { x: 3.4, y: 1.95, z: 1.4 };
+                                    data.hasChairs = false;
+                                    data.inventory = { plates: 0, cutlery: 0, water: 0, wine: 0, gold: false, center: 'none' };
+                                }
+
+                                group.userData = data;
+                                scene.add(group);
+                                objects.push(group);
+                                selectObject(group);
+                            }
+
+                            // --- LÓGICA DE SILLAS E INVENTARIO ---
+                            function updateChairsLogic(group, data) {
+                                if (data.type === 'chair_ceremony') return;
+
+                                clearChairs(group, data);
+
+                                const tableHeight = 0.8; // Altura visual de la mesa
+
+                                // --- MESAS REDONDAS ---
+                                if (data.type === 'table_round' || data.type === 'table_cocktail' || data.type === 'table_cake') {
+                                    const total = data.config.chairsTotal || 0;
+                                    if (total === 0) return;
+
+                                    // Radio del círculo donde van las sillas
+                                    const r = (data.originalDims.x) / 2 + 0.6;
+
+                                    for (let i = 0; i < total; i++) {
+                                        const ang = (i / total) * Math.PI * 2;
+                                        const chair = createChairMesh(data.config.chairColor);
+
+                                        // Posición: Al rededor de la mesa + offset
+                                        const x = Math.cos(ang) * r;
+                                        const z = Math.sin(ang) * r;
+
+                                        const chairGroup = new THREE.Group();
+                                        // Colocar silla
+                                        // IMPORTANTE: Posicion Y de la silla.
+                                        // La mesa está centrada en 0,0. Su tope está en 0.4.
+                                        // La silla tiene altura de 0.5 (asiento + respaldo). Pivote en -0.45 (aprox alineado al suelo).
+                                        const chairY = -0.45; // Ajustado para que quede al ras del suelo
+                                        chair.position.set(x, chairY, z);
+                                        chair.lookAt(0, 0.4, 0); // Mira al centro
+
+                                        chairGroup.add(chair);
+                                        data.chairs.push(chairGroup);
+                                    }
+                                }
+                                // --- MESAS RECTANGULARES (Ej. Honor, Imperial, Rectangular, Honor) ---
+                                else {
+                                    const w = data.originalDims.x;
+                                    const d = data.originalDims.z;
+                                    const offset = 0.6; // Distancia de la mesa al silla (para no meterla dentro de la mesa)
+
+                                    // Definir posiciones basado en configuración
+                                    const cTop = data.config.cTop || 0;
+                                    const cBottom = data.config.cBottom || 0;
+                                    const cLeft = data.config.cLeft || 0;
+                                    const cRight = data.config.cRight || 0;
+
+                                    const addChair = (x, z, ry) => {
+                                        const chair = createChairMesh(data.config.chairColor);
+                                        // Altura silla Y: Piso (0) + 0.5 (asiento) + 0.05 (respaldo).
+                                        const chairY = 0.55;
+
+                                        chair.position.set(x, chairY, z);
+                                        chair.rotation.y = ry;
+
+                                        chair.add(createChairMesh(data.config.chairColor));
+                                        data.chairs.push(chair);
+                                    };
+
+                                    // Funciones auxiliares para crear las posiciones
+                                    // Top (Z negativo)
+                                    for (let i = 0; i < cTop; i++) {
+                                        // Distribución equidistantes a lo largo
+                                        const x = -w / 2 + (w / (cTop + 1)) * (i + 1);
+                                        addChair(x, -d / 2 - offset, 0);
+                                    }
+                                    // Bottom (Z positivo)
+                                    for (let i = 0; i < cBottom; i++) {
+                                        const x = -w / 2 + (w / (cBottom + 1)) * (i + 1);
+                                        addChair(x, d / 2 + offset, Math.PI); // Mira hacia -Z
+                                    }
+                                    // Left (X negativo)
+                                    for (let i = 0; i < cLeft; i++) {
+                                        const z = -d / 2 + (d / (cLeft + 1)) * (i + 1);
+                                        addChair(-w / 2 - offset, z, Math.PI / 2); // Mira hacia +X
+                                    }
+                                    // Right (X positivo)
+                                    for (let i = 0; i < cRight; i++) {
+                                        const z = -d / 2 + (d / (cRight + 1)) * (i + 1);
+                                        addChair(w / 2 + offset, z, -Math.PI / 2); // Mira hacia -X
+                                    }
+                                }
+
+                                // Si hay sillas, actualizar inventario
+                                if (data.inventory && data.chairs.length > 0) updateInventoryLogic(group, data);
+                            }
+
+                            function createChairMesh(color) {
+                                const g = new THREE.Group();
+                                const col = new THREE.MeshStandardMaterial({ color: color });
+
+                                // Asiento (Cilindro para redondas, Caja para rectangulares)
+                                const seatGeo = new THREE.BoxGeometry(0.45, 0.05, 0.45);
+                                const backGeo = new THREE.BoxGeometry(0.45, 0.45, 0.05);
+                                const legGeo = new THREE.BoxGeometry(0.3, 0.5, 0.45); // Patas altas
+                                const legGeo2 = new THREE.BoxGeometry(0.3, 0.45, 0.05); // Patas delanteras (Frente / Atrás)
+                                const legs = [];
+
+                                // Pata delan (Frente y Atrás)
+                                const leg1 = new THREE.Mesh(legGeo, mats.metal);
+                                leg1.position.set(0, 0, -0.2, 0); // Posición relativa al asiento (0,0,0 es la base del grupo)
+                                const leg2 = leg1.clone();
+                                leg2.rotation.y = Math.PI; // Rotar 180 grados para la espalda
+
+                                const seat = new THREE.Mesh(seatGeo, col);
+                                const back = new THREE.Mesh(backGeo, col);
+                                back.position.set(0, 0.45, -0.2); // Arriba del asiento (0,0, -0.5)
+
+                                g.add(seat, back, leg1, leg2);
+
+                                return g;
+                            }
+
+                            function clearChairs(group, data) {
+                                data.chairs.forEach(c => group.remove(c));
+                                data.chairs = [];
+                            }
+
+                            // --- Lógica de Inventario (Vajilla en el piso, alineado al frente) ---
+                            function updateInventoryLogic(group, data) {
+                                if (data.elementsGroup) {
+                                    group.remove(data.elementsGroup);
+                                }
+                                data.elementsGroup = new THREE.Group();
+                                group.add(data.elementsGroup);
+
+                                const inv = data.inventory;
+                                const isGold = inv.gold;
+                                const plateMat = isGold ? mats.gold : mats.cloth;
+                                const cutleryMat = mats.gold; // Dorado para cubiertos
+                                const woodMat = mats.wood;
+
+                                // Posición Y donde se ponen los platos
+                                const plateY = 0.8; // Ajuste esto si la mesa cambia de altura
+
+                                // --- COLISIÓN: Colocar platos, cubiertos y copas en CADA silla ---
+                                if (data.chairs.length > 0) {
+                                    data.chairs.forEach(chair => {
+                                        // Dirección hacia la mesa (Vector normalizado a la silla)
+                                        const forward = new THREE.Vector3(0, 0, -1);
+                                        forward.applyQuaternion(chair.quaternion);
+
+                                        // Posición del plato: Mitad de la silla.
+                                        // Calculamos usando trigonometría simple para encontrar un punto en la mesa (Frente a la silla)
+                                        // Dirección delanter (Silla->Mesa)
+                                        const dir = forward.clone().multiplyScalar(0.45); // Avanza hacia el centro desde la silla
+
+                                        const chairPos = chair.position.clone().add(dir);
+
+                                        // El plato se posiciona en Y = 0.8 (Superficie de la mesa)
+                                        chairPos.y = 0.8;
+
+                                        if (inv.plates > 0) {
+                                            // Crear plato
+                                            const plate = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.12, 0.02), plateMat);
+                                            plate.position.copy(chairPos);
+                                            // Ajustar rotación del plato
+                                            plate.lookAt(group.position.x, 0.8, group.position.z); // Mira al centro del objeto
+                                            data.elementsGroup.add(plate);
+
+                                            // Cubiertos
+                                            if (inv.cutlery > 0) {
+                                                // Cuchillo (Navaja) del plato
+                                                const knife = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.02, 0.02), cutleryMat);
+                                                knife.position.copy(chairPos);
+                                                // Arriba del plato (Y relativo a la mesa)
+                                                knife.position.y = 0.82; // Plato en 0.8, cuchillo en 0.82.
+                                                knife.position.x -= 0.05; // Izquierda del plato
+                                                data.elementsGroup.add(knife);
+
+                                                // Tenedor (Cuchara) del plato (Cuchillo) del plato
+                                                const fork = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.02, 0.02), cutleryMat);
+                                                fork.position.copy(chairPos);
+                                                fork.position.y = 0.82;
+                                                fork.position.x += 0.05; // Derecha del plato
+                                                data.elementsGroup.add(fork);
+                                            }
+
+                                            // Copas
+                                            if (inv.water > 0) {
+                                                // Vaso (Cilindro)
+                                                const glass = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.03, 0.1), mats.water);
+                                                glass.position.copy(chairPos);
+                                                glass.position.y = 0.85; // Altura vaso
+                                                glass.position.x += 0.12; // Lado derecho de la silla (arbitrario)
+                                                data.elementsGroup.add(glass);
+                                            }
+
+                                            if (inv.wine > 0) {
+                                                // Vino (Cilindro cónico)
+                                                const glassWine = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.02, 0.12), mats.wine);
+                                                glassWine.position.copy(chairPos);
+                                                glassWine.position.x -= 0.12; // Lado izquierdo de la silla
+                                                glassWine.position.y = 0.85;
+                                                data.elementsGroup.add(glassWine);
+                                            }
+                                        }
+                                    }
+            }
+                            }
+
+                            // --- INTERACCIÓN ---
+                            function selectObject(obj) {
+                                selectedObject = obj;
+                                transformControl.attach(obj);
+                                document.getElementById('ui-overlay').style.display = 'block';
+                                updateUIFromObject(obj);
+                            }
+
+                            function formatName(str) {
+                                return str.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+                            }
+
+                            window.deselect = () => {
+                                selectedObject = null;
+                                transformControl.detach();
+                                document.getElementById('ui-overlay').style.display = 'none';
+                            };
+
+                            function updateUIFromObject(obj) {
+                                const d = obj.userData;
+                                document.getElementById('ui-item-name').innerText = formatName(d.type);
+                                document.getElementById('ui-item-name').title = d.note || 'Editar';
+                                document.getElementById('inp-note').value = d.note || '';
+
+                                document.getElementById('inp-w').value = (d.originalDims.x * obj.scale.x).toFixed(2);
+                                document.getElementById('inp-d').value = (d.originalDims.z * obj.scale.z).toFixed(2);
+                                document.getElementById('inp-h').value = (d.originalDims.y * obj.scale.y).toFixed(2);
+                                document.getElementById('inp-rot').value = Math.round(obj.rotation.y * 180 / Math.PI);
+
+                                const isLamp = d.isCeiling;
+                                const hInput = document.getElementById('inp-h');
+                                hInput.disabled = !isLamp;
+                                hInput.style.opacity = isLamp ? 1 : 0.5;
+
+                                if (d.clothMesh) {
+                                    document.getElementById('inp-color').value = '#' + d.clothMesh.material.color.getHexString();
+                                    document.getElementById('ui-color').style.display = 'block';
+                                } else {
+                                    document.getElementById('ui-color').style.display = 'none';
+                                }
+
+                                const uiChairs = document.getElementById('ui-chairs');
+                                const uiInv = document.getElementById('ui-inventory');
+
+                                // Lógica Sillas Especial
+                                if (d.chairs) {
+                                    uiChairs.style.display = 'block';
+                                    uiInv.style.display = 'block';
+
+                                    if (d.type === 'table_round' || d.type === 'table_cocktail' || d.type === 'table_cake') {
+                                        document.getElementById('chairs-round').style.display = 'block';
+                                        document.getElementById('chairs-rect').style.display = 'none';
+                                        document.getElementById('inp-chair-count').value = d.config.chairsTotal || 0;
+                                        document.getElementById('inp-chair-color').value = d.config.chairColor;
+                                    } else {
+                                        document.getElementById('chairs-round').style.display = 'none';
+                                        document.getElementById('chairs-rect').style.display = 'block';
+
+                                        document.getElementById('inp-c-top').value = d.config.cTop || 0;
+                                        document.getElementById('inp-c-bot').value = d.config.cBottom || 0;
+                                        document.getElementById('inp-c-left').value = d.config.cLeft || 0;
+                                        document.getElementById('c-right').value = d.config.cRight || 0;
+
+                                        document.getElementById('inp-c-top').previousElementSibling.innerText = "Arriba";
+                                        document.getElementById('inp-c-bot').previousElementSibling.innerText = "Abajo";
+                                        document.getElementById('inp-c-left').previousElementSibling.innerText = "Izquierda";
+                                        document.getElementById('c-right').previousElementSibling.innerText = "Derecha";
+
+                                        document.getElementById('inp-c-top').nextElementSibling.innerText = "Arriba";
+                                        document.getElementById('inp-c-bot').nextElementSibling.innerText = "Abajo";
+                                        document.getElementById('inp-c-left').nextElementSibling.innerText = "Izquierda";
+                                        document.getElementById('c-right').nextElementSibling.innerText = "Derecha";
+
+                                        const r = d.originalDims.x / 2 + 0.6;
+
+
+                                    // Actualizar inventario
+                                    if (data.inventory) updateInventoryLogic(group, data);
+                                }
+
+                                // --- FUNCIONES UI ---
+                                function updateDimensions() {
+                                    if (!selectedObject) return;
+                                    const d = selectedObject.userData;
+                                    const sx = parseFloat(document.getElementById('inp-w').value) / d.originalDims.x;
+                                    const sy = parseFloat(document.getElementById('inp-h').value) / d.originalDims.y;
+                                    const sz = parseFloat(document.getElementById('inp-d').value) / d.originalDims.z;
+                                    selectedObject.scale.set(sx, sy, sz);
+                                    enforceCollision(selectedObject);
+                                    if (d.inventory) updateInventoryLogic(selectedObject, d);
+                                };
+
+                                function updateTransform() {
+                                    if (!selectedObject) return;
+                                    selectedObject.rotation.y = parseFloat(document.getElementById('inp-rot').value) * Math.PI / 180;
+                                    if (selectedObject.userData.inventory) updateInventoryLogic(selectedObject, selectedObject.userData);
+                                };
+
+                                function updateColor() {
+                                    if (!selectedObject || !selectedObject.userData.clothMesh) return;
+                                    const hex = document.getElementById('inp-color').value;
+                                    selectedObject.userData.clothMesh.material.color.set(hex);
+                                };
+
+                                function updateChairs() {
+                                    if (!selectedObject || !selectedObject.userData.chairs) return;
+                                    const n = parseInt(document.getElementById('inp-chair-count').value);
+                                    const col = document.getElementById('inp-chair-color').value;
+
+                                    // Redonda
+                                    if (selectedObject.userData.type === 'table_round' || selectedObject.userData.type === 'table_cocktail' || selectedObject.userData.type === 'table_cake') {
+                                        selectedObject.userData.config.chairsTotal = n;
+                                        selectedObject.userData.config.chairColor = col;
+                                        updateChairsLogic(selectedObject, selectedObject.userData);
+                                    } else {
+                                        const d = selectedObject.userData;
+                                        const cTop = parseInt(document.getElementById('inp-c-top').value);
+                                        const cBot = parseInt(document.getElementById('inp-c-bot').value);
+                                        const cLeft = parseInt(document.getElementById('inp-c-left').value);
+                                        const cRight = parseInt(document.getElementById('c-right').value);
+
+                                        d.config.cTop = cTop; d.config.cBottom = cBot; d.config.cLeft = cLeft; d.config.cRight = d.config.cRight;
+                                        d.config.chairColor = col;
+                                        updateChairsLogic(selectedObject, d);
+                                    }
+                                }
+
+                                function updateInventory() {
+                                    if (!selectedObject || !selectedObject.userData.inventory) return;
+                                    const d = selectedObject.userData;
+
+                                    d.inventory.plates = parseInt(document.getElementById('inv-plates').value);
+                                    d.inventory.cutlery = parseInt(document.getElementById('inv-cutlery').value);
+                                    d.inventory.water = parseInt(document.getElementById('inv-water').value);
+                                    d.inventory.wine = parseInt(document.getElementById('inv-wine').value);
+                                    d.inventory.gold = document.getElementById('chk-gold').checked;
+                                    d.inventory.center = document.getElementById('sel-centerpiece').value;
+                                    d.inventory.center = document.getElementById('sel-centerpiece').value;
+
+                                    // Lógica de colocación de vajilla (Lógica física real)
+                                    const tableTopY = 0.8;
+                                    const cutleryMat = mats.gold;
+
+                                    // Recorrer sillas
+                                    d.chairs.forEach(chair => {
+                                        // Posición y rotación relativas de la silla
+                                        const forward = new THREE.Vector3(0, 0, -1);
+                                        forward.applyQuaternion(chair.quaternion);
+
+                                        // Posición del plato
+                                        // Posición base (delante de la silla)
+                                        // Deseamos que "chair.position" es (0,0,0) local al grupo. La mesa está en (0,0,0) local a la silla es (0,0,0). 
+                                        // Queremos el centro de la mesa (0,0,0).
+                                        // Punto "Frente a la mesa": Posición silla + (Dirección * 0.45).
+                                        const chairPos = chair.position.clone().add(forward.multiplyScalar(0.45));
+
+                                        // Si hay inventario
+                                        // Ajustar Y para que quede exacto sobre la mesa (0.8)
+                                        chairPos.y = tableTopY;
+
+                                        if (d.inventory.plates > 0) {
+                                            // Platos
+                                            const plate = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.12, 0.02), mats.plate);
+                                            plate.position.copy(chairPos);
+                                            plate.lookAt(group.position.x, tableTopY, group.position.z);
+                                            data.elementsGroup.add(plate);
+
+                                            // Cubiertos
+                                            if (d.inventory.cutlery > 0) {
+                                                const knife = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.02, 0.02), cutleryMat);
+                                                knife.position.copy(chairPos);
+                                                knife.position.y = tableTopY + 0.02; // Encima del plato
+                                                knife.position.x -= 0.05; // Arriba del plato (Izquierda)
+                                                data.elementsGroup.add(knife);
+
+                                                const fork = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.02, 0.02), cutleryMat);
+                                                fork.position.copy(chairPos); fork.position.y = tableTopY + 0.02;
+                                                fork.position.x += 0.05; // Derecha del plato
+                                                data.elementsGroup.add(fork);
+                                            }
+
+                                            if (d.inventory.water > 0) {
+                                                const glass = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.03, 0.1), mats.water);
+                                                glass.position.copy(chairPos);
+                                                glass.position.x += 0.12; // Lado derecho del plato
+                                                glass.position.y = tableTopY + 0.05;
+                                                data.elementsGroup.add(glass);
+                                            }
+
+                                            if (d.inventory.wine > 0) {
+                                                const glassWine = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.02, 0.12), mats.wine);
+                                                glassWine.position.copy(chairPos);
+                                                glassWine.position.x -= 0.12; // Lado izquierdo del plato
+                                                glassWine.position.y = tableTopY + 0.05;
+                                                data.elementsGroup.add(glassWine);
+                                            }
+                                        }
+                                    });
+                                }
+
+                                function updateInventoryLogic(group, data) {
+                                    // Limpiar elementos anteriores
+                                    if (data.elementsGroup) group.remove(data.elementsGroup);
+                                    data.elementsGroup = new THREE.Group();
+                                    group.add(data.elementsGroup);
+
+                                    const inv = data.inventory;
+                                    const isGold = inv.gold;
+                                    const plateMat = isGold ? mats.gold : mats.cloth;
+                                    const cutleryMat = mats.gold;
+
+                                    data.chairs.forEach(chair => {
+                                        const forward = new THREE.Vector3(0, 0, -1);
+                                        forward.applyQuaternion(chair.quaternion);
+                                        const platePos = chair.position.clone().add(forward.multiplyScalar(0.45));
+
+                                        if (inv.plates > 0) {
+                                            const plate = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.12, 0.02), plateMat);
+                                            plate.position.copy(platePos);
+                                            plate.position.y = 0.8;
+                                            plate.lookAt(group.position.x, 0.8, group.position.z);
+                                            data.elementsGroup.add(plate);
+
+                                            if (inv.cutlery > 0) {
+                                                const knife = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.02, 0.02), cutleryMat);
+                                                knife.position.copy(platePos);
+                                                knife.position.y = 0.82;
+                                                knife.position.x -= 0.05;
+                                                data.elementsGroup.add(knife);
+
+                                                const fork = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.02, 0.02), cutleryMat);
+                                                fork.position.copy(platePos);
+                                                fork.position.y = 0.82;
+                                                fork.position.x += 0.05;
+                                                data.elementsGroup.add(fork);
+                                            }
+                                        }
+
+                                        if (inv.water > 0) {
+                                            const glass = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.03, 0.1), mats.water);
+                                            glass.position.copy(platePos);
+                                            glass.position.x += 0.12;
+                                            glass.position.y = 0.85;
+                                            data.elementsGroup.add(glass);
+                                        }
+
+                                        if (inv.wine > 0) {
+                                            const glassWine = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.02, 0.12), mats.wine);
+                                            glassWine.position.copy(chairPos);
+                                            glassWine.position.x -= 0.12; // Lado izq (arbitrario)
+                                            glassWine.position.y = 0.85;
+                                            data.elementsGroup.add(glassWine);
+                                        }
+                                    });
+                                }
+
+                                window.deselect = () => {
+                                    selectedObject = null;
+                                    transformControl.detach();
+                                    document.getElementById('ui-overlay').style.display = 'none';
+                                };
+
+                                window.deleteSelected = () => {
+                                    if (!selectedObject) return;
+                                    scene.remove(selectedObject);
+                                    objects = objects.filter(o => o !== selectedObject);
+                                    deselect();
+                                    showToast("Elemento Eliminado");
+                                };
+
+                                window.duplicateSelected = () => {
+                                    if (!selectedObject) return;
+                                    const clone = selectedObject.clone();
+                                    // Duplicar posición para no superponerse inmediatamente
+                                    clone.position.x += 3;
+                                    scene.add(clone);
+                                    objects.push(clone);
+                                    selectObject(clone);
+                                    showToast("Elemento Duplicado");
+                                };
+
+                                // --- FÍSICA / COLISION ---
+                                function enforceCollision(obj) {
+                                    const d = obj.userData;
+                                    const box = new THREE.Box3().setFromObject(obj);
+                                    const size = new THREE.Vector3();
+                                    box.getSize(size);
+
+                                    const w2 = size.x / 2;
+                                    const d2 = size.z / 2;
+                                    const buffer = 0.1; // Margen de seguridad contra paredes
+
+                                    const limitX = (roomDims.w / 2) - w2 - buffer;
+                                    const limitZ = (roomDims.l / 2) - d2 - buffer;
+
+                                    if (obj.position.x > limitX) obj.position.x = limitX;
+                                    if (obj.position.x < -limitX) obj.position.x = -limitX;
+                                    if (obj.position.z > limitZ) obj.position.z = limitZ;
+                                    if (obj.position.z < -limitZ) obj.position.z = -limitZ;
+
+                                    // Lógica para mantener elementos en el suelo
+                                    if (d.isCeiling) {
+                                        const maxY = roomDims.h - (size.y / 2) - buffer;
+                                        const minY = 2; // Altura mínima para elementos de techo para que no choquen al suelo
+                                        if (obj.position.y > maxY) obj.position.y = maxY;
+                                        if (obj.position.y < minY) obj.position.y = minY;
+                                    } else {
+                                        if (obj.position.y + box.min.y < 0) {
+                                            obj.position.y = -box.min.y;
+                                        }
+                                    }
+                                }
+
+                                // --- RAYCASTING ---
+                                const raycaster = new THREE.Raycaster();
+                                const pointer = new THREE.Vector2();
+                                function onPointerDown(event) {
+                                    const rect = renderer.domElement.getBoundingClientRect();
+                                    pointer.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+                                    pointer.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+
+                                    raycaster.setFromCamera(pointer, camera);
+                                    const intersects = raycaster.intersectObjects(objects, true);
+
+                                    if (intersects.length > 0) {
+                                        let target = intersects[0].object;
+                                        while (target.parent && target.parent.type !== 'Scene') target = target.parent;
+                                        selectObject(target);
+                                    } else if (!transformControl.dragging) {
+                                        deselect();
+                                    }
+                                }
+
+                                function onResize() {
+                                    const container = document.getElementById('canvas-container');
+                                    camera.aspect = container.clientWidth / container.clientHeight;
+                                    camera.updateProjectionMatrix();
+                                    renderer.setSize(container.clientWidth, container.clientHeight);
+                                }
+
+                                function animate() {
+                                    requestAnimationFrame(animate);
+                                    orbit.update();
+                                    renderer.render(scene, camera);
+                                }
+
+                        </script>
+</body>
+
+</html>

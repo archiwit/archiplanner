@@ -6,6 +6,7 @@ import { BrandingProvider } from './context/BrandingContext';
 // Layouts
 import MainLayout from './components/layout/MainLayout';
 import AdminLayout from './components/admin/AdminLayout';
+import ScrollToTop from './components/common/ScrollToTop';
 
 // Public Pages
 import Home from './pages/Home';
@@ -61,6 +62,7 @@ function App() {
         <ErrorBoundary>
             <BrandingProvider>
                 <AuthProvider>
+                    <ScrollToTop />
                     <Routes>
                         {/* Public Website */}
                         <Route element={<MainLayout />}>

@@ -82,13 +82,13 @@ const Footer = () => {
                         <h4>{col.title}</h4>
                         <div className="contact-list">
                             {companyConfig?.email_contacto && (
-                                <p><Mail size={14} /> {companyConfig.email_contacto}</p>
+                                <p><Mail size={20} /> {companyConfig.email_contacto}</p>
                             )}
                             {companyConfig?.telefono && (
-                                <p><Phone size={14} /> {companyConfig.telefono}</p>
+                                <p><Phone size={20} /> {companyConfig.telefono}</p>
                             )}
                             {companyConfig?.city && (
-                                <p><MapPin size={14} /> {companyConfig.city}</p>
+                                <p><MapPin size={20} /> {companyConfig.city}</p>
                             )}
                         </div>
                     </div>

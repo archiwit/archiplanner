@@ -5,10 +5,13 @@ const db = require('../db');
  * Helper to get a configured OAuth2 client
  */
 const getClient = () => {
+    const redirectUri = process.env.GOOGLE_REDIRECT_URI || 'https://archiplanner.com.co/api/google/callback';
+    console.log(`[Google-Auth] Using Redirect URI: ${redirectUri}`);
+    
     return new google.auth.OAuth2(
         process.env.GOOGLE_CLIENT_ID,
         process.env.GOOGLE_CLIENT_SECRET,
-        process.env.GOOGLE_REDIRECT_URI || 'https://archiplanner.com.co/api/google/callback'
+        redirectUri
     );
 };
 
@@ -34,25 +37,32 @@ const googleCalendarService = {
      * Exchange code for tokens and save them to the user
      */
     async saveTokens(code, userId) {
+        console.log(`[Google-Auth] Exchanging code for user: ${userId}`);
         const client = getClient();
-        const { tokens } = await client.getToken(code);
-        
-        const { access_token, refresh_token, expiry_date } = tokens;
-        
-        // Save to DB
-        let sql = 'UPDATE usuarios SET google_access_token = ?, google_token_expiry = ?';
-        let params = [access_token, expiry_date];
-        
-        if (refresh_token) {
-            sql += ', google_refresh_token = ?';
-            params.push(refresh_token);
+        try {
+            const { tokens } = await client.getToken(code);
+            console.log(`[Google-Auth] Tokens received successfully`);
+            
+            const { access_token, refresh_token, expiry_date } = tokens;
+            
+            // Save to DB
+            let sql = 'UPDATE usuarios SET google_access_token = ?, google_token_expiry = ?';
+            let params = [access_token, expiry_date];
+            
+            if (refresh_token) {
+                sql += ', google_refresh_token = ?';
+                params.push(refresh_token);
+            }
+            
+            sql += ' WHERE id = ?';
+            params.push(userId);
+            
+            await db.query(sql, params);
+            return tokens;
+        } catch (error) {
+            console.error(`[Google-Auth] Error exchanging code:`, error.response ? error.response.data : error.message);
+            throw new Error(`Google Auth Failed: ${error.message}`);
         }
-        
-        sql += ' WHERE id = ?';
-        params.push(userId);
-        
-        await db.query(sql, params);
-        return tokens;
     },
 
     /**

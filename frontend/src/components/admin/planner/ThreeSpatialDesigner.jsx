@@ -72,7 +72,8 @@ const ThreeSpatialDesigner = forwardRef(({
         bottle: new THREE.MeshStandardMaterial({ color: '#2c4c2c', transparent: true, opacity: 0.8 })
     };
 
-    const findMat = (name) => {
+    const findMat = (name, customColor) => {
+        if (customColor) return new THREE.MeshStandardMaterial({ color: customColor, roughness: 0.8 });
         if (!name) return mats.wood;
         const n = String(name).toLowerCase();
         if (n.includes('mader')) return mats.wood;
@@ -188,7 +189,7 @@ const ThreeSpatialDesigner = forwardRef(({
         const oldRoom = scene.getObjectByName("RoomNode"); if (oldRoom) scene.remove(oldRoom);
         const roomGroup = new THREE.Group(); roomGroup.name = "RoomNode";
         const w = Number(roomConfig.width) || 20; const l = Number(roomConfig.length) || 20;
-        const floor = new THREE.Mesh(new THREE.PlaneGeometry(w, l), findMat(roomConfig.floorType));
+        const floor = new THREE.Mesh(new THREE.PlaneGeometry(w, l), findMat(roomConfig.floorType, roomConfig.floorColor));
         floor.rotation.x = -Math.PI/2; floor.position.set(w/2, 0, l/2); roomGroup.add(floor);
         const grid = new THREE.GridHelper(Math.max(w, l)*1.5, 30, 0x333333, 0x222222); grid.position.set(w/2, 0.01, l/2); roomGroup.add(grid);
         if (roomConfig.showWalls !== false) {

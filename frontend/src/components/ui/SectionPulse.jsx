@@ -67,6 +67,7 @@ const SectionPulse = ({
                     color: ${textColor};
                     font-family: 'Outfit', sans-serif;
                     position: relative;
+                    overflow-x: clip;
                 }
 
                 .v4-pulse-container {
@@ -310,7 +311,7 @@ const SectionPulse = ({
                     stroke-width: 0px;
                 }
 
-                .v4-pulse-imgt{
+                .v4-pulse-imgt {
                     background-color: transparent;
                     min-height: 100px;
                     padding: 0;
@@ -322,14 +323,14 @@ const SectionPulse = ({
                     position: absolute;
                     width: 100%;      
                     top: -98px;
-                     & svg{
-                        display: block;
-                        width: 110%;
-                        height: 100%;
-                        filter: drop-shadow(0px -15px 10px rgba(0, 0, 0, 0.3));
-                    }
                 }
-                .v4-pulse-imgB{
+                .v4-pulse-imgt svg {
+                    display: block;
+                    width: 100%;
+                    height: 100%;
+                    filter: drop-shadow(0px -15px 10px rgba(0, 0, 0, 0.3));
+                }
+                .v4-pulse-imgB {
                     background-color: transparent;
                     min-height: 100px;
                     padding: 0;
@@ -341,13 +342,12 @@ const SectionPulse = ({
                     position: absolute;      
                     width: 100%;      
                     bottom: -98px;
-               
-                    & svg{
-                        display: block;
-                        width: 110%;
-                        height: 100%;
-                        filter: drop-shadow(0px 15px 10px rgba(0, 0, 0, 0.3));
-                    }
+                }
+                .v4-pulse-imgB svg {
+                    display: block;
+                    width: 100%;
+                    height: 100%;
+                    filter: drop-shadow(0px 15px 10px rgba(0, 0, 0, 0.3));
                 }
             ` }} />
 
