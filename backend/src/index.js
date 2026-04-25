@@ -2,7 +2,8 @@ const express = require('express');
 const cors = require('cors');
 const path = require('path');
 const fs = require('fs');
-require('dotenv').config();
+require('dotenv').config({ path: path.join(__dirname, '../.env') });
+console.log('[System] Google Client ID loaded:', process.env.GOOGLE_CLIENT_ID ? 'YES' : 'NO');
 const db = require('./db');
 const { deleteFiles } = require('./utils/fileManager');
 const upload = require('./middleware/upload');
@@ -18,6 +19,7 @@ const itemsClaveRoutes = require('./routes/items_clave');
 const clientFinanceRoutes = require('./routes/client_finance');
 const googleRoutes = require('./routes/google');
 const actividadesRoutes = require('./routes/actividades');
+const debugRoutes = require('./routes/debug');
 
 
 const app = express();
@@ -481,6 +483,7 @@ app.use('/api/notifications', require('./routes/notifications'));
 app.use('/api/client-finance', clientFinanceRoutes);
 app.use('/api/google', googleRoutes);
 app.use('/api/actividades', actividadesRoutes);
+app.use('/api/debug', debugRoutes);
 
 // Automated Scan (Run on startup and every 12 hours)
 const runAudit = async () => {
