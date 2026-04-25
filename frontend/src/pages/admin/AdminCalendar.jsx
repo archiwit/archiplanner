@@ -290,7 +290,13 @@ const AdminCalendar = () => {
                 result = await actividadService.update(currentEdit.id, formData);
                 Swal.fire({ icon: 'success', title: '¡Actualizado!', text: 'Actividad actualizada correctamente.', background: '#1a1a1a', color: '#fff' });
             } else {
-                result = await actividadService.create({ ...formData, conf_id: companyConfig?.id, u_id: user?.id });
+                const payload = { 
+                    ...formData, 
+                    conf_id: companyConfig?.id || 1, 
+                    u_id: user?.id,
+                    cli_id: formData.cli_id || (formData.cot_id ? cotizaciones.find(c => c.id == formData.cot_id)?.cli_id : null)
+                };
+                result = await actividadService.create(payload);
                 Swal.fire({ icon: 'success', title: '¡Agendado!', text: 'Nueva actividad creada.', background: '#1a1a1a', color: '#fff' });
             }
 

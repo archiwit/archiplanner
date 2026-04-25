@@ -511,6 +511,102 @@ const AdminEventPlanner = () => {
         }
     };
 
+    const addMeetingActivity = async () => {
+        const { value: formValues } = await Swal.fire({
+            title: 'AGENDAR REUNIÓN / ACUERDO',
+            html: `
+                <div class="swal-v4-form">
+                    <div class="form-field is-floating">
+                        <input id="swal-meet-titulo" class="dense-input" placeholder=" " autocomplete="off">
+                        <label>Título de la Reunión</label>
+                    </div>
+                    
+                    <div class="swal-grid-2">
+                        <div class="form-field is-floating">
+                            <input id="swal-meet-fecha" class="dense-input" type="datetime-local" placeholder=" ">
+                            <label>Fecha y Hora</label>
+                        </div>
+                        <div class="form-field is-floating">
+                            <select id="swal-meet-tipo" class="dense-input">
+                                <option value="cita">Cita</option>
+                                <option value="visita">Visita</option>
+                                <option value="reunion" selected>Reunión</option>
+                                <option value="llamada">Llamada</option>
+                                <option value="otro">Otro</option>
+                            </select>
+                            <label>Tipo de Encuentro</label>
+                        </div>
+                    </div>
+
+                    <div class="form-field is-floating">
+                        <textarea id="swal-meet-resumen" class="dense-input" rows="3" placeholder=" "></textarea>
+                        <label>Resumen / Acuerdos (Visible p/ Cliente)</label>
+                    </div>
+
+                    <div class="form-field is-floating">
+                        <input id="swal-meet-place" class="dense-input" placeholder=" " autocomplete="off">
+                        <label>Ubicación / Link Virtual</label>
+                    </div>
+                </div>
+            `,
+            focusConfirm: false,
+            background: '#121212',
+            color: '#fff',
+            confirmButtonColor: '#B76E79',
+            confirmButtonText: 'CONFIRMAR AGENDA',
+            didOpen: () => {
+                const inputs = document.querySelectorAll('.swal-v4-form .dense-input');
+                inputs.forEach(input => {
+                    input.addEventListener('focus', () => input.parentElement.classList.add('is-floating'));
+                    input.addEventListener('blur', () => {
+                        if (!input.value) input.parentElement.classList.remove('is-floating');
+                    });
+                    if (input.value) input.parentElement.classList.add('is-floating');
+                });
+            },
+            preConfirm: () => {
+                const titulo = document.getElementById('swal-meet-titulo').value;
+                const fecha = document.getElementById('swal-meet-fecha').value;
+                if (!titulo || !fecha) {
+                    Swal.showValidationMessage('Título y fecha son obligatorios');
+                    return false;
+                }
+                return {
+                    titulo,
+                    fecha_inicio: fecha,
+                    tipo: document.getElementById('swal-meet-tipo').value,
+                    resumen: document.getElementById('swal-meet-resumen').value,
+                    ubicacion: document.getElementById('swal-meet-place').value
+                }
+            }
+        });
+
+        if (formValues) {
+            try {
+                const payload = {
+                    ...formValues,
+                    cot_id: selectedEvent.id,
+                    cli_id: selectedEvent.cli_id,
+                    u_id: user.id,
+                    conf_id: companyConfig?.id || 1,
+                    is_public: true
+                };
+                await actividadService.create(payload);
+                Swal.fire({ 
+                    icon: 'success', 
+                    title: '¡SESIÓN AGENDADA!', 
+                    text: 'La reunión se ha registrado y vinculado al evento.', 
+                    background: '#121212', 
+                    color: '#fff',
+                    confirmButtonColor: '#B76E79'
+                });
+                fetchAllData(selectedEvent.id);
+            } catch (err) {
+                Swal.fire({ icon: 'error', title: 'Error', text: err.message, background: '#121212', color: '#fff' });
+            }
+        }
+    };
+
     const exportItinerary = async () => {
         if (!selectedEvent) return;
         Swal.fire({
@@ -907,6 +1003,9 @@ const AdminEventPlanner = () => {
                                     <div className="meetings-history">
                                         <div className="section-header">
                                             <h3>Historial de Reuniones y Acuerdos</h3>
+                                            <button className="btn-v4 btn-v4-primary btn-mini" onClick={addMeetingActivity}>
+                                                <Plus size={14} /> Agendar Nueva
+                                            </button>
                                         </div>
                                         <div className="meetings-list">
                                             {(!Array.isArray(meetings) || meetings.length === 0) ? (

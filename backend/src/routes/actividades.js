@@ -85,13 +85,13 @@ router.post('/', async (req, res) => {
  * Update activity
  */
 router.put('/:id', async (req, res) => {
-    const { titulo, descripcion, resumen, tipo, fecha_inicio, fecha_fin, ubicacion, cli_id, cot_id, estado, color, all_day, is_public } = req.body;
+    const { titulo, descripcion, resumen, tipo, fecha_inicio, fecha_fin, ubicacion, cli_id, cot_id, u_id, estado, color, all_day, is_public } = req.body;
     try {
         await db.query(
             `UPDATE actividades SET 
-             titulo=?, descripcion=?, resumen=?, tipo=?, fecha_inicio=?, fecha_fin=?, ubicacion=?, cli_id=?, cot_id=?, estado=?, color=?, all_day=?, is_public=?
+             titulo=?, descripcion=?, resumen=?, tipo=?, fecha_inicio=?, fecha_fin=?, ubicacion=?, cli_id=?, cot_id=?, u_id=?, estado=?, color=?, all_day=?, is_public=?
              WHERE id=?`,
-            [titulo, descripcion, resumen || '', tipo, fecha_inicio, fecha_fin, ubicacion, cli_id || null, cot_id || null, estado, color, all_day ? 1 : 0, is_public !== undefined ? is_public : 1, req.params.id]
+            [titulo, descripcion, resumen || '', tipo, fecha_inicio, fecha_fin, ubicacion, cli_id || null, cot_id || null, u_id || null, estado, color, all_day ? 1 : 0, is_public !== undefined ? is_public : 1, req.params.id]
         );
 
         // Sync update with Google
