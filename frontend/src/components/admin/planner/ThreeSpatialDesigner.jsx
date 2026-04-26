@@ -4,6 +4,37 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import { TransformControls } from 'three/examples/jsm/controls/TransformControls';
 import { PointerLockControls } from 'three/examples/jsm/controls/PointerLockControls';
 
+const createTextLabel = (text, color = '#d4af37') => {
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    canvas.width = 512;
+    canvas.height = 128;
+    
+    // Glassmorphic background
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+    ctx.beginPath();
+    ctx.roundRect ? ctx.roundRect(0, 0, 512, 128, 64) : ctx.rect(0, 0, 512, 128);
+    ctx.fill();
+    
+    // Border
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 8;
+    ctx.stroke();
+    
+    // Text
+    ctx.font = 'bold 48px Inter, sans-serif';
+    ctx.fillStyle = '#ffffff';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(text, 256, 64);
+    
+    const texture = new THREE.CanvasTexture(canvas);
+    const material = new THREE.SpriteMaterial({ map: texture, transparent: true });
+    const sprite = new THREE.Sprite(material);
+    sprite.scale.set(1.5, 0.4, 1);
+    return sprite;
+};
+
 const SCALE = 50;
 
 const ThreeSpatialDesigner = forwardRef(({ 
@@ -11,7 +42,9 @@ const ThreeSpatialDesigner = forwardRef(({
     roomConfig = {}, 
     selectedId, 
     onSelect,
-    onUpdateElement 
+    onUpdateElement,
+    onWalkChange,
+    guests = []
 }, ref) => {
     const canvasRef = useRef(null);
     const sceneRef = useRef(null);
@@ -145,12 +178,14 @@ const ThreeSpatialDesigner = forwardRef(({
         });
         scene.add(tControls); transformControlsRef.current = tControls;
         const plControls = new PointerLockControls(camera, renderer.domElement);
-        plControls.addEventListener('unlock', () => { console.log("POV Unlocked"); });
+        plControls.addEventListener('lock', () => { onWalkChange?.(true); });
+        plControls.addEventListener('unlock', () => { onWalkChange?.(false); });
         scene.add(plControls.object); pointerLockRef.current = plControls;
         const moveState = { w: false, a: false, s: false, d: false };
         const keyHandler = (e, down) => {
             const k = e.code;
             if (k === 'Escape' && plControls.isLocked) { e.stopPropagation(); }
+            if (k === 'ShiftLeft' || k === 'ShiftRight') { if (down && plControls.isLocked) plControls.unlock(); }
             if (k === 'KeyW' || k === 'ArrowUp') moveState.w = down; 
             if (k === 'KeyS' || k === 'ArrowDown') moveState.s = down;
             if (k === 'KeyA' || k === 'ArrowLeft') moveState.a = down; 
@@ -176,7 +211,7 @@ const ThreeSpatialDesigner = forwardRef(({
             const hits = ray.intersectObjects(furnitureRef.current.children, true);
             if (hits.length > 0) {
                 let p = hits[0].object; while (p && !p.userData?.id) p = p.parent;
-                if (p?.userData?.id) onSelectRef.current(p.userData.id);
+                if (p?.userData?.id) onSelectRef.current(p.userData.id, e.shiftKey || e.ctrlKey);
             } else { onSelectRef.current(null); }
         };
         canvasRef.current.addEventListener('pointerup', handleUp);
@@ -212,7 +247,7 @@ const ThreeSpatialDesigner = forwardRef(({
             const config = el.config_json || {};
             const item = new THREE.Group(); item.userData = { id: el.id };
             item.position.set((el.x || 0) / SCALE, 0, (el.y || 0) / SCALE);
-            item.rotation.y = (el.rotation || 0) * (Math.PI / 180);
+            item.rotation.y = (el.rotacion || el.rotation || config.rotation || 0) * (Math.PI / 180);
 
             if (String(el.id) === String(selectedId) && transformControlsRef.current) {
                 transformControlsRef.current.attach(item);
@@ -241,8 +276,117 @@ const ThreeSpatialDesigner = forwardRef(({
                     }
                 });
                 item.add(barGroup);
-            } else if (tipo.includes('mesa') || tipo.includes('coctel') || tipo.includes('ponque')) {
-                const isRound = tipo.includes('redon') || tipo.includes('coctel') || tipo.includes('ponque');
+            } else if (tipo.includes('ponque')) {
+                const shape = config.tableShape || 'circular';
+                const isRect = shape === 'rectangular';
+                const dw = (config.width / SCALE) || 1.4;
+                const dl = (config.height / SCALE) || 1.0;
+                const mat = findMat(config.color || el.color || '#ff8484');
+                
+                const tableGeom = isRect ? new THREE.BoxGeometry(dw, 0.75, dl) : new THREE.CylinderGeometry(dw/2, dw/2, 0.75, 32);
+                const mesh = new THREE.Mesh(tableGeom, mat);
+                mesh.position.y = 0.375;
+                item.add(mesh);
+
+                const topY = 0.755;
+                
+                // Ponqué
+                if (config.showCake !== false) {
+                    const cakeType = config.cakeType || 'boda';
+                    const cakeColor = config.cakeColor || '#ffffff';
+                    const cakeMat = new THREE.MeshStandardMaterial({ color: cakeColor, roughness: 0.3 });
+                    
+                    const topperMat = findMat(config.topperColor || '#ffd700');
+                    
+                    if (cakeType === 'boda') {
+                        // 3 pisos
+                        [0.1, 0.28, 0.44].forEach((yOff, i) => {
+                            const r = (0.28 - i * 0.08);
+                            const tier = new THREE.Mesh(new THREE.CylinderGeometry(r, r, 0.16, 32), cakeMat);
+                            tier.position.y = topY + yOff;
+                            item.add(tier);
+                        });
+                        // 2 Anillos interlazados
+                        const ringGeom = new THREE.TorusGeometry(0.06, 0.008, 8, 24);
+                        const r1 = new THREE.Mesh(ringGeom, topperMat);
+                        r1.position.set(-0.03, topY + 0.58, 0); r1.rotation.y = 0.3;
+                        item.add(r1);
+                        const r2 = new THREE.Mesh(ringGeom, topperMat);
+                        r2.position.set(0.03, topY + 0.58, 0); r2.rotation.y = -0.3;
+                        item.add(r2);
+                    } else if (cakeType === 'cumple') {
+                        // 1 piso + velas
+                        const tier = new THREE.Mesh(new THREE.CylinderGeometry(0.25, 0.25, 0.25, 32), cakeMat);
+                        tier.position.y = topY + 0.125;
+                        item.add(tier);
+                        for(let i=0; i<6; i++){
+                            const v = new THREE.Mesh(new THREE.CylinderGeometry(0.01, 0.01, 0.08, 8), new THREE.MeshStandardMaterial({ color: '#e74c3c' }));
+                            const ang = (i/6) * Math.PI * 2;
+                            v.position.set(Math.cos(ang)*0.18, topY + 0.28, Math.sin(ang)*0.18);
+                            item.add(v);
+                        }
+                    } else if (cakeType === 'quince') {
+                        // 2 pisos
+                        [0.12, 0.35].forEach((yOff, i) => {
+                            const r = (0.28 - i * 0.1);
+                            const tier = new THREE.Mesh(new THREE.CylinderGeometry(r, r, 0.22, 32), cakeMat);
+                            tier.position.y = topY + yOff;
+                            item.add(tier);
+                        });
+                        const tiara = new THREE.Mesh(new THREE.TorusGeometry(0.08, 0.01, 8, 16), topperMat);
+                        tiara.rotation.x = Math.PI/2; tiara.position.y = topY + 0.48;
+                        item.add(tiara);
+                    }
+                }
+
+                // Pasabocas
+                if (config.showSnacks) {
+                    for(let i=0; i<12; i++) {
+                        const ang = (i/12) * Math.PI * 2;
+                        const dist = dw/2 - 0.25;
+                        const snack = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.06, 0.08), new THREE.MeshStandardMaterial({ color: '#8d6e63' }));
+                        if(isRect) {
+                            snack.position.set((i%2===0?1:-1)*dw/3, topY + 0.03, (i%3-1)*dl/3);
+                        } else {
+                            snack.position.set(Math.cos(ang)*dist, topY + 0.03, Math.sin(ang)*dist);
+                        }
+                        item.add(snack);
+                    }
+                }
+
+                // Decoración Modular
+                const decoMat = findMat(config.flowerColor || '#ffb7c5');
+                const renderDeco = (style, x, z) => {
+                    if (style === 'bajo') {
+                        const f = new THREE.Mesh(new THREE.SphereGeometry(0.15, 8, 8), decoMat);
+                        f.position.set(x, topY + 0.08, z); item.add(f);
+                    } else if (style === 'alto') {
+                        const vase = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.03, 0.4, 8), mats.silver);
+                        vase.position.set(x, topY + 0.2, z); item.add(vase);
+                        const f = new THREE.Mesh(new THREE.SphereGeometry(0.18, 8, 8), decoMat);
+                        f.position.set(x, topY + 0.45, z); item.add(f);
+                    } else if (style === 'velas') {
+                        [0.2, 0.28, 0.35].forEach((h, i) => {
+                            const v = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, h, 16), new THREE.MeshStandardMaterial({ color: '#fefefe', roughness: 0.2 }));
+                            v.position.set(x + (i - 1) * 0.12, topY + h / 2, z + (i % 2 === 0 ? 0.05 : -0.05)); item.add(v);
+                            const flame = new THREE.Mesh(new THREE.SphereGeometry(0.015), new THREE.MeshStandardMaterial({ color: '#ffca28', emissive: '#ffca28', emissiveIntensity: 2 }));
+                            flame.position.set(v.position.x, topY + h + 0.01, v.position.z); item.add(flame);
+                        });
+                    }
+                };
+
+                renderDeco(config.decoLeft, -dw/2 + 0.2, 0);
+                renderDeco(config.decoRight, dw/2 - 0.2, 0);
+
+                if (config.decoFront === 'flores') {
+                    const f = new THREE.Mesh(new THREE.SphereGeometry(0.22, 8, 8), decoMat);
+                    f.position.set(0, 0.12, dl/2 + 0.25); item.add(f);
+                } else if (config.decoFront === 'tabla') {
+                    const tabla = new THREE.Mesh(new THREE.BoxGeometry(dw * 0.9, 0.15, 0.15), decoMat);
+                    tabla.position.set(0, 0.075, dl/2 + 0.25); item.add(tabla);
+                }
+            } else if (tipo.includes('mesa') || tipo.includes('coctel')) {
+                const isRound = tipo.includes('redon') || tipo.includes('coctel');
                 const ew = (config.width / SCALE) || 1.6; const elen = (config.height / SCALE) || 1.6;
                 const tableTop = new THREE.Mesh(isRound ? new THREE.CylinderGeometry(ew/2, ew/2, 0.05, 32) : new THREE.BoxGeometry(ew, 0.05, elen), tableColor);
                 tableTop.position.y = th; item.add(tableTop);
@@ -264,13 +408,21 @@ const ThreeSpatialDesigner = forwardRef(({
                         const f = new THREE.Mesh(new THREE.BoxGeometry(0.012, 0.005, 0.18), cMat); f.position.set(-0.15, th+0.033, dIn); sGroup.add(f);
                     }
                     if (config.showWaterGlass !== false) {
-                        const gW = new THREE.Mesh(new THREE.CylinderGeometry(0.028, 0.012, 0.11, 8), mats.glass); gW.position.set(0.12, th+0.08, dIn + 0.12); sGroup.add(gW);
+                        const mat = new THREE.MeshPhysicalMaterial({ color: config.waterGlassColor || '#ffffff', transparent: true, opacity: 0.3, transmission: 0.9, thickness: 0.5 });
+                        const gW = new THREE.Mesh(new THREE.CylinderGeometry(0.028, 0.012, 0.11, 8), mat); gW.position.set(0.12, th+0.08, dIn + 0.12); sGroup.add(gW);
                     }
                     if (config.showWineGlass !== false) {
-                        const gV = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.01, 0.13, 8), mats.glass); gV.position.set(0.07, th+0.09, dIn + 0.17); sGroup.add(gV);
+                        const mat = new THREE.MeshPhysicalMaterial({ color: config.wineGlassColor || '#ffffff', transparent: true, opacity: 0.3, transmission: 0.9, thickness: 0.5 });
+                        const gV = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.01, 0.13, 8), mat); gV.position.set(0.07, th+0.09, dIn + 0.17); sGroup.add(gV);
                     }
                     if (config.showSodaGlass !== false) {
-                        const gS = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, 0.1, 12), mats.glass); gS.position.set(0.18, th+0.07, dIn + 0.18); sGroup.add(gS);
+                        const mat = new THREE.MeshPhysicalMaterial({ color: config.sodaGlassColor || '#ffffff', transparent: true, opacity: 0.3, transmission: 0.9, thickness: 0.5 });
+                        const gS = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, 0.1, 12), mat); gS.position.set(0.18, th+0.07, dIn + 0.18); sGroup.add(gS);
+                    }
+                    if (config.showChampagneGlass !== false) {
+                        const mat = new THREE.MeshPhysicalMaterial({ color: config.champagneGlassColor || '#ffffff', transparent: true, opacity: 0.3, transmission: 0.9, thickness: 0.5 });
+                        const gF = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.008, 0.15, 8), mat); gF.position.set(-0.12, th+0.09, dIn + 0.15); sGroup.add(gF);
+                        const base = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.015, 0.005, 8), mat); base.position.set(-0.12, th+0.02, dIn + 0.15); sGroup.add(base);
                     }
                     item.add(sGroup);
                 }
@@ -304,13 +456,67 @@ const ThreeSpatialDesigner = forwardRef(({
                 const ew = (config.width / SCALE) || 1.5; const elen = (config.height / SCALE) || 0.8;
                 const base = new THREE.Mesh(new THREE.BoxGeometry(ew, 1.0, elen), mats.black); base.position.y = 0.5; item.add(base);
                 const mixer = new THREE.Mesh(new THREE.BoxGeometry(ew * 0.8, 0.1, elen * 0.8), mats.silver); mixer.position.y = 1.05; item.add(mixer);
+            } else if (tipo.includes('pista') || tipo.includes('tarima')) {
+                const ew = (config.width / 50) || 6; 
+                const elen = (config.height / 50) || 6;
+                const eh = (config.danceFloorHeight / 100) || 0.1;
+                const box = new THREE.Mesh(new THREE.BoxGeometry(ew, eh, elen), findMat(config.danceFloorColor || el.color || '#111111'));
+                box.position.y = eh / 2;
+                item.add(box);
+                
+                if (config.danceFloorInitials) {
+                    const canvas = document.createElement('canvas');
+                    const ctx = canvas.getContext('2d');
+                    canvas.width = 1024; canvas.height = 1024;
+                    
+                    const centerX = 512; const centerY = 512; const radius = 460;
+                    
+                    // Dibujar Fondo Círculo
+                    if (config.danceFloorCircleColor && config.danceFloorCircleColor !== 'rgba(0,0,0,0)') {
+                        ctx.fillStyle = config.danceFloorCircleColor;
+                        ctx.beginPath();
+                        ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+                        ctx.fill();
+                    }
+
+                    // Dibujar Círculo / Borde
+                    ctx.strokeStyle = config.danceFloorBorderColor || '#ffffff';
+                    ctx.lineWidth = 25;
+                    ctx.beginPath();
+                    ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+                    ctx.stroke();
+                    
+                    // Dibujar Iniciales
+                    ctx.font = 'italic 250px serif';
+                    ctx.fillStyle = config.danceFloorTextColor || '#ffffff';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText(config.danceFloorInitials, centerX, centerY);
+                    
+                    const tex = new THREE.CanvasTexture(canvas);
+                    const labelMat = new THREE.MeshBasicMaterial({ map: tex, transparent: true });
+                    const size = Math.min(ew, elen) * 0.7;
+                    const initialsMesh = new THREE.Mesh(new THREE.PlaneGeometry(size, size), labelMat);
+                    initialsMesh.rotation.x = -Math.PI / 2;
+                    initialsMesh.position.y = eh + 0.008;
+                    item.add(initialsMesh);
+                }
             } else {
                 const ew = (config.width / SCALE) || 1; const elen = (config.height / SCALE) || 1;
                 const box = new THREE.Mesh(new THREE.BoxGeometry(ew, 0.22, elen), tableColor); box.position.y = 0.11; item.add(box);
             }
+            // V24.0: ETIQUETA DE INVITADOS
+            if (config.mesa_id) {
+                const elGuests = guests.filter(g => String(g.mesa_id) === String(config.mesa_id));
+                const labelText = `MESA ${config.mesa_id} · ${elGuests.length} PERS`;
+                const label = createTextLabel(labelText, elGuests.length > 0 ? '#d4af37' : '#ffffff');
+                label.position.y = (tipo.includes('lampara') || tipo.includes('puerta')) ? 0.5 : 1.8;
+                item.add(label);
+            }
+
             furnitureRef.current.add(item);
         });
-    }, [isInitialized, elements, selectedId, roomConfig]);
+    }, [isInitialized, elements, selectedId, roomConfig, guests]);
 
     return <canvas ref={canvasRef} style={{ width: '100%', height: '100%', cursor: 'crosshair' }} />;
 });

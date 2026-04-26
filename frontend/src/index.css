@@ -9450,3 +9450,83 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
     padding: 20px;
     font-style: italic;
 }
+
+/* --- DESIGNER GUEST MANAGEMENT PREMIUM UI --- */
+.canvas-hover-badge-premium {
+    background: rgba(10, 10, 10, 0.85);
+    backdrop-filter: blur(15px);
+    -webkit-backdrop-filter: blur(15px);
+    border: 1px solid rgba(212, 175, 55, 0.3);
+    border-radius: 12px;
+    padding: 12px 18px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.5), inset 0 0 20px rgba(212, 175, 55, 0.05);
+    min-width: 180px;
+    color: #fff;
+}
+
+.hover-badge-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+    padding-bottom: 8px;
+    margin-bottom: 8px;
+}
+
+.hover-badge-header strong {
+    color: #fff;
+    font-size: 14px;
+    letter-spacing: 0.5px;
+}
+
+.hover-badge-header span {
+    color: #d4af37;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.guest-list-preview::-webkit-scrollbar {
+    width: 3px;
+}
+
+.guest-list-preview::-webkit-scrollbar-thumb {
+    background: rgba(212, 175, 55, 0.2);
+}
+
+.guest-assignment-section select option {
+    background: #1a1a1a;
+    color: #fff;
+}
+
+.dense-input-premium {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    padding: 8px 12px;
+    color: #fff;
+    transition: all 0.3s ease;
+}
+
+.dense-input-premium:focus {
+    border-color: #d4af37;
+    background: rgba(212, 175, 55, 0.05);
+    outline: none;
+}
+
+/* Scene Explorer Drag and Drop Styles */
+.explorer-item.dragging {
+    background: rgba(212, 175, 55, 0.2) !important;
+    border: 1px solid rgba(212, 175, 55, 0.4);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.5);
+    cursor: grabbing !important;
+}
+
+.drag-handle:hover {
+    opacity: 0.8 !important;
+    color: #d4af37;
+}
+
+.explorer-item.dragging .drag-handle {
+    opacity: 1 !important;
+    color: #d4af37;
+}

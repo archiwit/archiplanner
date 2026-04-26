@@ -1,10 +1,26 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { 
+    DndContext, 
+    closestCenter, 
+    KeyboardSensor, 
+    PointerSensor, 
+    useSensor, 
+    useSensors 
+} from '@dnd-kit/core';
+import {
+    arrayMove,
+    SortableContext,
+    sortableKeyboardCoordinates,
+    verticalListSortingStrategy,
+    useSortable
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import { Stage, Layer, Rect, Circle, Text, Group, Image as KonvaImage, Transformer, Path } from 'react-konva';
 import useImage from 'use-image';
 import {
     Plus, Save, Trash2, RotateCw, Move,
     Maximize, Minimize, Square, Circle as CircleIcon,
-    Layers, Search, Image as ImageIcon, Ruler, List, Users, Info, Copy, Palette, X, ChevronDown, ChevronUp, ChevronLeft, Package, ClipboardList, Monitor, Map, ExternalLink, Edit2, Tag, Grid, GlassWater, Utensils, Flower, Disc, Focus, Footprints
+    Layers, Search, Image as ImageIcon, Ruler, List, Users, Info, Copy, Palette, X, ChevronDown, ChevronUp, ChevronLeft, Package, ClipboardList, Monitor, Map, ExternalLink, Edit2, Tag, Grid, GlassWater, Utensils, Flower, Disc, Focus, Footprints, GripVertical
 } from 'lucide-react';
 import layoutService from '../../../services/layoutService';
 import invitadoService from '../../../services/invitadoService';
@@ -298,6 +314,56 @@ const getContrastColor = (hexColor) => {
     return brightness > 128 ? '#000000' : '#ffffff';
 };
 
+// Componente de Item Ordenable para el Explorador de Escena
+const SortableSceneItem = ({ el, isSelected, onClick }) => {
+    const {
+        attributes,
+        listeners,
+        setNodeRef,
+        transform,
+        transition,
+        isDragging
+    } = useSortable({ id: el.id });
+
+    const style = {
+        transform: CSS.Transform.toString(transform),
+        transition,
+        zIndex: isDragging ? 2000 : 1, // Elevamos el zIndex cuando se arrastra
+        opacity: isDragging ? 0.6 : 1,
+        position: 'relative',
+        display: 'flex',
+        alignItems: 'center'
+    };
+
+    return (
+        <div 
+            ref={setNodeRef} 
+            style={style}
+            className={`explorer-item ${isSelected ? 'active' : ''} ${isDragging ? 'dragging' : ''}`}
+            onClick={(e) => {
+                // Prevenir selección si estamos arrastrando
+                if(!isDragging) onClick(e);
+            }}
+        >
+            <div className="drag-handle" {...attributes} {...listeners} style={{ 
+                marginRight: '10px', 
+                opacity: 0.4, 
+                cursor: 'grab',
+                padding: '4px',
+                display: 'flex',
+                alignItems: 'center'
+            }}>
+                <GripVertical size={14} />
+            </div>
+            <div className="item-icon-circle">
+                <div className="inner-dot" style={{ background: el.color || el.config_json?.color || '#ffd700' }} />
+            </div>
+            <span className="item-name" style={{ flex: 1 }}>{el.label || el.name || el.tipo?.toUpperCase() || 'Mesa'}</span>
+            {isSelected && <div className="active-dot" />}
+        </div>
+    );
+};
+
 const SpatialDesigner = ({ cotId, userRol, onToggleFullscreen }) => {
     const isClient = userRol === 'cliente' || userRol === 'pariente';
     const [layouts, setLayouts] = useState([]);
@@ -320,6 +386,30 @@ const SpatialDesigner = ({ cotId, userRol, onToggleFullscreen }) => {
     const [scale, setScale] = useState(1);
     const [loading, setLoading] = useState(false);
     const [canvasSize, setCanvasSize] = useState({ width: 800, height: 600 });
+
+    const sensors = useSensors(
+        useSensor(PointerSensor, {
+            activationConstraint: {
+                distance: 5,
+            },
+        }),
+        useSensor(KeyboardSensor, {
+            coordinateGetter: sortableKeyboardCoordinates,
+        })
+    );
+
+    const handleDragEnd = (event) => {
+        const { active, over } = event;
+        if (!over) return;
+        
+        if (active.id !== over.id) {
+            setElements((items) => {
+                const oldIndex = items.findIndex((i) => i.id === active.id);
+                const newIndex = items.findIndex((i) => i.id === over.id);
+                return arrayMove(items, oldIndex, newIndex);
+            });
+        }
+    };
 
     // V7.5: CARGA AUTOMÁTICA DE CONFIGURACIÓN 3D
     useEffect(() => {
@@ -484,6 +574,7 @@ const SpatialDesigner = ({ cotId, userRol, onToggleFullscreen }) => {
         if ('showWaterGlass' in newConfig) syncItem(newConfig.showWaterGlass, 'Copa de Agua', numSeats);
         if ('showWineGlass' in newConfig) syncItem(newConfig.showWineGlass, 'Copa de Vino', numSeats);
         if ('showSodaGlass' in newConfig) syncItem(newConfig.showSodaGlass, 'Vaso de Gaseosa', numSeats);
+        if ('showChampagneGlass' in newConfig) syncItem(newConfig.showChampagneGlass, 'Copa de Champaña', numSeats);
         
         if ('showCutlery' in newConfig) syncItem(newConfig.showCutlery, 'Juego de Cubiertos', numSeats);
         if ('showCenterpiece' in newConfig) syncItem(newConfig.showCenterpiece, 'Centro de Mesa', 1);
@@ -496,6 +587,7 @@ const SpatialDesigner = ({ cotId, userRol, onToggleFullscreen }) => {
             if (el.config_json.showWaterGlass !== false) syncItem(true, 'Copa de Agua', ns);
             if (el.config_json.showWineGlass !== false) syncItem(true, 'Copa de Vino', ns);
             if (el.config_json.showSodaGlass !== false) syncItem(true, 'Vaso de Gaseosa', ns);
+            if (el.config_json.showChampagneGlass !== false) syncItem(true, 'Copa de Champaña', ns);
             if (el.config_json.showCutlery !== false) syncItem(true, 'Juego de Cubiertos', ns);
         }
 
@@ -588,14 +680,15 @@ const SpatialDesigner = ({ cotId, userRol, onToggleFullscreen }) => {
             confirmButtonText: 'Sí, eliminar',
             cancelButtonText: 'Cancelar',
             background: '#1a1a1a',
-            color: '#fff'
+            color: '#fff',
+            target: containerRef.current || document.body
         });
 
         if (result.isConfirmed) {
             try {
                 await layoutService.delete(id);
                 fetchLayouts();
-                Swal.fire({ icon: 'success', title: 'Eliminado', background: '#1a1a1a', color: '#fff' });
+                Swal.fire({ icon: 'success', title: 'Eliminado', background: '#1a1a1a', color: '#fff', target: containerRef.current || document.body });
             } catch (err) {
                 Swal.fire({ icon: 'error', title: 'Error', text: err.message });
             }
@@ -611,7 +704,7 @@ const SpatialDesigner = ({ cotId, userRol, onToggleFullscreen }) => {
             puestos: (item.defaultSeatsLong || 0) * (item.type.includes('redonda') ? 1 : 2) + (item.defaultSeatsShort || 0) * 2,
             label: item.label,
             config_json: {
-                icon: item.icon, // RE-AGREGADO: Link al SVG
+                icon: item.icon,
                 color: item.color,
                 isArea: item.isArea,
                 numSeatsLong: item.defaultSeatsLong || 0,
@@ -621,12 +714,72 @@ const SpatialDesigner = ({ cotId, userRol, onToggleFullscreen }) => {
                 inventory: [],
                 showLabel: true,
                 showBackground: true,
-                showBorder: true // NUEVO: Toggle de bordes
+                showBorder: true
             }
         };
-        setElements([...elements, newEl]);
+        setElements([newEl, ...elements]);
         setSelectedIds([newEl.id]);
         setActiveTab('general');
+    };
+
+    const syncElements = async (mode) => {
+        if (selectedIds.length === 0) return;
+        const sourceEl = elements.find(e => String(e.id) === String(selectedIds[0]));
+        if (!sourceEl) return;
+
+        const result = await Swal.fire({
+            title: 'Sincronizar Estilo',
+            text: `¿Deseas aplicar el estilo de "${sourceEl.label}" a ${mode === 'all_tables' ? 'TODAS las mesas' : mode === 'same_type' ? `todas las mesas tipo ${sourceEl.tipo.toUpperCase()}` : 'los elementos seleccionados'}?`,
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonText: 'Sí, aplicar',
+            cancelButtonText: 'Cancelar',
+            background: '#1a1a1a',
+            color: '#fff',
+            target: containerRef.current || document.body
+        });
+
+        if (result.isConfirmed) {
+            const configToCopy = { ...sourceEl.config_json };
+            delete configToCopy.mesa_id;
+            delete configToCopy.width;
+            delete configToCopy.height;
+
+            setElements(prev => prev.map(el => {
+                let shouldUpdate = false;
+                const lowTipo = String(el.tipo || '').toLowerCase();
+                const sourceTipo = String(sourceEl.tipo || '').toLowerCase();
+
+                if (mode === 'all_tables') {
+                    shouldUpdate = lowTipo.includes('mesa') || lowTipo.includes('coctel') || lowTipo.includes('ponque') || lowTipo.includes('imperial');
+                } else if (mode === 'same_type') {
+                    shouldUpdate = lowTipo === sourceTipo;
+                } else if (mode === 'selected') {
+                    // Si el modo es 'selected', aplicamos a todos los que estén seleccionados EXCEPTO la fuente original
+                    shouldUpdate = selectedIds.includes(el.id);
+                }
+
+                if (shouldUpdate && String(el.id) !== String(sourceEl.id)) {
+                    return {
+                        ...el,
+                        config_json: { ...el.config_json, ...configToCopy }
+                    };
+                }
+                return el;
+            }));
+
+            Swal.fire({
+                icon: 'success',
+                title: 'Estilos Sincronizados',
+                toast: true,
+                position: 'top-end',
+                showConfirmButton: false,
+                timer: 2000,
+                background: '#1a1a1a',
+                color: '#fff',
+                target: containerRef.current || document.body
+            });
+        }
     };
 
     const saveLayout = async () => {
@@ -634,41 +787,57 @@ const SpatialDesigner = ({ cotId, userRol, onToggleFullscreen }) => {
         setLoading(true);
         try {
             const layoutId = activeLayout.id || activeLayout.layout_id;
+            if (!layoutId) throw new Error("ID de layout no encontrado en el estado activo");
+
             const updatedMaterials = JSON.stringify(globalInventory);
             
             // V7.4: PERSISTENCIA INTELIGENTE (Fusión de config_json)
-            const currentConfig = typeof activeLayout.config_json === 'string' 
-                ? JSON.parse(activeLayout.config_json || '{}') 
-                : (activeLayout.config_json || {});
+            let currentConfig = {};
+            try {
+                currentConfig = typeof activeLayout.config_json === 'string' 
+                    ? JSON.parse(activeLayout.config_json || '{}') 
+                    : (activeLayout.config_json || {});
+            } catch (e) {
+                console.warn("Error parsing config_json, fallback to empty", e);
+            }
                 
             const updatedConfig = {
                 ...currentConfig,
-                room3D: room3DConfig // Guardamos Tipo de Suelo, Paredes, etc.
+                room3D: room3DConfig // Guardamos Tipo de Suelo, Paredas, etc.
             };
 
+            const configStr = JSON.stringify(updatedConfig);
+
+            console.log("[Planeador] Guardando elementos para ID:", layoutId);
             await layoutService.saveElements(layoutId, elements);
-            await layoutService.save({ 
+            
+            console.log("[Planeador] Guardando metadata de layout para ID:", layoutId);
+            const layoutData = { 
                 ...activeLayout, 
+                id: layoutId, // Forzamos id para que layoutService.save haga PUT y no POST
                 notas_montaje: globalNotes, 
                 materiales_globales: updatedMaterials,
-                config_json: JSON.stringify(updatedConfig)
-            });
+                config_json: configStr
+            };
 
-            // Actualizar estado local para reflejar los cambios guardados inmediatamente
+            console.log("[Planeador] Payload enviado:", layoutData);
+            await layoutService.save(layoutData);
+
+            // Actualizar estado local
             setActiveLayout(prev => ({
                 ...prev,
+                id: layoutId,
+                layout_id: layoutId,
                 notas_montaje: globalNotes,
                 materiales_globales: updatedMaterials,
-                config_json: JSON.stringify(updatedConfig)
+                config_json: configStr
             }));
             
-            // Refrescar la lista de layouts para que el selector esté sincronizado
             fetchLayouts();
-
             Swal.fire({ icon: 'success', title: 'Diseño Guardado', background: '#1a1a1a', timer: 1500, target: containerRef.current || document.body });
         } catch (err) { 
             console.error("Error al guardar:", err);
-            Swal.fire({ icon: 'error', title: 'Error al guardar', target: containerRef.current || document.body }); 
+            Swal.fire({ icon: 'error', title: 'Error al guardar', text: err.message, target: containerRef.current || document.body }); 
         } finally { setLoading(false); }
     };
 
@@ -822,6 +991,9 @@ const SpatialDesigner = ({ cotId, userRol, onToggleFullscreen }) => {
         const isSelected = selectedIds.includes(el.id);
         const config = el.config_json || {};
         const { width, height, color = '#ffffff', showBackground = true, showBorder = true, showLabel = true, icon } = config;
+        
+        const elGuests = (guests || []).filter(g => g.mesa_id && String(g.mesa_id) === String(config.mesa_id));
+        const guestCount = elGuests.length;
         const contrastColor = getContrastColor(color);
 
         const isRound = el.tipo.includes('redonda') || el.tipo.includes('ponque') || el.tipo.includes('coctel');
@@ -832,8 +1004,16 @@ const SpatialDesigner = ({ cotId, userRol, onToggleFullscreen }) => {
             <Group key={el.id} x={el.x} y={el.y} rotation={el.rotacion} draggable={!isClient} id={el.id}
                 onDragMove={handleDragMove}
                 onDragEnd={(e) => { setGuides([]); updateElement(el.id, { x: e.target.x(), y: e.target.y() }); }}
-                onClick={(e) => { e.cancelBubble = true; setSelectedIds([el.id]); }}
-                onMouseEnter={() => { if (!isClient) setHoverInfo({ label: el.label, w: (width / 50).toFixed(1), h: (height / 50).toFixed(1) }); }}
+                onClick={(e) => { 
+                    e.cancelBubble = true; 
+                    const isShift = e.evt.shiftKey || e.evt.ctrlKey;
+                    if (isShift) {
+                        setSelectedIds(prev => prev.includes(el.id) ? prev.filter(id => id !== el.id) : [...prev, el.id]);
+                    } else {
+                        setSelectedIds([el.id]); 
+                    }
+                }}
+                onMouseEnter={() => { if (!isClient) setHoverInfo({ label: el.label, w: (width / 50).toFixed(1), h: (height / 50).toFixed(1), guests: elGuests }); }}
                 onMouseLeave={() => setHoverInfo(null)}
             >
                 {renderSeats(el.tipo, config)}
@@ -900,6 +1080,14 @@ const SpatialDesigner = ({ cotId, userRol, onToggleFullscreen }) => {
                         opacity={config.isArea ? 0.7 : 1}
                         listening={false}
                     />
+                )}
+
+                {/* Badge de Invitados */}
+                {guestCount > 0 && (
+                    <Group x={width / 2 - 10} y={-height / 2 + 10}>
+                        <Circle radius={10} fill="#d4af37" stroke="#fff" strokeWidth={1} shadowBlur={5} shadowColor="black" />
+                        <Text text={guestCount.toString()} fontSize={10} fontFamily="'Inter', sans-serif" fontStyle="bold" fill="#fff" align="center" verticalAlign="middle" width={20} height={20} x={-10} y={-10} />
+                    </Group>
                 )}
             </Group>
         );
@@ -1120,28 +1308,34 @@ const SpatialDesigner = ({ cotId, userRol, onToggleFullscreen }) => {
                             </div>
                         </aside>
 
-                        <div className="designer-canvas-container" ref={canvasContainerRef} onMouseDown={e => {
-                            if (viewMode === '3d') return;
-                            if (e.target && typeof e.target.getStage === 'function' && e.target === e.target.getStage()) {
-                                setIsSelecting(true);
-                                const pos = e.target.getStage().getPointerPosition();
-                                setSelectionRect({ x: pos.x, y: pos.y, w: 0, h: 0 });
-                                setSelectedIds([]);
-                            }
-                        }}>
+                        <div className="designer-canvas-container" ref={canvasContainerRef}>
                             {viewMode === '3d' && (
                                 <div className="three-toolbar-v5 animate-slide-down">
                                     <button className="three-tool-btn" onClick={() => threeRef.current?.recenterCamera()} title="Vista General">
                                         <Maximize size={16} /> <span>Recentrar</span>
                                     </button>
                                     <div className="three-divider" />
-                                    <button className={`three-tool-btn ${isWalking ? 'active' : ''}`} onClick={() => { setIsWalking(!isWalking); threeRef.current?.toggleWalkMode(); }} title="Caminar por el salón">
+                                    <button className={`three-tool-btn ${isWalking ? 'active' : ''}`} onClick={() => { 
+                                        const next = !isWalking;
+                                        setIsWalking(next); 
+                                        if (next) setIsExplorerOpen(false);
+                                        threeRef.current?.toggleWalkMode(); 
+                                    }} title="Caminar por el salón">
                                         <Footprints size={16} /> <span>{isWalking ? 'Detener Paseo' : 'Caminar (WASD)'}</span>
                                     </button>
                                 </div>
                             )}
                             {viewMode === '2d' ? (
                             <Stage ref={stageRef} width={canvasSize.width} height={canvasSize.height} draggable={!isSelecting}
+                                onMouseDown={e => {
+                                    if (viewMode === '3d') return;
+                                    if (e.target === e.target.getStage()) {
+                                        setIsSelecting(true);
+                                        const pos = e.target.getStage().getPointerPosition();
+                                        setSelectionRect({ x: pos.x, y: pos.y, w: 0, h: 0 });
+                                        setSelectedIds([]);
+                                    }
+                                }}
                                 onMouseMove={e => {
                                     if (isSelecting && selectionRect) {
                                         const pos = e.target.getStage().getPointerPosition();
@@ -1216,19 +1410,25 @@ const SpatialDesigner = ({ cotId, userRol, onToggleFullscreen }) => {
                                         </header>
                                         {isExplorerOpen && (
                                             <div className="explorer-content custom-scrollbar">
-                                                {elements.map(el => (
-                                                    <div 
-                                                        key={el.id} 
-                                                        className={`explorer-item ${selectedIds[0] === el.id ? 'active' : ''}`}
-                                                        onClick={() => setSelectedIds([el.id])}
+                                                <DndContext 
+                                                    sensors={sensors}
+                                                    collisionDetection={closestCenter}
+                                                    onDragEnd={handleDragEnd}
+                                                >
+                                                    <SortableContext 
+                                                        items={elements.map(el => el.id)}
+                                                        strategy={verticalListSortingStrategy}
                                                     >
-                                                        <div className="item-icon-circle">
-                                                            <div className="inner-dot" style={{ background: el.color || el.config_json?.color || '#ffd700' }} />
-                                                        </div>
-                                                        <span className="item-name">{el.name || el.tipo?.toUpperCase() || 'Mesa'}</span>
-                                                        {selectedIds[0] === el.id && <div className="active-dot" />}
-                                                    </div>
-                                                ))}
+                                                        {elements.map(el => (
+                                                            <SortableSceneItem 
+                                                                key={el.id} 
+                                                                el={el} 
+                                                                isSelected={selectedIds[0] === el.id} 
+                                                                onClick={() => setSelectedIds([el.id])} 
+                                                            />
+                                                        ))}
+                                                    </SortableContext>
+                                                </DndContext>
                                             </div>
                                         )}
                                     </div>
@@ -1242,13 +1442,50 @@ const SpatialDesigner = ({ cotId, userRol, onToggleFullscreen }) => {
                                             ...room3DConfig
                                         }}
                                         svgDataBank={ELEMENT_SVG_DATA}
+                                        guests={guests}
                                         selectedId={selectedIds[0]}
-                                        onSelect={(id) => setSelectedIds(id ? [id] : [])}
+                                        onSelect={(id, isMulti) => {
+                                            if (isMulti) {
+                                                setSelectedIds(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]);
+                                            } else {
+                                                setSelectedIds(id ? [id] : []);
+                                            }
+                                        }}
                                         onUpdateElement={(id, data) => updateElement(id, data)}
+                                        onWalkChange={setIsWalking}
                                     />
                                 </div>
                             )}
-                            {hoverInfo && viewMode === '2d' && <div className="canvas-hover-badge" style={{ position: 'absolute', left: '50%', bottom: '20px', transform: 'translateX(-50%)' }}><strong>{hoverInfo.label}</strong>: {hoverInfo.w}m x {hoverInfo.h}m</div>}
+                            {hoverInfo && viewMode === '2d' && (
+                                <div className="canvas-hover-badge-premium" style={{ 
+                                    position: 'absolute', 
+                                    left: '50%', 
+                                    bottom: '30px', 
+                                    transform: 'translateX(-50%)',
+                                    zIndex: 100,
+                                    pointerEvents: 'none'
+                                }}>
+                                    <div className="hover-badge-header">
+                                        <strong>{hoverInfo.label}</strong>
+                                        <span>{hoverInfo.w}m x {hoverInfo.h}m</span>
+                                    </div>
+                                    {hoverInfo.guests && hoverInfo.guests.length > 0 && (
+                                        <div className="hover-badge-guests mt-10">
+                                            <div style={{ color: '#d4af37', fontSize: '10px', fontWeight: 'bold', marginBottom: '5px', textTransform: 'uppercase', letterSpacing: '1px' }}>
+                                                {hoverInfo.guests.length} Invitados Asignados
+                                            </div>
+                                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '4px 15px' }}>
+                                                {hoverInfo.guests.map(g => (
+                                                    <div key={g.id} style={{ fontSize: '11px', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                                                        <div style={{ width: '4px', height: '4px', borderRadius: '50%', background: '#d4af37' }} />
+                                                        {g.nombre}
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
                         </div>
 
                         <aside className="designer-properties-sidebar">
@@ -1285,6 +1522,67 @@ const SpatialDesigner = ({ cotId, userRol, onToggleFullscreen }) => {
                                                 />
                                                 <label className="label-v5">Nombre del Elemento</label>
                                             </div>
+
+                                            {/* NUEVO: Sincronización de Estilos */}
+                                            {(selectedEl.tipo.includes('mesa') || selectedEl.tipo.includes('coctel') || selectedEl.tipo.includes('ponque')) && (
+                                                <div className="sync-actions-v5 mb-20" style={{ background: 'rgba(255,255,255,0.03)', borderRadius: '12px', padding: '12px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                                                    <label className="section-label-mini" style={{ marginBottom: '10px', display: 'block', opacity: 0.6 }}>REPLICAR DISEÑO</label>
+                                                    <div className="sync-buttons-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '5px' }}>
+                                                        <button 
+                                                            className="btn-sync-premium" 
+                                                            onClick={() => syncElements('same_type')}
+                                                            title="Replicar a mesas del mismo tipo"
+                                                            style={{ 
+                                                                background: 'rgba(212,175,55,0.1)', 
+                                                                border: '1px solid rgba(212,175,55,0.3)', 
+                                                                color: '#d4af37',
+                                                                padding: '8px 2px',
+                                                                borderRadius: '8px',
+                                                                fontSize: '9px',
+                                                                fontWeight: 'bold',
+                                                                cursor: 'pointer'
+                                                            }}
+                                                        >
+                                                            TIPO
+                                                        </button>
+                                                        <button 
+                                                            className="btn-sync-premium"
+                                                            onClick={() => syncElements('selected')}
+                                                            title="Replicar solo a los elementos que hayas seleccionado"
+                                                            disabled={selectedIds.length <= 1}
+                                                            style={{ 
+                                                                background: selectedIds.length > 1 ? 'rgba(52, 152, 219, 0.1)' : 'rgba(255,255,255,0.05)', 
+                                                                border: selectedIds.length > 1 ? '1px solid rgba(52, 152, 219, 0.3)' : '1px solid rgba(255,255,255,0.1)', 
+                                                                color: selectedIds.length > 1 ? '#3498db' : '#666',
+                                                                padding: '8px 2px',
+                                                                borderRadius: '8px',
+                                                                fontSize: '9px',
+                                                                fontWeight: 'bold',
+                                                                cursor: selectedIds.length > 1 ? 'pointer' : 'not-allowed'
+                                                            }}
+                                                        >
+                                                            SELEC.
+                                                        </button>
+                                                        <button 
+                                                            className="btn-sync-premium"
+                                                            onClick={() => syncElements('all_tables')}
+                                                            title="Replicar a todas las mesas del plano"
+                                                            style={{ 
+                                                                background: 'rgba(255,255,255,0.05)', 
+                                                                border: '1px solid rgba(255,255,255,0.1)', 
+                                                                color: '#fff',
+                                                                padding: '8px 2px',
+                                                                borderRadius: '8px',
+                                                                fontSize: '9px',
+                                                                fontWeight: 'bold',
+                                                                cursor: 'pointer'
+                                                            }}
+                                                        >
+                                                            TODO
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            )}
 
                                             {/* Visores de Configuración */}
                                             <div className="config-grid-v5">
@@ -1331,6 +1629,62 @@ const SpatialDesigner = ({ cotId, userRol, onToggleFullscreen }) => {
                                             </div>
 
                                             {(selectedEl.tipo.includes('mesa') || selectedEl.tipo.includes('coctel') || selectedEl.tipo.includes('ponque')) && (
+                                                        <div className="guest-assignment-section mb-20" style={{ background: 'rgba(212,175,55,0.08)', borderRadius: '12px', border: '1px solid rgba(212,175,55,0.2)', padding: '8px' }}>
+                                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                                                                <label className="section-label-mini" style={{ color: '#d4af37', fontSize: '10px', margin: 0 }}>VINCULAR INVITADOS</label>
+                                                                {selectedEl.config_json.mesa_id && (
+                                                                    <span style={{ background: '#d4af37', color: '#000', padding: '2px 6px', borderRadius: '4px', fontSize: '9px', fontWeight: 'bold' }}>
+                                                                        MESA {selectedEl.config_json.mesa_id}
+                                                                    </span>
+                                                                )}
+                                                            </div>
+                                                            <div className="mt-5">
+                                                                <div style={{ display: 'flex', gap: '5px' }}>
+                                                                    <select 
+                                                                        className="dense-input-premium"
+                                                                        value={selectedEl.config_json.mesa_id || ''}
+                                                                        onChange={(e) => updateElementAndInventory(selectedEl.id, { mesa_id: e.target.value })}
+                                                                        style={{ height: '32px', fontSize: '11px', flex: 2, padding: '0 8px', background: '#1a1a1a', color: '#fff' }}
+                                                                    >
+                                                                        <option value="" style={{ background: '#1a1a1a' }}>Seleccionar Mesa...</option>
+                                                                        {Array.from(new Set(guests.map(g => g.mesa_id).filter(id => id))).sort((a,b) => String(a).localeCompare(String(b), undefined, {numeric: true})).map(id => (
+                                                                            <option key={id} value={id} style={{ background: '#1a1a1a' }}>Mesa {id} ({guests.filter(g => String(g.mesa_id) === String(id)).length} pax)</option>
+                                                                        ))}
+                                                                    </select>
+                                                                    <input 
+                                                                        type="text" 
+                                                                        placeholder="ID Manual..." 
+                                                                        className="dense-input-premium"
+                                                                        style={{ height: '32px', flex: 1, fontSize: '11px', padding: '0 8px' }}
+                                                                        onBlur={(e) => {
+                                                                            if(e.target.value) {
+                                                                                updateElementAndInventory(selectedEl.id, { mesa_id: e.target.value });
+                                                                                e.target.value = '';
+                                                                            }
+                                                                        }}
+                                                                    />
+                                                                </div>
+                                                            </div>
+                                                            {selectedEl.config_json.mesa_id && (
+                                                                <div className="mt-10 guest-list-preview" style={{ maxHeight: '120px', overflowY: 'auto', background: 'rgba(0,0,0,0.2)', borderRadius: '8px', padding: '5px' }}>
+                                                                    <div style={{ fontSize: '9px', opacity: 0.5, marginBottom: '5px', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '3px' }}>
+                                                                        LISTADO DE INVITADOS (MESA {selectedEl.config_json.mesa_id}):
+                                                                    </div>
+                                                                    {guests.filter(g => String(g.mesa_id) === String(selectedEl.config_json.mesa_id)).map(g => (
+                                                                        <div key={g.id} style={{ fontSize: '10px', padding: '4px 0', borderBottom: '1px solid rgba(255,255,255,0.03)', display: 'flex', justifyContent: 'space-between' }}>
+                                                                            <span style={{ color: '#fff' }}>{g.nombre}</span>
+                                                                            <span style={{ opacity: 0.6, fontSize: '9px' }}>{g.grupo}</span>
+                                                                        </div>
+                                                                    ))}
+                                                                    {guests.filter(g => String(g.mesa_id) === String(selectedEl.config_json.mesa_id)).length === 0 && (
+                                                                        <div style={{ fontSize: '10px', opacity: 0.4, textAlign: 'center', padding: '10px 0' }}>No hay invitados asignados a este ID</div>
+                                                                    )}
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    )}
+
+                                            {(selectedEl.tipo.includes('mesa') || selectedEl.tipo.includes('coctel')) && selectedEl.tipo !== 'mesa-ponque' && (
                                                 <div className="tableware-section-v5 mt-20">
                                                     <label className="section-label-mini">ESTILO DE MENAJE (3D)</label>
                                                     <div className="config-grid-v5" style={{ gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' }}>
@@ -1349,6 +1703,10 @@ const SpatialDesigner = ({ cotId, userRol, onToggleFullscreen }) => {
                                                         <div className={`config-tile mini ${selectedEl.config_json.showSodaGlass ? 'active' : ''}`}
                                                             onClick={() => updateElementAndInventory(selectedEl.id, { showSodaGlass: !selectedEl.config_json.showSodaGlass })}>
                                                             <GlassWater size={16} /> <small>V. Gaseosa</small>
+                                                        </div>
+                                                        <div className={`config-tile mini ${selectedEl.config_json.showChampagneGlass ? 'active' : ''}`}
+                                                            onClick={() => updateElementAndInventory(selectedEl.id, { showChampagneGlass: !selectedEl.config_json.showChampagneGlass })}>
+                                                            <GlassWater size={16} /> <small>C. Flauta</small>
                                                         </div>
                                                         <div className={`config-tile mini ${selectedEl.config_json.showCutlery !== false ? 'active' : ''}`}
                                                             onClick={() => updateElementAndInventory(selectedEl.id, { showCutlery: selectedEl.config_json.showCutlery === false ? true : false })}>
@@ -1436,7 +1794,9 @@ const SpatialDesigner = ({ cotId, userRol, onToggleFullscreen }) => {
                                                         )}
                                                     </div>
 
+
                                                     <div className="tableware-colors-grid mt-15" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px' }}>
+
                                                         <div className="mini-color-pick">
                                                             <input type="color" value={selectedEl.config_json.tablewareColor || '#ffffff'} onChange={e => updateElement(selectedEl.id, { config_json: { ...selectedEl.config_json, tablewareColor: e.target.value } })} title="Color Vajilla" />
                                                             <small>Vajilla</small>
@@ -1462,6 +1822,10 @@ const SpatialDesigner = ({ cotId, userRol, onToggleFullscreen }) => {
                                                             <small>C.Gas</small>
                                                         </div>
                                                         <div className="mini-color-pick">
+                                                            <input type="color" value={selectedEl.config_json.champagneGlassColor || '#ffffff'} onChange={e => updateElement(selectedEl.id, { config_json: { ...selectedEl.config_json, champagneGlassColor: e.target.value } })} title="Color Copa Champaña" />
+                                                            <small>C.Flau</small>
+                                                        </div>
+                                                        <div className="mini-color-pick">
                                                             <input type="color" value={selectedEl.config_json.chairColor || '#333333'} onChange={e => updateElement(selectedEl.id, { config_json: { ...selectedEl.config_json, chairColor: e.target.value } })} title="Color General" />
                                                             <small>Base</small>
                                                         </div>
@@ -1469,7 +1833,7 @@ const SpatialDesigner = ({ cotId, userRol, onToggleFullscreen }) => {
                                                 </div>
                                             )}
 
-                                            {(selectedEl.tipo.includes('mesa') || selectedEl.tipo.includes('ceremony')) && (
+                                            {(selectedEl.tipo.includes('mesa') || selectedEl.tipo.includes('ceremony')) && selectedEl.tipo !== 'mesa-ponque' && (
                                                 <div className="seat-config-premium">
                                                     <div className="seat-label-row">
                                                         <Users size={14} />
@@ -1497,7 +1861,7 @@ const SpatialDesigner = ({ cotId, userRol, onToggleFullscreen }) => {
                                                 </div>
                                             )}
 
-                                            {selectedEl.tipo === 'pista-baile' && (
+                                            {(selectedEl.tipo === 'pista-baile' || selectedEl.tipo === 'tarima') && (
                                                 <div className="dance-floor-props mt-20 p-15" style={{ background: 'rgba(0,0,0,0.2)', borderRadius: '15px' }}>
                                                     <label className="section-label-mini">PISTA DE BAILE PREMIUM</label>
                                                     <div className="input-v5-wrapper mt-10">
@@ -1522,8 +1886,122 @@ const SpatialDesigner = ({ cotId, userRol, onToggleFullscreen }) => {
                                                         </div>
                                                         <div className="mini-color-pick">
                                                             <input type="color" value={selectedEl.config_json.danceFloorColor || '#111111'} onChange={e => updateElement(selectedEl.id, { config_json: { ...selectedEl.config_json, danceFloorColor: e.target.value } })} />
-                                                            <small>COLOR</small>
+                                                            <small>Pista</small>
                                                         </div>
+                                                        <div className="mini-color-pick">
+                                                            <input type="color" value={selectedEl.config_json.danceFloorBorderColor || '#ffffff'} onChange={e => updateElement(selectedEl.id, { config_json: { ...selectedEl.config_json, danceFloorBorderColor: e.target.value } })} />
+                                                            <small>Círculo</small>
+                                                        </div>
+                                                        <div className="mini-color-pick">
+                                                            <input type="color" value={selectedEl.config_json.danceFloorCircleColor || 'rgba(0,0,0,0)'} onChange={e => updateElement(selectedEl.id, { config_json: { ...selectedEl.config_json, danceFloorCircleColor: e.target.value } })} />
+                                                            <small>Fondo C.</small>
+                                                        </div>
+                                                        <div className="mini-color-pick">
+                                                            <input type="color" value={selectedEl.config_json.danceFloorTextColor || '#ffffff'} onChange={e => updateElement(selectedEl.id, { config_json: { ...selectedEl.config_json, danceFloorTextColor: e.target.value } })} />
+                                                            <small>Letra</small>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            )}
+
+                                            {selectedEl.tipo === 'mesa-ponque' && (
+                                                <div className="cake-table-props mt-20 p-15" style={{ background: 'rgba(0,0,0,0.2)', borderRadius: '15px' }}>
+                                                    <label className="section-label-mini">DISEÑO MESA PASABOCAS / PONQUÉ</label>
+                                                    
+                                                    <div className="input-v5-wrapper mt-10">
+                                                        <select className="input-v5" 
+                                                            value={selectedEl.config_json.tableShape || 'circular'} 
+                                                            onChange={e => updateElement(selectedEl.id, { config_json: { ...selectedEl.config_json, tableShape: e.target.value } })}>
+                                                            <option value="circular" style={{background: '#1a1a1a'}}>Circular</option>
+                                                            <option value="rectangular" style={{background: '#1a1a1a'}}>Rectangular</option>
+                                                        </select>
+                                                        <label className="label-v5">Forma de la Mesa</label>
+                                                    </div>
+
+                                                    {selectedEl.config_json.tableShape === 'rectangular' && (
+                                                        <div className="side-by-side mt-10">
+                                                            <div className="input-v5-wrapper">
+                                                                <input type="number" step="0.1" className="input-v5" 
+                                                                    value={selectedEl.config_json.width || 1.8} 
+                                                                    onChange={e => updateElement(selectedEl.id, { config_json: { ...selectedEl.config_json, width: parseFloat(e.target.value) } })} 
+                                                                />
+                                                                <label className="label-v5">Ancho (m)</label>
+                                                            </div>
+                                                            <div className="input-v5-wrapper">
+                                                                <input type="number" step="0.1" className="input-v5" 
+                                                                    value={selectedEl.config_json.height || 0.8} 
+                                                                    onChange={e => updateElement(selectedEl.id, { config_json: { ...selectedEl.config_json, height: parseFloat(e.target.value) } })} 
+                                                                />
+                                                                <label className="label-v5">Largo (m)</label>
+                                                            </div>
+                                                        </div>
+                                                    )}
+
+                                                    <div className="config-grid-v5 mt-10" style={{ gridTemplateColumns: 'repeat(2, 1fr)', gap: '8px' }}>
+                                                        <div className={`config-tile mini ${selectedEl.config_json.showSnacks ? 'active' : ''}`}
+                                                            onClick={() => updateElement(selectedEl.id, { config_json: { ...selectedEl.config_json, showSnacks: !selectedEl.config_json.showSnacks } })}>
+                                                            <Package size={16} /> <small>Pasabocas</small>
+                                                        </div>
+                                                        <div className={`config-tile mini ${selectedEl.config_json.showCake !== false ? 'active' : ''}`}
+                                                            onClick={() => updateElement(selectedEl.id, { config_json: { ...selectedEl.config_json, showCake: selectedEl.config_json.showCake === false ? true : false } })}>
+                                                            <Disc size={16} /> <small>Ponqué</small>
+                                                        </div>
+                                                    </div>
+
+                                                    <div className="input-v5-wrapper mt-15">
+                                                        <select className="input-v5" 
+                                                            value={selectedEl.config_json.cakeType || 'boda'} 
+                                                            onChange={e => updateElement(selectedEl.id, { config_json: { ...selectedEl.config_json, cakeType: e.target.value } })}>
+                                                            <option value="boda" style={{background: '#1a1a1a'}}>Boda (3 Pisos)</option>
+                                                            <option value="cumple" style={{background: '#1a1a1a'}}>Cumpleaños (1 Piso + Velas)</option>
+                                                            <option value="quince" style={{background: '#1a1a1a'}}>Quinceañera (2 Pisos)</option>
+                                                        </select>
+                                                        <label className="label-v5">Tipo de Ponqué</label>
+                                                    </div>
+
+                                                    <div className="side-by-side mt-15">
+                                                        <div className="mini-color-pick">
+                                                            <input type="color" value={selectedEl.config_json.cakeColor || '#ffffff'} onChange={e => updateElement(selectedEl.id, { config_json: { ...selectedEl.config_json, cakeColor: e.target.value } })} />
+                                                            <small>PONQUÉ</small>
+                                                        </div>
+                                                        <div className="mini-color-pick">
+                                                            <input type="color" value={selectedEl.config_json.flowerColor || '#ffb7c5'} onChange={e => updateElement(selectedEl.id, { config_json: { ...selectedEl.config_json, flowerColor: e.target.value } })} />
+                                                            <small>FLORES</small>
+                                                        </div>
+                                                        <div className="mini-color-pick">
+                                                            <input type="color" value={selectedEl.config_json.topperColor || '#ffd700'} onChange={e => updateElement(selectedEl.id, { config_json: { ...selectedEl.config_json, topperColor: e.target.value } })} />
+                                                            <small>TOPPER</small>
+                                                        </div>
+                                                    </div>
+
+                                                    <label className="section-label-mini mt-15">DECORACIÓN ADICIONAL</label>
+                                                    <div className="grid grid-cols-2 gap-2 mt-5">
+                                                        <div className="input-v5-wrapper mini">
+                                                            <select className="input-v5" value={selectedEl.config_json.decoLeft || 'off'} onChange={e => updateElement(selectedEl.id, { config_json: { ...selectedEl.config_json, decoLeft: e.target.value } })}>
+                                                                <option value="off" style={{background: '#1a1a1a'}}>Apagado</option>
+                                                                <option value="bajo" style={{background: '#1a1a1a'}}>Arreglo Bajo</option>
+                                                                <option value="alto" style={{background: '#1a1a1a'}}>Arreglo Alto</option>
+                                                                <option value="velas" style={{background: '#1a1a1a'}}>Trío de Velas</option>
+                                                            </select>
+                                                            <label className="label-v5">Lateral Izq.</label>
+                                                        </div>
+                                                        <div className="input-v5-wrapper mini">
+                                                            <select className="input-v5" value={selectedEl.config_json.decoRight || 'off'} onChange={e => updateElement(selectedEl.id, { config_json: { ...selectedEl.config_json, decoRight: e.target.value } })}>
+                                                                <option value="off" style={{background: '#1a1a1a'}}>Apagado</option>
+                                                                <option value="bajo" style={{background: '#1a1a1a'}}>Arreglo Bajo</option>
+                                                                <option value="alto" style={{background: '#1a1a1a'}}>Arreglo Alto</option>
+                                                                <option value="velas" style={{background: '#1a1a1a'}}>Trío de Velas</option>
+                                                            </select>
+                                                            <label className="label-v5">Lateral Der.</label>
+                                                        </div>
+                                                    </div>
+                                                    <div className="input-v5-wrapper mt-10">
+                                                        <select className="input-v5" value={selectedEl.config_json.decoFront || 'off'} onChange={e => updateElement(selectedEl.id, { config_json: { ...selectedEl.config_json, decoFront: e.target.value } })}>
+                                                            <option value="off" style={{background: '#1a1a1a'}}>Apagado</option>
+                                                            <option value="flores" style={{background: '#1a1a1a'}}>Arreglo Circular</option>
+                                                            <option value="tabla" style={{background: '#1a1a1a'}}>Tabla Floral (Larga)</option>
+                                                        </select>
+                                                        <label className="label-v5">Frente (Suelo)</label>
                                                     </div>
                                                 </div>
                                             )}

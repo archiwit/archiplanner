@@ -139,7 +139,10 @@ app.put('/api/layouts/:id', async (req, res) => {
             [nombre, ancho_metros, largo_metros, escala_px_metro, is_metric, fondo_url, notas_montaje, materiales_globales, config_json, req.params.id]
         );
         res.json({ success: true });
-    } catch (err) { res.status(500).json({ error: err.message }); }
+    } catch (err) { 
+        console.error("[ERROR] PUT /api/layouts:", err);
+        res.status(500).json({ error: err.message }); 
+    }
 });
 
 app.post('/api/layouts/delete/:id', async (req, res) => {
@@ -174,7 +177,10 @@ app.post('/api/layout-elementos/bulk/:layoutId', async (req, res) => {
             await db.query('INSERT INTO event_layout_elementos (layout_id, tipo, x, y, rotacion, puestos, label, config_json) VALUES ?', [values]);
         }
         res.json({ success: true });
-    } catch (err) { res.status(500).json({ error: err.message }); }
+    } catch (err) { 
+        console.error("[ERROR] POST /api/layout-elementos/bulk:", err);
+        res.status(500).json({ error: err.message }); 
+    }
 });
 
 // Routes - Pagos & Gastos
