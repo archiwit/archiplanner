@@ -2134,7 +2134,12 @@ const AdminCotizacionForm = ({ claseOverride }) => {
                                     }}
                                 >
                                     <span style={{ fontSize: '11px', fontWeight: '800', letterSpacing: '1px' }}>{cat.toUpperCase()} ({items.length})</span>
-                                    {collapsedCats[cat] ? <ChevronDown size={14} /> : <ChevronUp size={14} />}
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                        <span style={{ fontSize: '12px', fontWeight: '900', color: 'var(--color-primary)', background: 'rgba(255,132,132,0.1)', padding: '2px 8px', borderRadius: '4px' }}>
+                                            $ {smartFormat(items.reduce((acc, item) => acc + (Number(item.cantidad || 0) * Number(item.precio_u || 0)), 0))}
+                                        </span>
+                                        {collapsedCats[cat] ? <ChevronDown size={14} /> : <ChevronUp size={14} />}
+                                    </div>
                                 </div>
                                 
                                 {!collapsedCats[cat] && (
