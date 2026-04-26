@@ -1096,7 +1096,7 @@ const SpatialDesigner = ({ cotId, userRol, onToggleFullscreen }) => {
     const renderSeats = (type, config) => {
         const { width, height, numSeatsLong = 0, numSeatsShort = 0 } = config;
         const seats = [];
-        const isRound = type.includes('redonda') || type.includes('ponque') || type.includes('coctel');
+        const isRound = type.includes('redonda') || type.includes('coctel') || (type.includes('ponque') && config.tableShape !== 'rectangular');
         const isNovios = type.includes('honor');
         const isCeremony = type === 'ceremony-chairs';
 
@@ -1126,37 +1126,46 @@ const SpatialDesigner = ({ cotId, userRol, onToggleFullscreen }) => {
                 seats.push(<Path key={i} data={CHAIR_PATH} fill="#444" rotation={(angle * 180) / Math.PI + 90} x={sx} y={sy} scaleX={SEAT_SCALE} scaleY={SEAT_SCALE} offsetX={10} offsetY={10} />);
             }
         } else {
-            // Lados Largos (Top y Bottom) - Distribuidos de lado a lado
-            if (numSeatsLong > 0) {
-                const margin = 20; // Espacio en los bordes
-                const availableW = width - margin * 2;
-                const stepX = numSeatsLong > 1 ? availableW / (numSeatsLong - 1) : 0;
-                const startX = numSeatsLong > 1 ? -availableW / 2 : 0;
+            const cTop = config.chairsTop ?? (numSeatsLong || 0);
+            const cBottom = config.chairsBottom ?? (isNovios ? 0 : (numSeatsLong || 0));
+            const cLeft = config.chairsLeft ?? (numSeatsShort || 0);
+            const cRight = config.chairsRight ?? (numSeatsShort || 0);
+            const margin = 20;
 
-                for (let i = 0; i < numSeatsLong; i++) {
-                    const px = startX + i * stepX;
-                    // Top
-                    seats.push(<Path key={`t-${i}`} data={CHAIR_PATH} fill="#444" x={px} y={-height / 2 - SEAT_OFFSET} scaleX={SEAT_SCALE} scaleY={SEAT_SCALE} offsetX={10} offsetY={10} />);
-                    // Bottom (Solo si no es mesa de honor)
-                    if (!isNovios) {
-                        seats.push(<Path key={`b-${i}`} data={CHAIR_PATH} fill="#444" x={px} y={height / 2 + SEAT_OFFSET} rotation={180} scaleX={SEAT_SCALE} scaleY={SEAT_SCALE} offsetX={10} offsetY={10} />);
-                    }
+            // Arriba (Top)
+            if (cTop > 0) {
+                const available = width - margin * 2;
+                const step = cTop > 1 ? available / (cTop - 1) : 0;
+                const start = cTop > 1 ? -available / 2 : 0;
+                for (let i = 0; i < cTop; i++) {
+                    seats.push(<Path key={`t-${i}`} data={CHAIR_PATH} fill="#444" x={start + i * step} y={-height / 2 - SEAT_OFFSET} rotation={180} scaleX={SEAT_SCALE} scaleY={SEAT_SCALE} offsetX={10} offsetY={10} />);
                 }
             }
-
-            // Cabeceras (Short sides - Left y Right)
-            if (numSeatsShort > 0) {
-                const margin = 20;
-                const availableH = height - margin * 2;
-                const stepY = numSeatsShort > 1 ? availableH / (numSeatsShort - 1) : 0;
-                const startY = numSeatsShort > 1 ? -availableH / 2 : 0;
-
-                for (let i = 0; i < numSeatsShort; i++) {
-                    const py = startY + i * stepY;
-                    // Left
-                    seats.push(<Path key={`l-${i}`} data={CHAIR_PATH} fill="#444" x={-width / 2 - SEAT_OFFSET} y={py} rotation={-90} scaleX={SEAT_SCALE} scaleY={SEAT_SCALE} offsetX={10} offsetY={10} />);
-                    // Right
-                    seats.push(<Path key={`r-${i}`} data={CHAIR_PATH} fill="#444" x={width / 2 + SEAT_OFFSET} y={py} rotation={90} scaleX={SEAT_SCALE} scaleY={SEAT_SCALE} offsetX={10} offsetY={10} />);
+            // Abajo (Bottom)
+            if (cBottom > 0) {
+                const available = width - margin * 2;
+                const step = cBottom > 1 ? available / (cBottom - 1) : 0;
+                const start = cBottom > 1 ? -available / 2 : 0;
+                for (let i = 0; i < cBottom; i++) {
+                    seats.push(<Path key={`b-${i}`} data={CHAIR_PATH} fill="#444" x={start + i * step} y={height / 2 + SEAT_OFFSET} rotation={0} scaleX={SEAT_SCALE} scaleY={SEAT_SCALE} offsetX={10} offsetY={10} />);
+                }
+            }
+            // Izquierda (Left)
+            if (cLeft > 0) {
+                const available = height - margin * 2;
+                const step = cLeft > 1 ? available / (cLeft - 1) : 0;
+                const start = cLeft > 1 ? -available / 2 : 0;
+                for (let i = 0; i < cLeft; i++) {
+                    seats.push(<Path key={`l-${i}`} data={CHAIR_PATH} fill="#444" x={-width / 2 - SEAT_OFFSET} y={start + i * step} rotation={-90} scaleX={SEAT_SCALE} scaleY={SEAT_SCALE} offsetX={10} offsetY={10} />);
+                }
+            }
+            // Derecha (Right)
+            if (cRight > 0) {
+                const available = height - margin * 2;
+                const step = cRight > 1 ? available / (cRight - 1) : 0;
+                const start = cRight > 1 ? -available / 2 : 0;
+                for (let i = 0; i < cRight; i++) {
+                    seats.push(<Path key={`r-${i}`} data={CHAIR_PATH} fill="#444" x={width / 2 + SEAT_OFFSET} y={start + i * step} rotation={90} scaleX={SEAT_SCALE} scaleY={SEAT_SCALE} offsetX={10} offsetY={10} />);
                 }
             }
         }
@@ -1490,7 +1499,7 @@ const SpatialDesigner = ({ cotId, userRol, onToggleFullscreen }) => {
 
                         <aside className="designer-properties-sidebar">
                             {selectedIds.length > 0 && selectedIds[0] ? (
-                                <>
+                                <div className="sidebar-content-wrapper" style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
                                 <div className="sidebar-header" style={{ padding: '20px', borderBottom: '1px solid rgba(255,255,255,0.05)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                     <div><small>{selectedIds.length === 1 ? (selectedEl?.tipo?.toUpperCase() || 'SELECTOR') : `${selectedIds.length} ITEMS`}</small><h4>{selectedIds.length === 1 ? (selectedEl?.label || '...') : 'Selección'}</h4></div>
                                     <div style={{ display: 'flex', gap: '8px' }}>
@@ -1509,7 +1518,7 @@ const SpatialDesigner = ({ cotId, userRol, onToggleFullscreen }) => {
                                         </div>
                                     </div>
                                 )}
-                                <div className="sidebar-scroll premium-scroll" style={{ padding: '20px' }}>
+                                <div className="sidebar-scroll premium-scroll" style={{ padding: '20px', flex: 1, overflowY: 'auto' }}>
                                     {(selectedIds.length === 1 && selectedEl) && (
                                         <div className="prop-group animate-fade-in">
                                             {/* Campo Premium: Etiqueta */}
@@ -1817,7 +1826,7 @@ const SpatialDesigner = ({ cotId, userRol, onToggleFullscreen }) => {
                                                             <input type="color" value={selectedEl.config_json.wineGlassColor || '#ffffff'} onChange={e => updateElement(selectedEl.id, { config_json: { ...selectedEl.config_json, wineGlassColor: e.target.value } })} title="Color Copa Vino" />
                                                             <small>C.Vino</small>
                                                         </div>
-                                                        <div className="mini-color-pick">
+                                                                                          <div className="mini-color-pick">
                                                             <input type="color" value={selectedEl.config_json.sodaGlassColor || '#ffffff'} onChange={e => updateElement(selectedEl.id, { config_json: { ...selectedEl.config_json, sodaGlassColor: e.target.value } })} title="Color Vaso Gaseosa" />
                                                             <small>C.Gas</small>
                                                         </div>
@@ -1835,29 +1844,84 @@ const SpatialDesigner = ({ cotId, userRol, onToggleFullscreen }) => {
 
                                             {(selectedEl.tipo.includes('mesa') || selectedEl.tipo.includes('ceremony')) && selectedEl.tipo !== 'mesa-ponque' && (
                                                 <div className="seat-config-premium">
-                                                    <div className="seat-label-row">
-                                                        <Users size={14} />
-                                                        <span>{selectedEl.tipo.includes('rectangular') || selectedEl.tipo.includes('imperial') ? 'Puestos por Lado Largo' : 'Sillas Totales'}</span>
-                                                    </div>
-                                                    <div className="seat-stepper">
-                                                        <button className="step-btn" onClick={() => updateElementAndInventory(selectedIds[0], { numSeatsLong: Math.max(0, (selectedEl.config_json.numSeatsLong || 0) - 1) })}>-</button>
-                                                        <div className="count-display">{selectedEl.config_json.numSeatsLong || 0}</div>
-                                                        <button className="step-btn" onClick={() => updateElementAndInventory(selectedIds[0], { numSeatsLong: (selectedEl.config_json.numSeatsLong || 0) + 1 })}>+</button>
-                                                    </div>
+                                                    {(() => {
+                                                        const isGranular = (selectedEl.tipo.includes('rectangular') || selectedEl.tipo.includes('imperial') || selectedEl.tipo.includes('honor') || (selectedEl.tipo.includes('ponque') && selectedEl.config_json.tableShape === 'rectangular'));
+                                                        const sideInputStyle = { background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '6px', color: '#ff8484', textAlign: 'center', width: '100%', padding: '10px 0', fontSize: '18px', fontWeight: 'bold', outline: 'none' };
+                                                        
+                                                        if (isGranular) {
+                                                            const cT = selectedEl.config_json.chairsTop ?? selectedEl.config_json.numSeatsLong ?? 0;
+                                                            const cB = selectedEl.config_json.chairsBottom ?? (selectedEl.tipo.includes('honor') ? 0 : (selectedEl.config_json.numSeatsLong ?? 0));
+                                                            const cL = selectedEl.config_json.chairsLeft ?? selectedEl.config_json.numSeatsShort ?? 0;
+                                                            const cR = selectedEl.config_json.chairsRight ?? selectedEl.config_json.numSeatsShort ?? 0;
+                                                            const total = Number(cT) + Number(cB) + Number(cL) + Number(cR);
 
-                                                    {(selectedEl.tipo.includes('rectangular') || selectedEl.tipo.includes('imperial')) && (
-                                                        <>
-                                                            <div className="seat-label-row mt-15">
-                                                                <Grid size={14} />
-                                                                <span>Puestos Cabeceras</span>
-                                                            </div>
-                                                            <div className="seat-stepper">
-                                                                <button className="step-btn" onClick={() => updateElement(selectedEl.id, { config_json: { ...selectedEl.config_json, numSeatsShort: Math.max(0, (selectedEl.config_json.numSeatsShort || 0) - 1) } })}>-</button>
-                                                                <div className="count-display">{selectedEl.config_json.numSeatsShort || 0}</div>
-                                                                <button className="step-btn" onClick={() => updateElement(selectedEl.id, { config_json: { ...selectedEl.config_json, numSeatsShort: (selectedEl.config_json.numSeatsShort || 0) + 1 } })}>+</button>
-                                                            </div>
-                                                        </>
-                                                    )}
+                                                            return (
+                                                                <>
+                                                                    <div className="seat-label-row">
+                                                                        <Users size={14} />
+                                                                        <span>Sillas Totales (Auto)</span>
+                                                                        <span style={{ fontWeight: 'bold', color: '#ff8484', marginLeft: 'auto', fontSize: '16px' }}>{total}</span>
+                                                                    </div>
+                                                                    
+                                                                    <div className="granular-seats mt-15 p-10" style={{ background: 'rgba(212,175,55,0.05)', borderRadius: '12px', border: '1px solid rgba(212,175,55,0.1)' }}>
+                                                                        <label className="section-label-mini" style={{ color: '#d4af37', marginBottom: '15px', display: 'block', fontSize: '10px', textAlign: 'center' }}>DISTRIBUCIÓN POR LADO</label>
+                                                                        <div className="side-inputs-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                                                                            <div className="side-input-item">
+                                                                                <small style={{ opacity: 0.6, fontSize: '9px', display: 'block', marginBottom: '4px', textAlign: 'center' }}>ARRIBA</small>
+                                                                                <input 
+                                                                                    type="number" 
+                                                                                    style={{ ...sideInputStyle, borderTop: '3px solid #d4af37' }}
+                                                                                    value={cT}
+                                                                                    onChange={e => updateElement(selectedEl.id, { config_json: { ...selectedEl.config_json, chairsTop: parseInt(e.target.value) || 0 } })}
+                                                                                />
+                                                                            </div>
+                                                                            <div className="side-input-item">
+                                                                                <small style={{ opacity: 0.6, fontSize: '9px', display: 'block', marginBottom: '4px', textAlign: 'center' }}>ABAJO</small>
+                                                                                <input 
+                                                                                    type="number" 
+                                                                                    style={{ ...sideInputStyle, borderBottom: '3px solid #d4af37' }}
+                                                                                    value={cB}
+                                                                                    onChange={e => updateElement(selectedEl.id, { config_json: { ...selectedEl.config_json, chairsBottom: parseInt(e.target.value) || 0 } })}
+                                                                                />
+                                                                            </div>
+                                                                            <div className="side-input-item">
+                                                                                <small style={{ opacity: 0.6, fontSize: '9px', display: 'block', marginBottom: '4px', textAlign: 'center' }}>IZQUIERDA</small>
+                                                                                <input 
+                                                                                    type="number" 
+                                                                                    style={{ ...sideInputStyle, borderLeft: '3px solid #d4af37' }}
+                                                                                    value={cL}
+                                                                                    onChange={e => updateElement(selectedEl.id, { config_json: { ...selectedEl.config_json, chairsLeft: parseInt(e.target.value) || 0 } })}
+                                                                                />
+                                                                            </div>
+                                                                            <div className="side-input-item">
+                                                                                <small style={{ opacity: 0.6, fontSize: '9px', display: 'block', marginBottom: '4px', textAlign: 'center' }}>DERECHA</small>
+                                                                                <input 
+                                                                                    type="number" 
+                                                                                    style={{ ...sideInputStyle, borderRight: '3px solid #d4af37' }}
+                                                                                    value={cR}
+                                                                                    onChange={e => updateElement(selectedEl.id, { config_json: { ...selectedEl.config_json, chairsRight: parseInt(e.target.value) || 0 } })}
+                                                                                />
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                </>
+                                                            );
+                                                        } else {
+                                                            return (
+                                                                <>
+                                                                    <div className="seat-label-row">
+                                                                        <Users size={14} />
+                                                                        <span>Sillas Totales</span>
+                                                                    </div>
+                                                                    <div className="seat-stepper">
+                                                                        <button className="step-btn" onClick={() => updateElementAndInventory(selectedIds[0], { numSeatsLong: Math.max(0, (selectedEl.config_json.numSeatsLong || 0) - 1) })}>-</button>
+                                                                        <div className="count-display">{selectedEl.config_json.numSeatsLong || 0}</div>
+                                                                        <button className="step-btn" onClick={() => updateElementAndInventory(selectedIds[0], { numSeatsLong: (selectedEl.config_json.numSeatsLong || 0) + 1 })}>+</button>
+                                                                    </div>
+                                                                </>
+                                                            );
+                                                        }
+                                                    })()}
                                                 </div>
                                             )}
 
@@ -2069,8 +2133,9 @@ const SpatialDesigner = ({ cotId, userRol, onToggleFullscreen }) => {
                                                         ))
                                                     )}
                                                 </div>
+                                            </div>
 
-                                                {selectedEl.tipo === 'puerta' && (
+                                            {selectedEl.tipo === 'puerta' && (
                                                 <div className="grid grid-cols-2 gap-4 mt-10">
                                                     <div className="config-section-v5">
                                                         <label className="config-label-v5">Ancho (cm)</label>
@@ -2127,17 +2192,16 @@ const SpatialDesigner = ({ cotId, userRol, onToggleFullscreen }) => {
                                                     />
                                                 </div>
                                             </div>
-                                        </div>
-                                    )}
+                                        )}
+                                    </div>
                                 </div>
-                                </>
                             ) : (
-                                <>
+                                <div className="sidebar-content-wrapper" style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
                                 <div className="sidebar-header" style={{ padding: '20px', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
                                     <small>ESTRUCTURA 3D</small>
                                     <h4>Configuración de Sala</h4>
                                 </div>
-                                <div className="sidebar-scroll premium-scroll" style={{ padding: '20px' }}>
+                                <div className="sidebar-scroll premium-scroll" style={{ padding: '20px', flex: 1, overflowY: 'auto' }}>
                                     <div className="prop-group animate-fade-in">
                                         <div className="side-by-side">
                                             <div className="input-v5-wrapper mini">
@@ -2237,7 +2301,7 @@ const SpatialDesigner = ({ cotId, userRol, onToggleFullscreen }) => {
                                         </div>
                                     </div>
                                 </div>
-                                </>
+                            </div>
                             )}
                         </aside>
                     </div>
@@ -2324,7 +2388,8 @@ const SpatialDesigner = ({ cotId, userRol, onToggleFullscreen }) => {
             )}
 
             <style jsx>{`
-                .spatial-designer-v4 { background: #000; color: #fff; width: 100%; height: 100vh; overflow: hidden; font-family: 'Inter', sans-serif; }
+                .spatial-designer-v4 { background: #000; color: #fff; width: 100%; height: 100vh; overflow: hidden; font-family: 'Inter', sans-serif; box-sizing: border-box; }
+                .spatial-designer-v4 *, .spatial-designer-v4 *:before, .spatial-designer-v4 *:after { box-sizing: border-box; }
                 .glass-panel { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 16px; }
                 
                 /* Estilos del Selector V5 */
@@ -2477,8 +2542,8 @@ const SpatialDesigner = ({ cotId, userRol, onToggleFullscreen }) => {
                 .toolbox-item:hover { background: rgba(255,255,255,0.05); border-color: #ff8484; transform: translateY(-2px); }
                 .item-icon-wrap { width: 32px; height: 32px; margin: 0 auto 8px; opacity: 0.7; }
                 .toolbox-item span { font-size: 11px; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; opacity: 0.8; }
-                .designer-canvas-container { flex: 1; background: #0a0a0a; position: relative; cursor: crosshair; overflow: hidden; }
-                .designer-properties-sidebar { width: 320px; min-width: 320px; background: #111; border-left: 1px solid rgba(255,255,255,0.05); display: flex; flex-direction: column; z-index: 10; }
+                .designer-canvas-container { flex: 1; background: #0a0a0a; position: relative; cursor: crosshair; overflow: hidden; height: 100%; }
+                .designer-properties-sidebar { width: 320px; min-width: 320px; max-width: 100%; background: #111; border-left: 1px solid rgba(255,255,255,0.05); display: flex; flex-direction: column; z-index: 10; height: 100%; overflow: hidden; }
                 .prop-group { margin-bottom: 20px; }
                 .prop-group label { display: block; font-size: 11px; opacity: 0.5; margin-bottom: 8px; text-transform: uppercase; }
                 .prop-group input[type="text"], .prop-group input[type="number"] { width: 100%; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.05); border-radius: 6px; padding: 8px; color: #fff; outline: none; margin-bottom: 15px; }

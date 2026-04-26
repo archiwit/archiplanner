@@ -391,13 +391,17 @@ const ThreeSpatialDesigner = forwardRef(({
                 const tableTop = new THREE.Mesh(isRound ? new THREE.CylinderGeometry(ew/2, ew/2, 0.05, 32) : new THREE.BoxGeometry(ew, 0.05, elen), tableColor);
                 tableTop.position.y = th; item.add(tableTop);
                 const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.08, th, 16), mats.silver); leg.position.y = th/2; item.add(leg);
-                const radius = (ew / 2) + 0.35;
-                for (let i = 0; i < seats; i++) {
-                    const ang = (i / seats) * Math.PI * 2;
+                const isNovios = tipo.includes('honor');
+                const seatOffset = 0.35;
+                const chairMat = findMat(config.chairColor || el.color || '#333333');
+                const dIn = 0.45;
+
+                const addChairAndMenaje = (parent, position, rotation) => {
                     const sGroup = new THREE.Group();
-                    sGroup.position.set(Math.cos(ang) * radius, 0, Math.sin(ang) * radius); sGroup.rotation.y = -ang - Math.PI / 2;
-                    sGroup.add(createChair(config.chairStyle || 'chavari', findMat(config.chairColor || el.color || '#333333')));
-                    const dIn = 0.45; 
+                    sGroup.position.copy(position);
+                    sGroup.rotation.copy(rotation);
+                    sGroup.add(createChair(config.chairStyle || 'chavari', chairMat));
+                    
                     if (config.showPlates !== false) {
                         const plat = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.12, 0.015, 16), findMat(config.tablewareColor || '#ffffff')); plat.position.set(0, th+0.03, dIn); sGroup.add(plat);
                         const servi = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.015, 0.12), findMat(config.napkinColor || '#ffffff')); servi.position.set(0, th+0.045, dIn); sGroup.add(servi);
@@ -424,7 +428,40 @@ const ThreeSpatialDesigner = forwardRef(({
                         const gF = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.008, 0.15, 8), mat); gF.position.set(-0.12, th+0.09, dIn + 0.15); sGroup.add(gF);
                         const base = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.015, 0.005, 8), mat); base.position.set(-0.12, th+0.02, dIn + 0.15); sGroup.add(base);
                     }
-                    item.add(sGroup);
+                    parent.add(sGroup);
+                };
+
+                if (isRound) {
+                    const count = Number(config.numSeatsLong) || 10;
+                    const radius = (ew / 2) + seatOffset;
+                    for (let i = 0; i < count; i++) {
+                        const ang = (i / count) * Math.PI * 2;
+                        addChairAndMenaje(item, new THREE.Vector3(Math.cos(ang) * radius, 0, Math.sin(ang) * radius), new THREE.Euler(0, -ang - Math.PI / 2, 0));
+                    }
+                } else {
+                    const cTop = config.chairsTop ?? (Number(config.numSeatsLong) || 0);
+                    const cBottom = config.chairsBottom ?? (isNovios ? 0 : (Number(config.numSeatsLong) || 0));
+                    const cLeft = config.chairsLeft ?? (Number(config.numSeatsShort) || 0);
+                    const cRight = config.chairsRight ?? (Number(config.numSeatsShort) || 0);
+                    const margin = 0.4;
+
+                    const plotSide = (count, side) => {
+                        if (count <= 0) return;
+                        const totalLen = (side === 'top' || side === 'bottom') ? ew : elen;
+                        const available = totalLen - margin * 2;
+                        const step = count > 1 ? available / (count - 1) : 0;
+                        const start = count > 1 ? -available / 2 : 0;
+                        for (let i = 0; i < count; i++) {
+                            const pos = start + i * step;
+                            let p = new THREE.Vector3(); let r = new THREE.Euler();
+                            if (side === 'top') { p.set(pos, 0, -elen/2 - seatOffset); r.set(0, 0, 0); }
+                            else if (side === 'bottom') { p.set(pos, 0, elen/2 + seatOffset); r.set(0, Math.PI, 0); }
+                            else if (side === 'left') { p.set(-ew/2 - seatOffset, 0, pos); r.set(0, Math.PI / 2, 0); }
+                            else if (side === 'right') { p.set(ew/2 + seatOffset, 0, pos); r.set(0, -Math.PI / 2, 0); }
+                            addChairAndMenaje(item, p, r);
+                        }
+                    };
+                    plotSide(cTop, 'top'); plotSide(cBottom, 'bottom'); plotSide(cLeft, 'left'); plotSide(cRight, 'right');
                 }
                 if (config.showCenterpiece !== false) {
                     const style = config.centerpieceType || 'bajo';
