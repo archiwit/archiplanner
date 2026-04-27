@@ -875,8 +875,11 @@ const AdminEventPlanner = () => {
                         })
                         .map(cot => (
                             <div key={cot.id} className={`client-card-glass glass-panel ${cot.estado === 'aprobado' || cot.estado === 'contratado' ? 'is-confirmed' : ''}`} onClick={() => handleEventSelect(cot)}>
-                                <div className="card-status-dot"></div>
-                                <CountdownTimer targetDate={cot.fevent} variant="compact" />
+                                <div className="card-top-row">
+                                    <CountdownTimer targetDate={cot.fevent} variant="compact" />
+                                    <div className="card-status-dot"></div>
+                                </div>
+                                
                                 <div className="client-avatar-mini">
                                     {getEventIcon(cot.tipo_evento)}
                                 </div>
@@ -1229,14 +1232,21 @@ const AdminEventPlanner = () => {
                     color: var(--color-primary);
                 }
 
-                .card-status-dot {
+                .card-top-row {
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    width: 100%;
+                    padding: 10px 15px;
                     position: absolute;
-                    top: 15px;
-                    right: 15px;
+                    top: 0; left: 0;
+                }
+                .card-status-dot {
                     width: 8px;
                     height: 8px;
                     border-radius: 50%;
                     background: #555;
+                    position: relative;
                 }
                 .is-confirmed .card-status-dot {
                     background: #82ca9d;
@@ -1244,18 +1254,27 @@ const AdminEventPlanner = () => {
                 }
                 .event-meta-badges {
                     display: flex;
-                    flex-direction: column;
-                    gap: 8px;
+                    justify-content: space-between;
                     align-items: center;
+                    width: 100%;
+                    margin-top: 15px;
+                    padding-top: 15px;
+                    border-top: 1px solid rgba(255,255,255,0.05);
+                }
+                .event-date-badge {
+                    margin: 0;
+                    font-size: 10px;
+                    padding: 4px 10px;
                 }
                 .status-pill-mini {
                     font-size: 9px;
                     text-transform: uppercase;
                     letter-spacing: 0.5px;
                     background: rgba(255,255,255,0.05);
-                    padding: 2px 8px;
+                    padding: 3px 10px;
                     border-radius: 4px;
                     opacity: 0.7;
+                    font-weight: 700;
                 }
                 .status-pill-mini.aprobado, .status-pill-mini.contratado {
                     color: #82ca9d;
