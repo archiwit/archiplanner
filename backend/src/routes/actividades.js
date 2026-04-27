@@ -44,10 +44,23 @@ router.get('/', async (req, res) => {
         query += ' ORDER BY a.fecha_inicio ASC';
         const [rows] = await db.query(query, params);
 
-        // Fetch photos for each activity
+        // Helper to format date as local ISO string (YYYY-MM-DDTHH:mm:ss)
+        const toLocalISO = (date) => {
+            if (!date) return null;
+            const d = new Date(date);
+            const pad = (n) => n.toString().padStart(2, '0');
+            return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+        };
+
+        // Fetch photos for each activity and format dates
         const activitiesWithPhotos = await Promise.all(rows.map(async (act) => {
             const [photos] = await db.query('SELECT foto_path FROM actividad_fotos WHERE act_id = ?', [act.id]);
-            return { ...act, fotos: photos.map(p => p.foto_path) };
+            return { 
+                ...act, 
+                fecha_inicio: toLocalISO(act.fecha_inicio),
+                fecha_fin: toLocalISO(act.fecha_fin),
+                fotos: photos.map(p => p.foto_path) 
+            };
         }));
 
         res.json(activitiesWithPhotos);

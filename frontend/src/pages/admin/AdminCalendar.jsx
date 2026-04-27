@@ -509,9 +509,15 @@ const AdminCalendar = () => {
                         </>
                     ) : (
                         <div className="google-calendar-fullscreen glass-panel">
+                            <div className="google-calendar-header-toolbar">
+                                <span className="info-tip"><AlertCircle size={12} /> Google Calendar limitado en vista embebida.</span>
+                                <a href="https://calendar.google.com" target="_blank" rel="noreferrer" className="btn-v4 btn-v4-outline btn-mini">
+                                    <ExternalLink size={12} /> Ver en Full Google Calendar
+                                </a>
+                            </div>
                             <iframe 
                                 src={getGoogleCalendarUrl()}
-                                style={{ border: 0, width: '100%', height: '100%', filter: 'invert(90%) hue-rotate(180deg)' }} 
+                                style={{ border: 0, width: '100%', height: 'calc(100% - 40px)', filter: 'invert(90%) hue-rotate(180deg)' }} 
                                 frameBorder="0" 
                                 scrolling="no"
                                 title="Google Calendar"
@@ -556,7 +562,8 @@ const AdminCalendar = () => {
                                                     setFormData({
                                                         ...formData, 
                                                         cot_id: val, 
-                                                        cli_id: cot ? cot.cli_id : ''
+                                                        cli_id: cot ? cot.cli_id : '',
+                                                        color: (cot?.tipo_evento?.includes('XV')) ? '#FFC0CB' : (cot?.tipo_evento === 'Boda' ? '#B76E79' : '#D32ED6')
                                                     });
                                                 }}
                                                 onFocus={() => setFocusedField('cot_id')}
@@ -592,17 +599,16 @@ const AdminCalendar = () => {
                                     </div>
 
                                     <div className="form-field is-floating">
-                                        <div className="color-preview-input">
-                                            <div className="color-circle" style={{ background: formData.color }}></div>
+                                        <div className="color-preview-input improved">
                                             <input 
                                                 type="color" 
                                                 value={formData.color} 
                                                 onChange={e => setFormData({...formData, color: e.target.value})} 
-                                                style={{ opacity: 0, position: 'absolute', inset: 0, cursor: 'pointer', width: '100%' }}
+                                                className="modern-color-picker"
                                             />
                                             <span className="color-code">{formData.color.toUpperCase()}</span>
                                         </div>
-                                        <label>Etiqueta de Color</label>
+                                        <label>Etiqueta de Color (Personalizar)</label>
                                     </div>
 
                                 <div className="modal-form-grid">
@@ -858,7 +864,36 @@ const AdminCalendar = () => {
                     left: 10px;
                     z-index: 1;
                 }
-                .color-code { font-size: 12px; margin-left: 36px; opacity: 0.6; font-family: monospace; }
+                .color-code { font-size: 12px; margin-left: 12px; opacity: 0.6; font-family: monospace; }
+                
+                .color-preview-input.improved {
+                    background: rgba(255,255,255,0.05);
+                    border-radius: 12px;
+                    padding: 8px 12px;
+                    border: 1px solid rgba(255,132,132,0.2);
+                }
+                .modern-color-picker {
+                    width: 32px;
+                    height: 32px;
+                    border: 2px solid rgba(255,255,255,0.1);
+                    border-radius: 8px;
+                    background: none;
+                    cursor: pointer;
+                    padding: 0;
+                    overflow: hidden;
+                }
+                .modern-color-picker::-webkit-color-swatch-wrapper { padding: 0; }
+                .modern-color-picker::-webkit-color-swatch { border: none; }
+
+                .google-calendar-header-toolbar {
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    padding: 8px 15px;
+                    background: rgba(255,255,255,0.03);
+                    border-bottom: 1px solid rgba(255,255,255,0.05);
+                }
+                .info-tip { font-size: 10px; opacity: 0.5; display: flex; align-items: center; gap: 5px; }
                 
                 @media (max-width: 768px) {
                     .calendar-content-grid { grid-template-columns: 1fr; }
