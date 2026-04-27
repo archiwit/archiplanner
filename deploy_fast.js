@@ -28,7 +28,7 @@ async function deploy() {
         await client.uploadFromDir(backendSrc, "api/src");
 
         console.log("📤 Subiendo index.js y package.json...");
-        await client.uploadFrom(path.resolve(__dirname, "backend/index.js"), "api/index.js");
+        await client.uploadFrom(path.resolve(__dirname, "backend/src/index.js"), "api/index.js");
         await client.uploadFrom(path.resolve(__dirname, "backend/package.json"), "api/package.json");
 
         // 3. Subir Migraciones

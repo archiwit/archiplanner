@@ -1167,50 +1167,54 @@ const AdminEventPlanner = () => {
                 }
 
                 .planner-filters-bar {
-                    display: flex;
-                    justify-content: space-between;
-                    align-items: center;
-                    padding: 20px 30px;
-                    margin: 25px 0;
-                    gap: 30px;
-                    width: 100%;
-                    flex-wrap: wrap;
+                    display: flex !important;
+                    flex-direction: row !important;
+                    flex-wrap: nowrap !important;
+                    justify-content: space-between !important;
+                    align-items: center !important;
+                    padding: 8px 20px !important;
+                    margin: 15px 0 !important;
+                    width: 100% !important;
+                    background: rgba(255, 255, 255, 0.02) !important;
+                    border-radius: 12px !important;
+                    border: 1px solid rgba(255, 255, 255, 0.05) !important;
+                    box-sizing: border-box;
                 }
                 .search-box-v4 {
-                    max-width: 450px;
-                    width: 100%;
+                    width: 350px;
                     position: relative;
                     display: flex;
                     align-items: center;
-                    margin-right: auto;
+                    flex-shrink: 0;
                 }
                 .search-icon-v4 {
                     position: absolute;
                     left: 20px;
                     color: var(--color-primary);
-                    opacity: 0.8;
-                    z-index: 2;
+                    opacity: 1;
+                    z-index: 10;
+                    pointer-events: none;
                 }
                 .v4-search-input {
-                    width: 100%;
-                    padding: 14px 15px 14px 55px;
-                    background: rgba(255,255,255,0.03);
-                    border: 1px solid rgba(255,255,255,0.08);
-                    border-radius: 12px;
-                    color: #fff;
-                    font-size: 15px;
-                    transition: all 0.3s;
+                    width: 100% !important;
+                    padding: 12px 20px 12px 50px !important;
+                    background: rgba(0, 0, 0, 0.2) !important;
+                    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+                    border-radius: 10px !important;
+                    color: white !important;
+                    font-size: 14px !important;
+                    transition: all 0.3s ease;
                 }
                 .v4-search-input:focus {
-                    outline: none;
-                    border-color: var(--color-primary);
-                    background: rgba(255,255,255,0.05);
-                    box-shadow: 0 0 20px rgba(183,110,121,0.15);
+                    outline: none !important;
+                    border-color: var(--color-primary) !important;
+                    background: rgba(0, 0, 0, 0.3) !important;
                 }
                 .v4-filter-chips {
-                    display: flex;
-                    gap: 12px;
-                    margin-left: auto;
+                    display: flex !important;
+                    flex-direction: row !important;
+                    gap: 12px !important;
+                    flex-shrink: 0;
                 }
                 .filter-chip {
                     display: flex;

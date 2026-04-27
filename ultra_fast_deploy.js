@@ -17,11 +17,10 @@ async function deploy() {
 
         console.log("🚀 INICIANDO DESPLIEGUE ULTRA-RÁPIDO (Solo Código)...");
 
-        // 1. Subir archivos raíz del frontend (index.html, .htaccess)
+        // 1. Subir archivos raíz del frontend (index.html)
         console.log("📤 Subiendo archivos raíz del frontend...");
         const distPath = path.resolve(__dirname, "frontend/dist");
         await client.uploadFrom(path.join(distPath, "index.html"), "index.html");
-        await client.uploadFrom(path.join(distPath, ".htaccess"), ".htaccess");
 
         // 2. Subir Assets (JS y CSS) - Esto es lo que cambia con build
         console.log("📤 Subiendo Assets (JS/CSS)...");
