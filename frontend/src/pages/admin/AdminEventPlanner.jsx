@@ -1173,8 +1173,8 @@ const AdminEventPlanner = () => {
                     flex-wrap: wrap;
                 }
                 .search-box-v4 {
-                    flex: 1;
-                    min-width: 250px;
+                    max-width: 400px;
+                    width: 100%;
                     position: relative;
                     display: flex;
                     align-items: center;
