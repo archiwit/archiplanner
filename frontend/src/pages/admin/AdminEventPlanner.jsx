@@ -1170,43 +1170,47 @@ const AdminEventPlanner = () => {
                     display: flex;
                     justify-content: space-between;
                     align-items: center;
-                    padding: 15px 25px;
-                    margin-top: 20px;
-                    gap: 20px;
+                    padding: 20px 30px;
+                    margin: 25px 0;
+                    gap: 30px;
+                    width: 100%;
                     flex-wrap: wrap;
                 }
                 .search-box-v4 {
-                    max-width: 400px;
+                    max-width: 450px;
                     width: 100%;
                     position: relative;
                     display: flex;
                     align-items: center;
+                    margin-right: auto;
                 }
                 .search-icon-v4 {
                     position: absolute;
-                    left: 15px;
+                    left: 20px;
                     color: var(--color-primary);
-                    opacity: 0.6;
+                    opacity: 0.8;
+                    z-index: 2;
                 }
                 .v4-search-input {
                     width: 100%;
-                    padding: 12px 15px 12px 45px;
+                    padding: 14px 15px 14px 55px;
                     background: rgba(255,255,255,0.03);
                     border: 1px solid rgba(255,255,255,0.08);
                     border-radius: 12px;
                     color: #fff;
-                    font-size: 14px;
+                    font-size: 15px;
                     transition: all 0.3s;
                 }
                 .v4-search-input:focus {
                     outline: none;
                     border-color: var(--color-primary);
                     background: rgba(255,255,255,0.05);
-                    box-shadow: 0 0 15px rgba(183,110,121,0.1);
+                    box-shadow: 0 0 20px rgba(183,110,121,0.15);
                 }
                 .v4-filter-chips {
                     display: flex;
-                    gap: 10px;
+                    gap: 12px;
+                    margin-left: auto;
                 }
                 .filter-chip {
                     display: flex;
