@@ -15,6 +15,14 @@ const googleService = {
     async exchangeToken(code, userId) {
         const response = await api.post('/google/exchange-token', { code, userId });
         return response.data;
+    },
+
+    /**
+     * Check if user is connected to Google
+     */
+    async checkStatus(userId) {
+        const response = await api.get(`/google/status/${userId}`);
+        return response.data;
     }
 };
 

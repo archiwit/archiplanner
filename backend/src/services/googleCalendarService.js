@@ -89,16 +89,13 @@ const googleCalendarService = {
         );
 
         if (!rows.length || !rows[0].google_access_token) {
+            console.error(`[Google-Sync] No tokens found for user ${userId}`);
             return null;
         }
 
         const { google_access_token, google_refresh_token, google_token_expiry } = rows[0];
 
-        const localOAuth = new google.auth.OAuth2(
-            process.env.GOOGLE_CLIENT_ID,
-            process.env.GOOGLE_CLIENT_SECRET,
-            process.env.GOOGLE_REDIRECT_URI
-        );
+        const localOAuth = getClient();
 
         localOAuth.setCredentials({
             access_token: google_access_token,
@@ -108,6 +105,7 @@ const googleCalendarService = {
 
         // Auto-refresh logic
         localOAuth.on('tokens', async (tokens) => {
+            console.log(`[Google-Sync] New tokens received for user ${userId}`);
             if (tokens.access_token) {
                 await db.query(
                     'UPDATE usuarios SET google_access_token = ?, google_token_expiry = ? WHERE id = ?',
@@ -204,16 +202,29 @@ const googleCalendarService = {
         if (!hex) return '1';
         const color = hex.toLowerCase();
         
-        // Mapeo aproximado basado en colores de Google (1-11)
-        if (color.includes('d32ed6')) return '3'; // Grape (Púrpura/Rosa fuerte)
-        if (color.includes('b76e79')) return '1'; // Lavender
-        if (color.includes('green') || color === '#2ecc71') return '10'; // Basil
-        if (color.includes('blue') || color === '#3498db') return '9';  // Blueberry
-        if (color.includes('red') || color === '#e74c3c') return '11';   // Tomato
-        if (color.includes('orange')) return '6'; // Tangerine
-        if (color.includes('yellow')) return '5'; // Banana
+        // Mapeo exacto si usan la paleta de Google que añadiremos
+        if (color === '#a4bdfc') return '1';  // Lavender
+        if (color === '#7ae7bf') return '2';  // Sage
+        if (color === '#dbadff') return '3';  // Grape
+        if (color === '#ff887c') return '4';  // Flamingo
+        if (color === '#fbd75b') return '5';  // Banana
+        if (color === '#ffb878') return '6';  // Tangerine
+        if (color === '#46d6db') return '7';  // Peacock
+        if (color === '#e1e1e1') return '8';  // Graphite
+        if (color === '#5484ed') return '9';  // Blueberry
+        if (color === '#51b749') return '10'; // Basil
+        if (color === '#dc2127') return '11'; // Tomato
+
+        // Mapeo aproximado para otros colores
+        if (color.includes('d32ed6')) return '3'; 
+        if (color.includes('b76e79')) return '1'; 
+        if (color.includes('green') || color === '#2ecc71') return '10'; 
+        if (color.includes('blue') || color === '#3498db') return '9';  
+        if (color.includes('red') || color === '#e74c3c') return '11';   
+        if (color.includes('orange')) return '6'; 
+        if (color.includes('yellow')) return '5'; 
         
-        return '1'; // Por defecto Lavender
+        return '1'; 
     }
 };
 

@@ -77,4 +77,19 @@ router.post('/exchange-token', async (req, res) => {
     }
 });
 
+/**
+ * Check Google Connection Status
+ */
+router.get('/status/:userId', async (req, res) => {
+    const { userId } = req.params;
+    try {
+        const db = require('../db');
+        const [rows] = await db.query('SELECT google_access_token FROM usuarios WHERE id = ?', [userId]);
+        const connected = rows.length > 0 && rows[0].google_access_token !== null;
+        res.json({ connected });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 module.exports = router;

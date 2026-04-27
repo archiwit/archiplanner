@@ -31,6 +31,20 @@ import {
 } from 'lucide-react';
 import Swal from 'sweetalert2';
 
+const GOOGLE_COLORS = [
+    { id: '1', name: 'Lavanda', hex: '#a4bdfc' },
+    { id: '2', name: 'Salvia', hex: '#7ae7bf' },
+    { id: '3', name: 'Uva', hex: '#dbadff' },
+    { id: '4', name: 'Flamenco', hex: '#ff887c' },
+    { id: '5', name: 'Plátano', hex: '#fbd75b' },
+    { id: '6', name: 'Mandarina', hex: '#ffb878' },
+    { id: '7', name: 'Pavo Real', hex: '#46d6db' },
+    { id: '8', name: 'Grafito', hex: '#e1e1e1' },
+    { id: '9', name: 'Arándano', hex: '#5484ed' },
+    { id: '10', name: 'Basilio', hex: '#51b749' },
+    { id: '11', name: 'Tomate', hex: '#dc2127' }
+];
+
 const AdminCalendar = () => {
     const { companyConfig, user } = useAuth();
     const [actividades, setActividades] = useState([]);
@@ -49,10 +63,18 @@ const AdminCalendar = () => {
     const [isGoogleConnected, setIsGoogleConnected] = useState(false);
 
     useEffect(() => {
-        // Verificar conexión inicial
-        if (user?.google_access_token) {
-            setIsGoogleConnected(true);
-        }
+        const checkStatus = async () => {
+            if (user?.id) {
+                try {
+                    const data = await googleService.checkStatus(user.id);
+                    setIsGoogleConnected(data.connected);
+                } catch (err) {
+                    console.error("Status check failed", err);
+                    if (user?.google_access_token) setIsGoogleConnected(true);
+                }
+            }
+        };
+        checkStatus();
     }, [user]);
 
     useEffect(() => {
@@ -541,8 +563,25 @@ const AdminCalendar = () => {
                                 {renderField('Título de la Actividad', 'titulo', 'text')}
                                 
                                     <div className="modal-form-grid" style={{ gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: '15px' }}>
-                                        {renderField('Tipo', 'tipo', 'select', (
-                                            <>
+                                        <div className={`form-field ${(focusedField === 'tipo' || formData.tipo) ? 'is-floating' : ''}`}>
+                                            <select 
+                                                value={formData.tipo} 
+                                                onChange={e => {
+                                                    const val = e.target.value;
+                                                    let color = formData.color;
+                                                    // Asignar color por tipo (Paleta Google)
+                                                    if (val === 'cita') color = '#a4bdfc'; // Lavanda
+                                                    if (val === 'reunion') color = '#5484ed'; // Arándano
+                                                    if (val === 'visita') color = '#7ae7bf'; // Salvia
+                                                    if (val === 'evento') color = '#dbadff'; // Uva
+                                                    if (val === 'llamada') color = '#46d6db'; // Pavo Real
+                                                    if (val === 'otro') color = '#e1e1e1'; // Grafito
+                                                    
+                                                    setFormData({...formData, tipo: val, color});
+                                                }}
+                                                onFocus={() => setFocusedField('tipo')}
+                                                onBlur={() => setFocusedField(null)}
+                                            >
                                                 <option value=""></option>
                                                 <option value="cita">Cita</option>
                                                 <option value="visita">Visita</option>
@@ -550,8 +589,9 @@ const AdminCalendar = () => {
                                                 <option value="llamada">Llamada</option>
                                                 <option value="evento">Evento</option>
                                                 <option value="otro">Otro</option>
-                                            </>
-                                        ))}
+                                            </select>
+                                            <label>Tipo de actividad</label>
+                                        </div>
                                         
                                         <div className={`form-field ${(focusedField === 'cot_id' || formData.cot_id) ? 'is-floating' : ''}`}>
                                             <select 
@@ -598,17 +638,29 @@ const AdminCalendar = () => {
                                         </div>
                                     </div>
 
-                                    <div className="form-field is-floating">
-                                        <div className="color-preview-input improved">
-                                            <input 
-                                                type="color" 
-                                                value={formData.color} 
-                                                onChange={e => setFormData({...formData, color: e.target.value})} 
-                                                className="modern-color-picker"
-                                            />
-                                            <span className="color-code">{formData.color.toUpperCase()}</span>
+                                    <div className="form-field">
+                                        <label style={{ display: 'block', position: 'static', marginBottom: '10px', fontSize: '12px' }}>Paleta de Colores Google Calendar</label>
+                                        <div className="google-color-palette">
+                                            {GOOGLE_COLORS.map(c => (
+                                                <button 
+                                                    key={c.id} 
+                                                    type="button"
+                                                    className={`google-color-btn ${formData.color === c.hex ? 'active' : ''}`}
+                                                    style={{ background: c.hex }}
+                                                    onClick={() => setFormData({...formData, color: c.hex})}
+                                                    title={c.name}
+                                                />
+                                            ))}
+                                            <div className="color-preview-input improved" style={{ marginLeft: '10px', flex: 1, height: '40px' }}>
+                                                <input 
+                                                    type="color" 
+                                                    value={formData.color} 
+                                                    onChange={e => setFormData({...formData, color: e.target.value})} 
+                                                    className="modern-color-picker"
+                                                />
+                                                <span className="color-code">{formData.color.toUpperCase()}</span>
+                                            </div>
                                         </div>
-                                        <label>Etiqueta de Color (Personalizar)</label>
                                     </div>
 
                                 <div className="modal-form-grid">
@@ -812,6 +864,31 @@ const AdminCalendar = () => {
                 }
                 .btn-icon-tiny:hover { background: rgba(255,255,255,0.08); color: #fff; }
                 .btn-icon-tiny.delete:hover { color: #ff5252; background: rgba(255,82,82,0.1); }
+                
+                .google-color-palette {
+                    display: flex;
+                    flex-wrap: wrap;
+                    gap: 8px;
+                    align-items: center;
+                    background: rgba(0,0,0,0.2);
+                    padding: 10px;
+                    border-radius: 12px;
+                    margin-bottom: 5px;
+                }
+                .google-color-btn {
+                    width: 24px;
+                    height: 24px;
+                    border-radius: 50%;
+                    border: 2px solid transparent;
+                    cursor: pointer;
+                    transition: all 0.2s;
+                    position: relative;
+                }
+                .google-color-btn:hover { transform: scale(1.2); }
+                .google-color-btn.active {
+                    border-color: #fff;
+                    box-shadow: 0 0 10px rgba(255,255,255,0.5);
+                }
 
                 .google-calendar-embed {
                     height: 550px;
