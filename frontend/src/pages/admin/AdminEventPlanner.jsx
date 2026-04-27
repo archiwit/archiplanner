@@ -227,6 +227,8 @@ const AdminEventPlanner = () => {
     const [selectedEvent, setSelectedEvent] = useState(null);
     const [activeTab, setActiveTab] = useState('itinerary');
     const [loading, setLoading] = useState(false);
+    const [searchTerm, setSearchTerm] = useState('');
+    const [filterStatus, setFilterStatus] = useState('all'); // 'all', 'confirmed', 'prospect'
 
     // Module States
     const [itinerary, setItinerary] = useState([]);
@@ -811,26 +813,84 @@ const AdminEventPlanner = () => {
                 </div>
             </header>
 
+            {!selectedEvent && (
+                <div className="planner-filters-bar glass-panel fade-in">
+                    <div className="search-box-v4">
+                        <Star size={16} className="search-icon-v4" />
+                        <input 
+                            type="text" 
+                            placeholder="Buscar por cliente o evento..." 
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            className="v4-search-input"
+                        />
+                    </div>
+                    
+                    <div className="v4-filter-chips">
+                        <button 
+                            className={`filter-chip ${filterStatus === 'all' ? 'active' : ''}`}
+                            onClick={() => setFilterStatus('all')}
+                        >
+                            Todos
+                        </button>
+                        <button 
+                            className={`filter-chip ${filterStatus === 'confirmed' ? 'active' : ''}`}
+                            onClick={() => setFilterStatus('confirmed')}
+                        >
+                            <ShieldCheck size={14} /> Confirmados
+                        </button>
+                        <button 
+                            className={`filter-chip ${filterStatus === 'prospect' ? 'active' : ''}`}
+                            onClick={() => setFilterStatus('prospect')}
+                        >
+                            <FileText size={14} /> Prospectos
+                        </button>
+                    </div>
+                </div>
+            )}
+
             {!selectedEvent ? (
                 <div className="client-selector-grid">
                     {(Array.isArray(cotizaciones) ? cotizaciones : [])
                         .filter(cot => {
+                            // Búsqueda (global para admin)
+                            const matchesSearch = 
+                                (cot.titulo || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+                                (cot.cliente_nombre || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+                                (cot.cliente_apellido || '').toLowerCase().includes(searchTerm.toLowerCase());
+                            
+                            if (!matchesSearch) return false;
+
+                            // Filtro de Estado
+                            const isConfirmed = cot.estado === 'aprobado' || cot.estado === 'contratado';
+                            if (filterStatus === 'confirmed' && !isConfirmed) return false;
+                            if (filterStatus === 'prospect' && isConfirmed) return false;
+
                             if (user?.rol === 'admin') return true;
+                            
                             // Si es cliente, solo ve eventos donde coincida su nombre o ID
                             const fullName = `${user.nombre || ''} ${user.apellido || ''}`.toLowerCase();
                             return cot.cliente_nombre?.toLowerCase().includes(user.nombre?.toLowerCase()) ||
                                 cot.titulo?.toLowerCase().includes(user.nombre?.toLowerCase());
                         })
                         .map(cot => (
-                            <div key={cot.id} className="client-card-glass glass-panel" onClick={() => handleEventSelect(cot)}>
+                            <div key={cot.id} className={`client-card-glass glass-panel ${cot.estado === 'aprobado' || cot.estado === 'contratado' ? 'is-confirmed' : ''}`} onClick={() => handleEventSelect(cot)}>
+                                <div className="card-status-dot"></div>
                                 <CountdownTimer targetDate={cot.fevent} variant="compact" />
                                 <div className="client-avatar-mini">
                                     {getEventIcon(cot.tipo_evento)}
                                 </div>
-                                <h3>{cot.titulo}</h3>
-                                <p>{cot.cliente_nombre} {cot.cliente_apellido}</p>
-                                <div className="event-date-badge">
-                                    {cot.tipo_evento}
+                                <div className="card-content-stack">
+                                    <h3>{cot.titulo}</h3>
+                                    <p>{cot.cliente_nombre} {cot.cliente_apellido}</p>
+                                    <div className="event-meta-badges">
+                                        <div className="event-date-badge">
+                                            {cot.tipo_evento}
+                                        </div>
+                                        <div className={`status-pill-mini ${cot.estado}`}>
+                                            {cot.estado}
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         ))}
@@ -901,12 +961,16 @@ const AdminEventPlanner = () => {
                                 <button className={activeTab === 'guests' ? 'active' : ''} onClick={() => setActiveTab('guests')}>
                                     <Users size={16} /> Lista de Invitados
                                 </button>
-                                <button className={activeTab === 'planner_360' ? 'active' : ''} onClick={() => setActiveTab('planner_360')}>
-                                    <Layout size={16} /> Diseño Plano 360
-                                </button>
-                                <button className={activeTab === 'brief' ? 'active' : ''} onClick={() => setActiveTab('brief')}>
-                                    <FileText size={16} /> Brief de Operación
-                                </button>
+                                {(selectedEvent.estado === 'aprobado' || selectedEvent.estado === 'contratado') && (
+                                    <>
+                                        <button className={activeTab === 'planner_360' ? 'active' : ''} onClick={() => setActiveTab('planner_360')}>
+                                            <Layout size={16} /> Diseño Plano 360
+                                        </button>
+                                        <button className={activeTab === 'brief' ? 'active' : ''} onClick={() => setActiveTab('brief')}>
+                                            <FileText size={16} /> Brief de Operación
+                                        </button>
+                                    </>
+                                )}
                             </nav>
                         </aside>
                     )}
@@ -1097,6 +1161,108 @@ const AdminEventPlanner = () => {
                     display: inline-flex; align-items: center; gap: 6px; 
                     background: rgba(255,255,255,0.03); padding: 4px 12px; border-radius: 20px;
                     font-size: 11px; color: var(--color-primary);
+                }
+
+                .planner-filters-bar {
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    padding: 15px 25px;
+                    margin-top: 20px;
+                    gap: 20px;
+                    flex-wrap: wrap;
+                }
+                .search-box-v4 {
+                    flex: 1;
+                    min-width: 250px;
+                    position: relative;
+                    display: flex;
+                    align-items: center;
+                }
+                .search-icon-v4 {
+                    position: absolute;
+                    left: 15px;
+                    color: var(--color-primary);
+                    opacity: 0.6;
+                }
+                .v4-search-input {
+                    width: 100%;
+                    padding: 12px 15px 12px 45px;
+                    background: rgba(255,255,255,0.03);
+                    border: 1px solid rgba(255,255,255,0.08);
+                    border-radius: 12px;
+                    color: #fff;
+                    font-size: 14px;
+                    transition: all 0.3s;
+                }
+                .v4-search-input:focus {
+                    outline: none;
+                    border-color: var(--color-primary);
+                    background: rgba(255,255,255,0.05);
+                    box-shadow: 0 0 15px rgba(183,110,121,0.1);
+                }
+                .v4-filter-chips {
+                    display: flex;
+                    gap: 10px;
+                }
+                .filter-chip {
+                    display: flex;
+                    align-items: center;
+                    gap: 8px;
+                    padding: 10px 20px;
+                    background: rgba(255,255,255,0.03);
+                    border: 1px solid rgba(255,255,255,0.08);
+                    border-radius: 20px;
+                    color: rgba(255,255,255,0.6);
+                    font-size: 12px;
+                    font-weight: 600;
+                    cursor: pointer;
+                    transition: all 0.3s;
+                }
+                .filter-chip:hover {
+                    background: rgba(255,255,255,0.05);
+                    color: #fff;
+                }
+                .filter-chip.active {
+                    background: var(--color-primary-dim);
+                    border-color: var(--color-primary);
+                    color: var(--color-primary);
+                }
+
+                .card-status-dot {
+                    position: absolute;
+                    top: 15px;
+                    right: 15px;
+                    width: 8px;
+                    height: 8px;
+                    border-radius: 50%;
+                    background: #555;
+                }
+                .is-confirmed .card-status-dot {
+                    background: #82ca9d;
+                    box-shadow: 0 0 10px #82ca9d;
+                }
+                .event-meta-badges {
+                    display: flex;
+                    flex-direction: column;
+                    gap: 8px;
+                    align-items: center;
+                }
+                .status-pill-mini {
+                    font-size: 9px;
+                    text-transform: uppercase;
+                    letter-spacing: 0.5px;
+                    background: rgba(255,255,255,0.05);
+                    padding: 2px 8px;
+                    border-radius: 4px;
+                    opacity: 0.7;
+                }
+                .status-pill-mini.aprobado, .status-pill-mini.contratado {
+                    color: #82ca9d;
+                    background: rgba(130, 202, 157, 0.1);
+                }
+                .status-pill-mini.pendiente, .status-pill-mini.borrador {
+                    color: #f6ad55;
                 }
 
                 .event-planner-layout {
