@@ -41,6 +41,14 @@ const actividadService = {
             headers: { 'Content-Type': 'multipart/form-data' }
         });
         return response.data;
+    },
+
+    /**
+     * Sincronizar manualmente con Google
+     */
+    syncGoogle: async (id, userId) => {
+        const response = await api.post(`/actividades/sync/${id}`, { u_id: userId });
+        return response.data;
     }
 };
 

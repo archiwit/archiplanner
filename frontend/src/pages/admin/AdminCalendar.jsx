@@ -27,7 +27,8 @@ import {
     Briefcase,
     AlertCircle,
     DollarSign,
-    Bell
+    Bell,
+    RefreshCw as SyncIcon
 } from 'lucide-react';
 import Swal from 'sweetalert2';
 
@@ -369,6 +370,39 @@ const AdminCalendar = () => {
         }
     };
 
+    const handleSyncGoogle = async (act) => {
+        try {
+            Swal.fire({
+                title: 'Sincronizando...',
+                text: 'Enviando actividad a Google Calendar.',
+                didOpen: () => Swal.showLoading(),
+                background: '#1a1a1a',
+                color: '#fff'
+            });
+            
+            await actividadService.syncGoogle(act.id, user.id);
+            
+            Swal.fire({
+                icon: 'success',
+                title: 'Sincronizado',
+                text: 'La actividad ya está en tu Google Calendar.',
+                timer: 2000,
+                showConfirmButton: false,
+                background: '#1a1a1a',
+                color: '#fff'
+            });
+            fetchActividades();
+        } catch (err) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Fallo de Sincronización',
+                text: err.response?.data?.error || err.message,
+                background: '#1a1a1a',
+                color: '#fff'
+            });
+        }
+    };
+
     const getActivityIcon = (act) => {
         if (act.agendaType === 'alert' || act.agendaType === 'virtual_alert') {
             if (act.tipo === 'pago_vencido' || act.tipo === 'deuda') return <DollarSign size={14} />;
@@ -521,6 +555,15 @@ const AdminCalendar = () => {
                                                 </div>
                                             </div>
                                             <div className="card-actions-hover">
+                                                {isGoogleConnected && (
+                                                    <button 
+                                                        onClick={(e) => { e.stopPropagation(); handleSyncGoogle(act); }} 
+                                                        title="Sincronizar con Google"
+                                                        className="sync-btn"
+                                                    >
+                                                        <SyncIcon size={14} />
+                                                    </button>
+                                                )}
                                                 <button onClick={() => { setCurrentEdit(act); setFormData(act); setIsModalOpen(true); }}><Edit2 size={14} /></button>
                                                 <button className="del" onClick={() => handleDelete(act.id)}><Trash2 size={14} /></button>
                                             </div>
@@ -1180,6 +1223,7 @@ const AdminCalendar = () => {
                 }
                 .card-actions-hover button:hover { background: rgba(255,255,255,0.1); }
                 .card-actions-hover button.del:hover { background: rgba(255,82,82,0.1); color: #ff5252; }
+                .card-actions-hover button.sync-btn:hover { background: rgba(95, 220, 127, 0.1); color: #5FDC7F; }
 
                 .google-calendar-fullscreen { height: 700px; border-radius: 24px; overflow: hidden; border: 1px solid rgba(255,255,255,0.05); }
 

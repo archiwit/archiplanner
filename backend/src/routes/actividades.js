@@ -150,8 +150,27 @@ router.delete('/:id', async (req, res) => {
         }
 
         await db.query('DELETE FROM actividades WHERE id = ?', [req.params.id]);
-        res.json({ success: true });
+        res.json({ message: 'Actividad eliminada' });
     } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+/**
+ * Manual Sync to Google
+ */
+router.post('/sync/:id', async (req, res) => {
+    const { id } = req.params;
+    const { u_id } = req.body;
+    try {
+        const result = await googleCalendarService.syncEvent(u_id, id);
+        if (result) {
+            res.json({ success: true, message: 'Sincronizado con Google', data: result });
+        } else {
+            res.status(400).json({ error: 'No se pudo sincronizar. Verifica tu conexión a Google.' });
+        }
+    } catch (err) {
+        console.error('[MANUAL SYNC ROUTE ERROR]', err);
         res.status(500).json({ error: err.message });
     }
 });

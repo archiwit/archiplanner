@@ -15,9 +15,6 @@ const getClient = () => {
         : 'https://archiplanner-api.onrender.com/api/google/callback'
     );
     
-    console.log(`[Google-Auth] Entorno: ${isLocal ? 'DEVELOPMENT' : 'PRODUCTION'}`);
-    console.log(`[Google-Auth] Redirect URI: ${redirectUri}`);
-    
     if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET) {
         console.error('[Google-Auth] ERROR: Faltan credenciales de Google en el servidor.');
     }
@@ -163,17 +160,19 @@ const googleCalendarService = {
                 return res.data;
             } else {
                 // Insert new
+                console.log(`[Google-Sync] Inserting new event into calendar: ${calendarId}`);
                 const res = await calendar.events.insert({
                     calendarId,
                     resource: event,
                 });
                 // Save google_event_id back to local activity
                 await db.query('UPDATE actividades SET google_event_id = ? WHERE id = ?', [res.data.id, activityId]);
+                console.log(`[Google-Sync] Success! Event ID: ${res.data.id}`);
                 return res.data;
             }
         } catch (err) {
-            console.error('[GOOGLE SYNC ERROR]', err.message);
-            return null;
+            console.error('[GOOGLE SYNC ERROR FULL]', err);
+            throw err;
         }
     },
 
