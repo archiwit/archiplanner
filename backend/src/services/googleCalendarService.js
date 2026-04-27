@@ -133,16 +133,23 @@ const googleCalendarService = {
             const act = rows[0];
             const calendarId = process.env.GOOGLE_CALENDAR_ID || 'primary';
 
+            // Función auxiliar para formatear fecha sin el sufijo 'Z' de UTC
+            const formatForGoogle = (dateStr) => {
+                const d = new Date(dateStr);
+                const pad = (n) => n.toString().padStart(2, '0');
+                return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+            };
+
             const event = {
                 summary: act.titulo,
                 description: act.descripcion || '',
                 location: act.ubicacion || '',
                 start: {
-                    dateTime: new Date(act.fecha_inicio).toISOString(),
+                    dateTime: formatForGoogle(act.fecha_inicio),
                     timeZone: 'America/Bogota',
                 },
                 end: {
-                    dateTime: new Date(act.fecha_fin || act.fecha_inicio).toISOString(),
+                    dateTime: formatForGoogle(act.fecha_fin || act.fecha_inicio),
                     timeZone: 'America/Bogota',
                 },
                 colorId: this.mapColorToGoogle(act.color)
@@ -191,12 +198,22 @@ const googleCalendarService = {
     },
 
     /**
-     * Map HEX color to Google Calendar colorId (simplified)
+     * Map HEX color to Google Calendar colorId
      */
     mapColorToGoogle(hex) {
-        // Google has 1-11 color IDs
-        if (hex?.toLowerCase() === '#b76e79') return '1'; // Lavender-ish
-        return '5'; // Banana (yellow) default
+        if (!hex) return '1';
+        const color = hex.toLowerCase();
+        
+        // Mapeo aproximado basado en colores de Google (1-11)
+        if (color.includes('d32ed6')) return '3'; // Grape (Púrpura/Rosa fuerte)
+        if (color.includes('b76e79')) return '1'; // Lavender
+        if (color.includes('green') || color === '#2ecc71') return '10'; // Basil
+        if (color.includes('blue') || color === '#3498db') return '9';  // Blueberry
+        if (color.includes('red') || color === '#e74c3c') return '11';   // Tomato
+        if (color.includes('orange')) return '6'; // Tangerine
+        if (color.includes('yellow')) return '5'; // Banana
+        
+        return '1'; // Por defecto Lavender
     }
 };
 
