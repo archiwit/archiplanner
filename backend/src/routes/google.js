@@ -8,15 +8,19 @@ const jwt = require('jsonwebtoken');
  */
 router.get('/auth-url', (req, res) => {
     try {
-        if (!process.env.GOOGLE_CLIENT_ID) {
-            console.error('[Google-Auth] ERROR: process.env.GOOGLE_CLIENT_ID no está definido.');
-            return res.status(500).json({ error: 'Configuración de Google incompleta en el servidor (.env)' });
+        if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET) {
+            console.error('[Google-Auth] ERROR: Configuración de Google incompleta en el servidor.');
+            return res.status(500).json({ 
+                error: 'Configuración de Google incompleta en el servidor (faltan Client ID o Secret en Render)' 
+            });
         }
+        
         const url = googleCalendarService.getAuthUrl();
-        console.log('[Google-Auth] URL generada:', url);
+        console.log('[Google-Auth] URL generada exitosamente');
         res.json({ url });
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        console.error('[Google-Auth] Excepción al generar URL:', err);
+        res.status(500).json({ error: `Fallo al generar URL: ${err.message}` });
     }
 });
 

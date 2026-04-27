@@ -379,13 +379,35 @@ const AdminCalendar = () => {
 
     const handleConnectGoogle = async () => {
         try {
+            // Mostrar un pequeño loading mientras obtenemos la URL
+            Swal.fire({
+                title: 'Conectando con Google...',
+                text: 'Preparando enlace de seguridad.',
+                allowOutsideClick: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                },
+                background: '#1a1a1a',
+                color: '#fff'
+            });
+
             const { url } = await googleService.getAuthUrl();
+            Swal.close();
+
             const width = 600, height = 700;
             const left = (window.innerWidth / 2) - (width / 2);
             const top = (window.innerHeight / 2) - (height / 2);
             window.open(url, 'Google OAuth', `width=${width},height=${height},left=${left},top=${top}`);
         } catch (err) {
-            Swal.fire({ icon: 'error', title: 'Error', text: 'No se pudo obtener la URL de conexión.', background: '#1a1a1a', color: '#fff' });
+            console.error("DEBUG Google Conn Error:", err);
+            const errorMsg = err.response?.data?.error || err.message || 'Error desconocido';
+            Swal.fire({ 
+                icon: 'error', 
+                title: 'Error de Configuración', 
+                text: `No se pudo obtener la URL: ${errorMsg}`, 
+                background: '#1a1a1a', 
+                color: '#fff' 
+            });
         }
     };
 

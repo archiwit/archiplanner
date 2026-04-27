@@ -2854,6 +2854,39 @@ const AdminCotizacionForm = ({ claseOverride }) => {
                     from { opacity: 0; transform: translateY(10px); }
                     to { opacity: 1; transform: translateY(0); }
                 }
+
+                /* REPORT SYSTEM REFINEMENTS */
+                .report-overlay {
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    padding: 20px;
+                }
+                .report-grid-system {
+                    display: grid;
+                    grid-template-columns: 1.2fr 1fr;
+                    gap: 60px;
+                    align-items: flex-start;
+                }
+                @media (max-width: 900px) {
+                    .report-grid-system {
+                        grid-template-columns: 1fr;
+                        gap: 30px;
+                    }
+                }
+                .report-modal-content {
+                    max-height: 90vh;
+                    overflow-y: auto;
+                    position: relative;
+                }
+                .close-report-fixed {
+                    position: sticky;
+                    top: 20px;
+                    right: 20px;
+                    float: right;
+                    z-index: 100;
+                    margin-bottom: -50px;
+                }
             `}</style>
             {/* History Panel */}
             {id && (
@@ -3153,38 +3186,7 @@ const AdminCotizacionForm = ({ claseOverride }) => {
                             </div>
 
                             <div className="report-grid-system">
-                                {/* Left: Financial Health & Expenses */}
-                                <div style={{ textAlign: 'center' }}>
-                                    <div style={{ position: 'relative', width: '220px', height: '220px', margin: '0 auto 24px' }}>
-                                        <svg viewBox="0 0 36 36" style={{ width: '100%', height: '100%', transform: 'rotate(-90deg)' }}>
-                                            <circle cx="18" cy="18" r="15.5" fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="3" />
-                                            <circle cx="18" cy="18" r="15.5" fill="none" stroke="var(--color-tertiary)" strokeWidth="3" 
-                                                strokeDasharray={`${Math.max(0, Math.min(100, (Number(formData.monto_final) - gastos.reduce((acc, g) => acc + Number(g.monto), 0)) / Number(formData.monto_final) * 100))}, 100`}
-                                                className="report-circle-anim"
-                                            />
-                                        </svg>
-                                        <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', textAlign: 'center' }}>
-                                            <div style={{ fontSize: '32px', fontWeight: '900' }}>{Math.round((Number(formData.monto_final) - gastos.reduce((acc, g) => acc + Number(g.monto), 0)) / Number(formData.monto_final) * 100)}%</div>
-                                            <div style={{ fontSize: '10px', opacity: 0.5, fontWeight: '700' }}>MARGEN ROI</div>
-                                        </div>
-                                    </div>
-
-                                    <div style={{ display: 'flex', justifyContent: 'center', gap: '20px', marginBottom: '40px' }}>
-                                        <div style={{ textAlign: 'left' }}>
-                                            <div style={{ fontSize: '10px', opacity: 0.5 }}>COSTOS</div>
-                                            <div style={{ fontWeight: '800', color: '#ff8484' }}>$ {smartFormat(gastos.reduce((acc, g) => acc + Number(g.monto), 0))}</div>
-                                        </div>
-                                        <div style={{ textAlign: 'right' }}>
-                                            <div style={{ fontSize: '10px', opacity: 0.5 }}>UTILIDAD</div>
-                                            <div style={{ fontWeight: '800', color: 'var(--color-tertiary)' }}>$ {smartFormat(Number(formData.monto_final) - gastos.reduce((acc, g) => acc + Number(g.monto), 0))}</div>
-                                        </div>
-                                    </div>
-
-                                    {/* Gastos por Proveedor moved here for balance */}
-                                    <ProviderExpenseRings />
-                                </div>
-
-                                {/* Right: Cashflow & AI Analysis */}
+                                {/* Left: Cashflow & AI Analysis (Main Container) */}
                                 <div>
                                     <h4 style={{ fontSize: '12px', fontWeight: '800', letterSpacing: '1px', marginBottom: '20px' }}>DISTRIBUCIÓN DE CUMPLIMIENTO</h4>
                                     
@@ -3208,7 +3210,7 @@ const AdminCotizacionForm = ({ claseOverride }) => {
                                         </div>
                                     </div>
 
-                                    {/* Profitability Wave moved here to full right width */}
+                                    {/* Profitability Wave full width for impact */}
                                     <div style={{ marginTop: '30px' }}>
                                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
                                             <div style={{ fontSize: '11px', opacity: 0.6, letterSpacing: '1px', fontWeight: '900' }}>FLUJO DE RENTABILIDAD</div>
@@ -3231,6 +3233,49 @@ const AdminCotizacionForm = ({ claseOverride }) => {
                                                 ? "El flujo de caja está saludable. Se han recolectado abonos suficientes para cubrir la mayoría de los gastos operativos."
                                                 : "Se recomienda aumentar la recolección de abonos para mitigar riesgos en la ejecución de gastos fijos."}
                                         </p>
+                                    </div>
+                                    
+                                    <button type="button" onClick={() => setShowReport(false)} className="btn-admin-secondary" style={{ marginTop: '30px', width: '100%', justifyContent: 'center', border: '1px solid rgba(255,255,255,0.1)' }}>
+                                        CERRAR VISTA DE REPORTE
+                                    </button>
+                                </div>
+
+                                {/* Right Panel: Financial Health & Category Rings */}
+                                <div style={{ 
+                                    textAlign: 'center', 
+                                    background: 'rgba(255,255,255,0.02)', 
+                                    padding: '30px 20px', 
+                                    borderRadius: '20px', 
+                                    border: '1px solid rgba(255,255,255,0.03)' 
+                                }}>
+                                    <div style={{ position: 'relative', width: '180px', height: '180px', margin: '0 auto 24px' }}>
+                                        <svg viewBox="0 0 36 36" style={{ width: '100%', height: '100%', transform: 'rotate(-90deg)' }}>
+                                            <circle cx="18" cy="18" r="15.5" fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="3" />
+                                            <circle cx="18" cy="18" r="15.5" fill="none" stroke="var(--color-tertiary)" strokeWidth="3" 
+                                                strokeDasharray={`${Math.max(0, Math.min(100, (Number(formData.monto_final) - gastos.reduce((acc, g) => acc + Number(g.monto), 0)) / Number(formData.monto_final) * 100))}, 100`}
+                                                className="report-circle-anim"
+                                            />
+                                        </svg>
+                                        <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', textAlign: 'center' }}>
+                                            <div style={{ fontSize: '28px', fontWeight: '900' }}>{Math.round((Number(formData.monto_final) - gastos.reduce((acc, g) => acc + Number(g.monto), 0)) / Number(formData.monto_final) * 100)}%</div>
+                                            <div style={{ fontSize: '9px', opacity: 0.5, fontWeight: '700' }}>MARGEN ROI</div>
+                                        </div>
+                                    </div>
+
+                                    <div style={{ display: 'flex', justifyContent: 'center', gap: '20px', marginBottom: '30px', borderBottom: '1px solid rgba(255,255,255,0.05)', pb: '30px' }}>
+                                        <div style={{ textAlign: 'left' }}>
+                                            <div style={{ fontSize: '10px', opacity: 0.5 }}>COSTOS</div>
+                                            <div style={{ fontWeight: '800', color: '#ff8484' }}>$ {smartFormat(gastos.reduce((acc, g) => acc + Number(g.monto), 0))}</div>
+                                        </div>
+                                        <div style={{ textAlign: 'right' }}>
+                                            <div style={{ fontSize: '10px', opacity: 0.5 }}>UTILIDAD</div>
+                                            <div style={{ fontWeight: '800', color: 'var(--color-tertiary)' }}>$ {smartFormat(Number(formData.monto_final) - gastos.reduce((acc, g) => acc + Number(g.monto), 0))}</div>
+                                        </div>
+                                    </div>
+
+                                    {/* Circles by category (Provider Rings) */}
+                                    <div style={{ marginTop: '10px' }}>
+                                        <ProviderExpenseRings />
                                     </div>
                                 </div>
                             </div>

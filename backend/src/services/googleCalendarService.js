@@ -5,14 +5,23 @@ const db = require('../db');
  * Helper to get a configured OAuth2 client
  */
 const getClient = () => {
-    // URL dinámica basada en el entorno
-    const isDev = process.env.NODE_ENV === 'development';
-    const redirectUri = isDev 
+    // Si estamos en desarrollo local, usamos localhost
+    // Si estamos en producción, usamos la variable de entorno o un fallback seguro
+    const isLocal = process.env.NODE_ENV === 'development' || process.env.DB_HOST === '127.0.0.1';
+    
+    const redirectUri = process.env.GOOGLE_REDIRECT_URI || (
+        isLocal 
         ? 'http://localhost:5001/api/google/callback' 
-        : (process.env.GOOGLE_REDIRECT_URI || 'https://archiplanner.com.co/api/google/callback');
+        : 'https://archiplanner-api.onrender.com/api/google/callback'
+    );
     
-    console.log(`[Google-Auth] Usando Redirect URI (${isDev ? 'DEV' : 'PROD'}): ${redirectUri}`);
+    console.log(`[Google-Auth] Entorno: ${isLocal ? 'DEVELOPMENT' : 'PRODUCTION'}`);
+    console.log(`[Google-Auth] Redirect URI: ${redirectUri}`);
     
+    if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET) {
+        console.error('[Google-Auth] ERROR: Faltan credenciales de Google en el servidor.');
+    }
+
     return new google.auth.OAuth2(
         process.env.GOOGLE_CLIENT_ID,
         process.env.GOOGLE_CLIENT_SECRET,

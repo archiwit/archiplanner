@@ -38,7 +38,7 @@ const QuotationView = ({ isPrintView = false }) => {
                 'Quinceaños': 'XV', 'Boda': 'Boda', 'Baby shower': 'BabyShower',
                 'Aniversario': 'Aniversario', 'Corporativo': 'Corpo', 'Cumpleaños': 'Cumple'
             };
-            const tipoStr = isArriendo ? 'Arriendo' : (shortTypes[data.tipo_evento_nombre] || data.tipo_evento_nombre || 'Evento');
+            const tipoStr = isArriendo ? 'Arriendo' : (shortTypes[data.tipo_evento] || data.tipo_evento || 'Evento');
             const numStr = isArriendo ? (data.num_arriendo || data.num) : data.num;
             const clienteStr = cliente?.nombre || data.cliente_nombre || 'Cliente';
             const fileName = `${dateStr} • ${tipoStr} • ${numStr} • ${clienteStr}`;
@@ -145,9 +145,9 @@ const QuotationView = ({ isPrintView = false }) => {
         if (!dateStr) return "N/A";
         return formatDateSafe(dateStr, {
             weekday: 'short',
+            day: '2-digit',
+            month: '2-digit',
             year: 'numeric',
-            month: 'long',
-            day: 'numeric',
         });
     };
 
@@ -629,48 +629,37 @@ const QuotationView = ({ isPrintView = false }) => {
                                         </div>
                                     </div>
 
-                                    <div className="quotation-items-grid">
-                                        {[[], []].map((colItems, colIdx) => {
-                                            // Lógica de balanceo simple para distribuir categorías en dos columnas
-                                            const entries = Object.entries(groupedDetalles);
-                                            const half = Math.ceil(entries.length / 2);
-                                            const columnEntries = colIdx === 0
-                                                ? entries.slice(0, half)
-                                                : entries.slice(half);
-
-                                            return (
-                                                <div key={colIdx} className="quotation-column">
-                                                    {columnEntries.map(([categoria, items]) => (
-                                                        <table key={categoria} className="quotation-table-compact">
-                                                            <thead>
-                                                                <tr className="category-row">
-                                                                    <th colSpan={data.mostrar_precios ? 4 : 2}>
-                                                                        {categoria}
-                                                                    </th>
-                                                                </tr>
-                                                            </thead>
-                                                            <tbody>
-                                                                {items.map((item, idx) => (
-                                                                    <tr key={idx}>
-                                                                        <td className="text-center">{Number(item.cantidad)}</td>
-                                                                        <td className="text-left">
-                                                                            <span className="item-name">{item.nombre}</span>
-                                                                            {item.notas && <span className="item-observation">{item.notas}</span>}
-                                                                        </td>
-                                                                        {data.mostrar_precios ? (
-                                                                            <>
-                                                                                <td className="price-cell">$ {formatCurrency(item.precio_u)}</td>
-                                                                                <td className="total-cell">$ {formatCurrency(item.subtotal)}</td>
-                                                                            </>
-                                                                        ) : null}
-                                                                    </tr>
-                                                                ))}
-                                                            </tbody>
-                                                        </table>
-                                                    ))}
-                                                </div>
-                                            );
-                                        })}
+                                    <div className="quotation-items-grid-v2">
+                                        {Object.entries(groupedDetalles).map(([categoria, items]) => (
+                                            <div key={categoria} className="quotation-category-block">
+                                                <table className="quotation-table-compact">
+                                                    <thead>
+                                                        <tr className="category-row">
+                                                            <th colSpan={data.mostrar_precios ? 4 : 2}>
+                                                                {categoria}
+                                                            </th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        {items.map((item, idx) => (
+                                                            <tr key={idx}>
+                                                                <td className="text-center">{Number(item.cantidad)}</td>
+                                                                <td className="text-left">
+                                                                    <span className="item-name">{item.nombre}</span>
+                                                                    {item.notas && <span className="item-observation">{item.notas}</span>}
+                                                                </td>
+                                                                {data.mostrar_precios ? (
+                                                                    <>
+                                                                        <td className="price-cell">$ {formatCurrency(item.precio_u)}</td>
+                                                                        <td className="total-cell">$ {formatCurrency(item.subtotal)}</td>
+                                                                    </>
+                                                                ) : null}
+                                                            </tr>
+                                                        ))}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        ))}
                                     </div>
 
                                     <div className="quotation-summary-area">

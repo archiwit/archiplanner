@@ -1901,29 +1901,27 @@
    ======================================== */
 @media screen,
 print {
-    .quotation-items-grid {
-        display: grid !important;
-        grid-template-columns: 1fr 1fr !important;
-        gap: 12px !important;
-        /* Reducido para ganar espacio horizontal */
-        align-items: start !important;
-        margin: 10px 0 !important;
+    .quotation-items-grid-v2 {
+        column-count: 2 !important;
+        column-gap: 24px !important;
         width: 100% !important;
+        margin: 10px 0 !important;
+        display: block !important;
     }
 
-    .quotation-column {
-        display: flex !important;
-        flex-direction: column !important;
-        gap: 0 !important;
+    .quotation-category-block {
+        break-inside: avoid !important;
+        page-break-inside: avoid !important;
+        margin-bottom: 20px !important;
+        display: block !important;
     }
 
     .quotation-table-compact {
         width: 100% !important;
+        break-inside: avoid !important;
+        margin-bottom: 12px !important;
         border-collapse: collapse !important;
         font-size: 10px !important;
-        /* Ligeramente más pequeña para ganar espacio */
-        margin-bottom: 8px !important;
-        /* Mínimo espacio entre categorías */
         background: transparent !important;
     }
 
