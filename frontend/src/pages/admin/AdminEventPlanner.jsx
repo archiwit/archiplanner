@@ -321,11 +321,11 @@ const AdminEventPlanner = () => {
             if (itRes.status === 'fulfilled') setItinerary(Array.isArray(itRes.value) ? itRes.value : []);
             if (inspRes.status === 'fulfilled') setInspirations(Array.isArray(inspRes.value) ? inspRes.value : []);
             if (keyRes.status === 'fulfilled') setKeyItems(Array.isArray(keyRes.value) ? keyRes.value : []);
-            
+
             if (meetRes.status === 'fulfilled') {
                 const meetingTypes = ['reunion', 'reunión', 'cita', 'visita', 'llamada', 'evento', 'actividad', 'seguimiento', 'otro'];
                 const dataArray = Array.isArray(meetRes.value) ? meetRes.value : [];
-                const meetings = dataArray.filter(a => 
+                const meetings = dataArray.filter(a =>
                     a.tipo && meetingTypes.includes(a.tipo.toLowerCase())
                 );
                 setMeetings(meetings);
@@ -594,11 +594,11 @@ const AdminEventPlanner = () => {
                     is_public: true
                 };
                 await actividadService.create(payload);
-                Swal.fire({ 
-                    icon: 'success', 
-                    title: '¡SESIÓN AGENDADA!', 
-                    text: 'La reunión se ha registrado y vinculado al evento.', 
-                    background: '#121212', 
+                Swal.fire({
+                    icon: 'success',
+                    title: '¡SESIÓN AGENDADA!',
+                    text: 'La reunión se ha registrado y vinculado al evento.',
+                    background: '#121212',
                     color: '#fff',
                     confirmButtonColor: '#B76E79'
                 });
@@ -814,32 +814,33 @@ const AdminEventPlanner = () => {
             </header>
 
             {!selectedEvent && (
-                <div className="planner-filters-bar glass-panel fade-in">
+                <div className="planner-filters-bar glass-panel fade-in" style={{ flexDirection: 'row', height: 'auto' }}>
                     <div className="search-box-v4">
                         <Star size={16} className="search-icon-v4" />
-                        <input 
-                            type="text" 
-                            placeholder="Buscar por cliente o evento..." 
+                        <input
+                            type="text"
+                            placeholder="Buscar por cliente o evento..."
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                             className="v4-search-input"
+                            style={{ paddingLeft: '40px' }}
                         />
                     </div>
-                    
+
                     <div className="v4-filter-chips">
-                        <button 
+                        <button
                             className={`filter-chip ${filterStatus === 'all' ? 'active' : ''}`}
                             onClick={() => setFilterStatus('all')}
                         >
                             Todos
                         </button>
-                        <button 
+                        <button
                             className={`filter-chip ${filterStatus === 'confirmed' ? 'active' : ''}`}
                             onClick={() => setFilterStatus('confirmed')}
                         >
                             <ShieldCheck size={14} /> Confirmados
                         </button>
-                        <button 
+                        <button
                             className={`filter-chip ${filterStatus === 'prospect' ? 'active' : ''}`}
                             onClick={() => setFilterStatus('prospect')}
                         >
@@ -854,20 +855,20 @@ const AdminEventPlanner = () => {
                     {(Array.isArray(cotizaciones) ? cotizaciones : [])
                         .filter(cot => {
                             // Búsqueda (global para admin)
-                            const matchesSearch = 
+                            const matchesSearch =
                                 (cot.titulo || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
                                 (cot.cliente_nombre || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
                                 (cot.cliente_apellido || '').toLowerCase().includes(searchTerm.toLowerCase());
-                            
+
                             if (!matchesSearch) return false;
 
                             // Filtro de Estado
-                            const isConfirmed = cot.estado === 'aprobado' || cot.estado === 'contratado';
+                            const isConfirmed = ['aprobado', 'contratado', 'aprobada', 'contratada'].includes(cot.estado?.toLowerCase());
                             if (filterStatus === 'confirmed' && !isConfirmed) return false;
                             if (filterStatus === 'prospect' && isConfirmed) return false;
 
                             if (user?.rol === 'admin') return true;
-                            
+
                             // Si es cliente, solo ve eventos donde coincida su nombre o ID
                             const fullName = `${user.nombre || ''} ${user.apellido || ''}`.toLowerCase();
                             return cot.cliente_nombre?.toLowerCase().includes(user.nombre?.toLowerCase()) ||
@@ -879,7 +880,7 @@ const AdminEventPlanner = () => {
                                     <CountdownTimer targetDate={cot.fevent} variant="compact" />
                                     <div className="card-status-dot"></div>
                                 </div>
-                                
+
                                 <div className="client-avatar-mini">
                                     {getEventIcon(cot.tipo_evento)}
                                 </div>
@@ -907,8 +908,8 @@ const AdminEventPlanner = () => {
                                 <button className="btn-back-planner" onClick={() => setSelectedEvent(null)}>← Volver</button>
                                 {selectedCompany && (
                                     <div className="planner-company-branding">
-                                        <img 
-                                            src={getUploadUrl(selectedCompany.logo)} 
+                                        <img
+                                            src={getUploadUrl(selectedCompany.logo)}
                                             alt={selectedCompany.nombre}
                                             className="planner-mini-logo"
                                             onError={(e) => e.target.style.display = 'none'}
@@ -923,7 +924,7 @@ const AdminEventPlanner = () => {
 
                             {user?.rol === 'admin' && (
                                 <div className="company-selection-mini">
-                                    <select 
+                                    <select
                                         className="dense-input-mini"
                                         value={selectedEvent.empresa_id || ''}
                                         onChange={async (e) => {
@@ -1095,7 +1096,7 @@ const AdminEventPlanner = () => {
                                                             </div>
                                                         </div>
                                                     </div>
-                                                    
+
                                                     <div className="meet-card-body">
                                                         {Array.isArray(meet.fotos) && meet.fotos.length > 0 && (
                                                             <div className="meet-gallery">
