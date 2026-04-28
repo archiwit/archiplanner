@@ -653,7 +653,7 @@ const AdminCotizacionForm = ({ claseOverride }) => {
         setPagosLoading(true);
         const formDataPayload = new FormData();
         formDataPayload.append('cotizacion_id', id);
-        formDataPayload.append('monto', nuevoPago.monto);
+        formDataPayload.append('monto', String(nuevoPago.monto).replace(/\./g, '').replace(/,/g, '.'));
         formDataPayload.append('metodo', nuevoPago.metodo);
         formDataPayload.append('nota', nuevoPago.nota);
         if (comprobante) formDataPayload.append('comprobante', comprobante);

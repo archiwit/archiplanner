@@ -26,13 +26,19 @@ exports.crearGasto = async (req, res) => {
     
     const comprobante_path = req.file ? `/uploads/gastos/${req.file.filename}` : null;
     
+    // Ensure monto is a clean float (handles "2.000.000" -> 2000000)
+    let parsedMonto = monto;
+    if (typeof monto === 'string') {
+        parsedMonto = parseFloat(monto.replace(/\./g, '').replace(/,/g, '.'));
+    }
+    
     try {
         const [result] = await pool.query(
             'INSERT INTO gastos (cot_id, concepto, monto, fgasto, pagado_a, responsable, metodo, comprobante_path, u_id, estado, item_id, categoria) VALUES (?, ?, ?, NOW(), ?, ?, ?, ?, ?, ?, ?, ?)',
             [
                 cotizacion_id, 
                 concepto, 
-                monto, 
+                parsedMonto, 
                 pagado_a, 
                 responsable, 
                 metodo ? metodo.toLowerCase() : 'efectivo', 

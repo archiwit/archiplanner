@@ -15,10 +15,16 @@ exports.crearPago = async (req, res) => {
     const { cotizacion_id, monto, metodo, nota } = req.body;
     const foto_comprobante = req.file ? `/uploads/pagos/${req.file.filename}` : null;
     
+    // Ensure monto is a clean float (handles "2.000.000" -> 2000000)
+    let parsedMonto = monto;
+    if (typeof monto === 'string') {
+        parsedMonto = parseFloat(monto.replace(/\./g, '').replace(/,/g, '.'));
+    }
+    
     try {
         const [result] = await pool.query(
             'INSERT INTO pagos (cot_id, monto, metodo, foto_comprobante, referencia, fpago, estado) VALUES (?, ?, ?, ?, ?, NOW(), "pendiente")',
-            [cotizacion_id, monto, metodo.toLowerCase(), foto_comprobante, nota]
+            [cotizacion_id, parsedMonto, metodo.toLowerCase(), foto_comprobante, nota]
         );
         res.status(201).json({ 
             success: true, 
