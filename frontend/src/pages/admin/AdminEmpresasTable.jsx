@@ -56,7 +56,7 @@ const AdminEmpresasTable = () => {
                 <div className="td-flex-img">
                     <div className="td-img" style={{ background: row.color_primario || 'var(--color-primary-dim)' }}>
                         {row.logo_cuadrado_path ? (
-                            <img src={getUploadUrl(row.logo_cuadrado_path)} alt="Logo" style={{width: '100%', height: '100%', objectFit: 'cover'}}/>
+                            <img src={getUploadUrl(row.logo_cuadrado_path)} alt="Logo" style={{width: '100%', height: '100%', objectFit: 'contain'}}/>
                         ) : (
                             <span style={{ fontWeight: 'bold', color: '#fff', textTransform: 'uppercase' }}>
                                 {row.nombre_empresa ? row.nombre_empresa[0] : 'E'}
