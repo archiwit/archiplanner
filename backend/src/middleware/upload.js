@@ -1,6 +1,7 @@
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
+const sharp = require('sharp');
 
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
@@ -64,10 +65,66 @@ const fileFilter = (req, file, cb) => {
     }
 };
 
-const upload = multer({ 
+const rawUpload = multer({ 
     storage: storage,
     fileFilter: fileFilter,
     limits: { fileSize: 200 * 1024 * 1024 } // 200MB limit for high-res photos and videos
 });
+
+const processImage = async (file) => {
+    if (!file || !file.mimetype.startsWith('image/')) return;
+    if (file.mimetype === 'image/gif' || file.mimetype === 'image/webp') return;
+
+    const originalPath = file.path;
+    const parsedPath = path.parse(originalPath);
+    const webpFilename = parsedPath.name + '.webp';
+    const webpPath = path.join(parsedPath.dir, webpFilename);
+
+    try {
+        await sharp(originalPath)
+            .resize(1920, 1920, { fit: 'inside', withoutEnlargement: true })
+            .webp({ quality: 80 })
+            .toFile(webpPath);
+            
+        // Eliminar el archivo original
+        if (fs.existsSync(originalPath)) {
+            fs.unlinkSync(originalPath);
+        }
+        
+        // Actualizar el objeto file para que los controladores usen la nueva ruta
+        file.path = webpPath;
+        file.filename = webpFilename;
+        file.mimetype = 'image/webp';
+    } catch (err) {
+        console.error('Error procesando imagen con sharp:', err);
+    }
+};
+
+const processMediaMiddleware = async (req, res, next) => {
+    if (req.file) {
+        await processImage(req.file);
+    } else if (req.files) {
+        if (Array.isArray(req.files)) {
+            for (const file of req.files) {
+                await processImage(file);
+            }
+        } else {
+            for (const key in req.files) {
+                for (const file of req.files[key]) {
+                    await processImage(file);
+                }
+            }
+        }
+    }
+    next();
+};
+
+const upload = {
+    single: (fieldname) => [rawUpload.single(fieldname), processMediaMiddleware],
+    array: (fieldname, maxCount) => [rawUpload.array(fieldname, maxCount), processMediaMiddleware],
+    fields: (fields) => [rawUpload.fields(fields), processMediaMiddleware],
+    // Proxy for raw upload if needed
+    raw: rawUpload
+};
 
 module.exports = upload;
