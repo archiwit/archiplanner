@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import api from '../../services/api';
 import { Printer, ArrowLeft, FileText, Globe, Phone, Mail, MapPin } from 'lucide-react';
 import { numeroALetras } from '../../services/numberToWords';
-import { UPLOADS_URL } from '../../config';
+import { UPLOADS_URL, getUploadUrl } from '../../config';
 import { parseDateSafe } from '../../utils/dateUtils';
 import '../style/QuotationContract.css';
 

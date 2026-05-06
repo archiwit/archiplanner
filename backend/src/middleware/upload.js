@@ -2,6 +2,7 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 const sharp = require('sharp');
+const { uploadToRemote } = require('../utils/remoteStorage');
 
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
@@ -101,17 +102,28 @@ const processImage = async (file) => {
 };
 
 const processMediaMiddleware = async (req, res, next) => {
+    const handleFile = async (file) => {
+        await processImage(file);
+        
+        // Determinar carpeta remota (basada en el dir de multer)
+        // file.destination suele ser "uploads/config", "uploads/items", etc.
+        const remoteFolder = file.destination ? file.destination.replace('uploads/', '') : 'misc';
+        
+        // Subir al puente de Hostinger
+        await uploadToRemote(file.path, remoteFolder);
+    };
+
     if (req.file) {
-        await processImage(req.file);
+        await handleFile(req.file);
     } else if (req.files) {
         if (Array.isArray(req.files)) {
             for (const file of req.files) {
-                await processImage(file);
+                await handleFile(file);
             }
         } else {
             for (const key in req.files) {
                 for (const file of req.files[key]) {
-                    await processImage(file);
+                    await handleFile(file);
                 }
             }
         }
