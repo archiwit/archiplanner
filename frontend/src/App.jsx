@@ -88,6 +88,9 @@ function App() {
                                 <Route path="/proteccion" element={<PublicPageViewV4 slugOverride="proteccion" />} />
                                 <Route path="/evaluacion/:id" element={<SatisfactionSurvey />} />
                             </Route>
+                            
+                            {/* Standalone Print View */}
+                            <Route path="/print-quotation/:id" element={<QuotationView isPrintView={true} />} />
 
                             {/* Administration Area */}
                             <Route 
@@ -148,8 +151,6 @@ function App() {
                                 <Route path="perfil" element={<AdminPerfil />} />
                             </Route>
 
-                            {/* Isolated Print Route (No Layouts) */}
-                            <Route path="/print-quotation/:id" element={<QuotationView isPrintView={true} />} />
 
                             {/* Fallback */}
                             <Route path="*" element={<Navigate to="/" />} />

@@ -10,7 +10,7 @@
 }
 
 /* ========================================
-   SECCIÓN ADICIONALES (Hoja 5)
+   SECCI├ôN ADICIONALES (Hoja 5)
    ======================================== */
 .quotation-page.adicionales {
     background-image: radial-gradient(circle at 10% 10%, rgba(212, 175, 55, 0.03) 0%, transparent 50%);
@@ -99,7 +99,7 @@
     --color-white: #ffffff;
     --color-shadow: rgba(0, 0, 0, 0.1);
 
-    /* Tipografía */
+    /* Tipograf├¡a */
     --font-family: 'Inter', 'Segoe UI', sans-serif;
     --font-cursiva: 'Mrs Saint Delafield', 'Segoe UI', sans-serif;
     --font-size-xs: 0.75rem;
@@ -132,7 +132,7 @@
 
 
 /* ========================================
-   CONTENEDOR PRINCIPAL (FONDO DE PÁGINA)
+   CONTENEDOR PRINCIPAL (FONDO DE P├üGINA)
    ======================================== */
 .quotation-view {
     background: var(--color-bg-page);
@@ -301,7 +301,7 @@
     flex-direction: column;
 }
 
-/* Eliminado @media print de CSS para evitar conflictos con los estilos en línea del componente */
+/* Eliminado @media print de CSS para evitar conflictos con los estilos en l├¡nea del componente */
 
 /* ========================================
    ENCABEZADO
@@ -444,7 +444,7 @@
 
 
 /* ========================================
-   DATOS POR ÁREA
+   DATOS POR ├üREA
    ======================================== */
 .page1 {
     position: relative;
@@ -744,17 +744,18 @@
         display: flex;
         flex-direction: row;
         align-items: stretch;
-        justify-content: space-between;
+        justify-content: center;
+        gap: 20px;
 
         & .contInfoCoti {
             position: relative;
             border-top: 2px solid var(--color-primary);
             border-bottom: 2px solid var(--color-primary);
-            padding: 8px 10px;
+            padding: 8px 12px;
             margin: 0;
             flex: 1;
             /* Permitir que crezca proporcionalmente */
-            max-width: 250px;
+            max-width: 330px;
             /* Limitar el ancho para que quepan los 3 bloques */
 
             & .contInfoCoti__grid {
@@ -1091,9 +1092,9 @@
         width: 100%;
         height: auto;
         padding: 5px 15px !important;
-        /* REDUCIDO DRÁSTICAMENTE */
+        /* REDUCIDO DR├üSTICAMENTE */
         margin-bottom: 2px !important;
-        /* Espacio mínimo */
+        /* Espacio m├¡nimo */
 
         & .contInfoCoti__grid {
             display: grid;
@@ -1165,7 +1166,7 @@
     text-align: right !important;
 }
 
-/* Categorías */
+/* Categor├¡as */
 .category-row td {
     background-color: #fcfaf5;
     color: var(--color-primary);
@@ -1177,7 +1178,7 @@
     border-bottom: 2px solid var(--color-primary);
 }
 
-/* Detalles de ítem */
+/* Detalles de ├¡tem */
 .item-name {
     display: block;
     font-weight: 600;
@@ -1321,7 +1322,7 @@
 }
 
 /* ========================================
-   ESTADOS DE CARGA Y VACÍO
+   ESTADOS DE CARGA Y VAC├ìO
    ======================================== */
 .quotation-loading,
 .quotation-empty {
@@ -1331,7 +1332,7 @@
 }
 
 /* ========================================
-   INFORMACIÓN DE CONTACTO (footer opcional)
+   INFORMACI├ôN DE CONTACTO (footer opcional)
    ======================================== */
 .quotation-footer {
     margin-top: auto;
@@ -1354,11 +1355,11 @@
 }
 
 /* ========================================
-   ESTILOS DE IMPRESIÓN MAESTRO (PDF)
+   ESTILOS DE IMPRESI├ôN MAESTRO (PDF)
    ======================================== */
 @media print {
 
-    /* 1. RESET DE PÁGINA Y MARGENES ELECTRÓNICOS */
+    /* 1. RESET DE P├üGINA Y MARGENES ELECTR├ôNICOS */
     @page {
         size: letter;
         margin: 0 !important;
@@ -1375,7 +1376,7 @@
     }
 
     /* 2. FLUJO NATURAL (Sin position fixed)
-       Importante: fixed/absolute rompen el salto de página automático.
+       Importante: fixed/absolute rompen el salto de p├ígina autom├ítico.
     */
     #root,
     .admin-layout,
@@ -1398,7 +1399,7 @@
         page-break-after: avoid !important;
     }
 
-    /* Gestión de Pagos y Abonos */
+    /* Gesti├│n de Pagos y Abonos */
     .payments-summary-mini {
         margin-top: 20px;
         padding: 15px;
@@ -1559,7 +1560,7 @@
         display: none !important;
     }
 
-    /* 3. CONFIGURACIÓN DE HOJAS CARTA */
+    /* 3. CONFIGURACI├ôN DE HOJAS CARTA */
     .quotation-page {
         display: block !important;
         width: 216mm !important;
@@ -1579,7 +1580,7 @@
         page-break-after: auto !important;
     }
 
-    /* Fondos oscuros específicos */
+    /* Fondos oscuros espec├¡ficos */
     .page1,
     .contactPage {
         background-color: var(--color-bg-page) !important;
@@ -1616,7 +1617,7 @@
         background-position: center !important;
     }
 
-    /* Tabla de Cotización - FLUJO MULTI-PÁGINA ESTABLE */
+    /* Tabla de Cotizaci├│n - FLUJO MULTI-P├üGINA ESTABLE */
     .cotizacion {
         height: auto !important;
         min-height: 279mm !important;
@@ -1645,7 +1646,7 @@
         display: table-footer-group !important;
     }
 
-    /* Footer por página (ANCLADO AL BORDE INFERIOR - 279mm) */
+    /* Footer por p├ígina (ANCLADO AL BORDE INFERIOR - 279mm) */
     .print-footer-container {
         position: absolute !important;
         bottom: 0 !important;
@@ -1826,7 +1827,7 @@
         width: 450px !important;
         height: auto !important;
         z-index: -10 !important;
-        /* Detrás de todo */
+        /* Detr├ís de todo */
         pointer-events: none !important;
         margin: 0 !important;
         padding: 0 !important;
@@ -1840,15 +1841,15 @@
         width: 100% !important;
         height: auto !important;
         z-index: -20 !important;
-        /* Detrás de todo, incluso de la onda rosa si surge */
+        /* Detr├ís de todo, incluso de la onda rosa si surge */
         pointer-events: none !important;
         margin: 0 !important;
         padding: 0 !important;
         object-fit: cover !important;
     }
 
-    /* Asegurar que la hoja nosotros y otras no tengan el adorno si no está en JSX */
-    /* (Ya lo limpiamos del JSX, así que no aparecerán) */
+    /* Asegurar que la hoja nosotros y otras no tengan el adorno si no est├í en JSX */
+    /* (Ya lo limpiamos del JSX, as├¡ que no aparecer├ín) */
 
     /* Contenido central que fluye */
     .quotation-content-flow {
@@ -1897,31 +1898,33 @@
 }
 
 /* ========================================
-   DISEÑO DOS COLUMNAS (GRID) - DEFINITIVO
+   DISE├æO DOS COLUMNAS (GRID) - DEFINITIVO
    ======================================== */
 @media screen,
 print {
-    .quotation-items-grid-v2 {
-        column-count: 2 !important;
-        column-gap: 24px !important;
-        width: 100% !important;
+    .quotation-items-grid {
+        display: grid !important;
+        grid-template-columns: 1fr 1fr !important;
+        gap: 12px !important;
+        /* Reducido para ganar espacio horizontal */
+        align-items: start !important;
         margin: 10px 0 !important;
-        display: block !important;
+        width: 100% !important;
     }
 
-    .quotation-category-block {
-        break-inside: avoid !important;
-        page-break-inside: avoid !important;
-        margin-bottom: 20px !important;
-        display: block !important;
+    .quotation-column {
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 0 !important;
     }
 
     .quotation-table-compact {
         width: 100% !important;
-        break-inside: avoid !important;
-        margin-bottom: 12px !important;
         border-collapse: collapse !important;
         font-size: 10px !important;
+        /* Ligeramente m├ís peque├▒a para ganar espacio */
+        margin-bottom: 8px !important;
+        /* M├¡nimo espacio entre categor├¡as */
         background: transparent !important;
     }
 
@@ -1939,10 +1942,10 @@ print {
         border-left: 5px solid var(--color-primary) !important;
     }
 
-    /* Filas alternas con contraste mejorado para diferenciación clara */
+    /* Filas alternas con contraste mejorado para diferenciaci├│n clara */
     .quotation-table-compact tbody tr:nth-child(even) {
         background-color: rgb(145 97 97 / 12%) !important;
-        /* Más visible */
+        /* M├ís visible */
     }
 
     /* Asegurar que las celdas sean transparentes para ver el fondo de la fila */

@@ -6,7 +6,7 @@ import 'sweetalert2/dist/sweetalert2.min.css';
 import { useAuth } from '../../context/AuthContext';
 import { getUploadUrl } from '../../config';
 import { parseDateSafe, formatDateSafe } from '../../utils/dateUtils';
-import { User, Calendar, Clock, Users, Palette, Droplets, Tag, FileText, Printer, ArrowLeft, Mail, MapPin, Phone, MessageCircle, Download, X, Plus, Briefcase, History, Edit3, Star } from 'lucide-react';
+import { User, Calendar, Clock, Users, Palette, Droplet, Tag, FileText, Printer, ArrowLeft, Mail, MapPin, Phone, MessageCircle, Download, X, Plus, Briefcase, History, Edit3, Star } from 'lucide-react';
 import { motion } from 'framer-motion';
 import QuotationHistoryPanel from '../../components/admin/QuotationHistoryPanel';
 import '../style/QuotationView.css';
@@ -38,7 +38,7 @@ const QuotationView = ({ isPrintView = false }) => {
                 'Quinceaños': 'XV', 'Boda': 'Boda', 'Baby shower': 'BabyShower',
                 'Aniversario': 'Aniversario', 'Corporativo': 'Corpo', 'Cumpleaños': 'Cumple'
             };
-            const tipoStr = isArriendo ? 'Arriendo' : (shortTypes[data.tipo_evento] || data.tipo_evento || 'Evento');
+            const tipoStr = isArriendo ? 'Arriendo' : (shortTypes[data.tipo_evento_nombre] || data.tipo_evento_nombre || 'Evento');
             const numStr = isArriendo ? (data.num_arriendo || data.num) : data.num;
             const clienteStr = cliente?.nombre || data.cliente_nombre || 'Cliente';
             const fileName = `${dateStr} • ${tipoStr} • ${numStr} • ${clienteStr}`;
@@ -143,12 +143,16 @@ const QuotationView = ({ isPrintView = false }) => {
 
     const formatDate = (dateStr) => {
         if (!dateStr) return "N/A";
-        return formatDateSafe(dateStr, {
-            weekday: 'short',
-            day: '2-digit',
-            month: '2-digit',
-            year: 'numeric',
-        });
+        const date = parseDateSafe(dateStr);
+        if (!date) return "N/A";
+
+        // Formato solicitado: mar, 05 MAY 2026
+        const weekday = date.toLocaleDateString('es-CO', { weekday: 'short' }).replace('.', '').toLowerCase();
+        const day = date.toLocaleDateString('es-CO', { day: '2-digit' });
+        const month = date.toLocaleDateString('es-CO', { month: 'short' }).replace('.', '').toUpperCase();
+        const year = date.getFullYear();
+
+        return `${weekday}, ${day} ${month} ${year}`;
     };
 
     const formatTime = (timeStr) => {
@@ -203,7 +207,7 @@ const QuotationView = ({ isPrintView = false }) => {
             return;
         }
 
-        // --- AUTOMATIZACIÓN DE ESTATUS ---
+        // --- AUTOMATIZACI├ôN DE ESTATUS ---
         try {
             if (cliente?.id) {
                 await api.put(`/clientes/${cliente.id}/status`, { estado: 'Cotizando' });
@@ -503,7 +507,7 @@ const QuotationView = ({ isPrintView = false }) => {
                                             )}
                                             {!isArriendo && (
                                                 <div className="contInfoCoti__grid">
-                                                    <Droplets className="lucide w-4 h-4 text-neutral-500" />
+                                                    <Droplet className="lucide w-4 h-4 text-neutral-500" />
                                                     <p>
                                                         <span>Paleta:</span>
                                                         <div style={{ display: 'flex', gap: '6px', alignItems: 'center', marginTop: '4px' }}>
@@ -629,37 +633,48 @@ const QuotationView = ({ isPrintView = false }) => {
                                         </div>
                                     </div>
 
-                                    <div className="quotation-items-grid-v2">
-                                        {Object.entries(groupedDetalles).map(([categoria, items]) => (
-                                            <div key={categoria} className="quotation-category-block">
-                                                <table className="quotation-table-compact">
-                                                    <thead>
-                                                        <tr className="category-row">
-                                                            <th colSpan={data.mostrar_precios ? 4 : 2}>
-                                                                {categoria}
-                                                            </th>
-                                                        </tr>
-                                                    </thead>
-                                                    <tbody>
-                                                        {items.map((item, idx) => (
-                                                            <tr key={idx}>
-                                                                <td className="text-center">{Number(item.cantidad)}</td>
-                                                                <td className="text-left">
-                                                                    <span className="item-name">{item.nombre}</span>
-                                                                    {item.notas && <span className="item-observation">{item.notas}</span>}
-                                                                </td>
-                                                                {data.mostrar_precios ? (
-                                                                    <>
-                                                                        <td className="price-cell">$ {formatCurrency(item.precio_u)}</td>
-                                                                        <td className="total-cell">$ {formatCurrency(item.subtotal)}</td>
-                                                                    </>
-                                                                ) : null}
-                                                            </tr>
-                                                        ))}
-                                                    </tbody>
-                                                </table>
-                                            </div>
-                                        ))}
+                                    <div className="quotation-items-grid">
+                                        {[[], []].map((colItems, colIdx) => {
+                                            // Lógica de balanceo simple para distribuir categorías en dos columnas
+                                            const entries = Object.entries(groupedDetalles);
+                                            const half = Math.ceil(entries.length / 2);
+                                            const columnEntries = colIdx === 0
+                                                ? entries.slice(0, half)
+                                                : entries.slice(half);
+
+                                            return (
+                                                <div key={colIdx} className="quotation-column">
+                                                    {columnEntries.map(([categoria, items]) => (
+                                                        <table key={categoria} className="quotation-table-compact">
+                                                            <thead>
+                                                                <tr className="category-row">
+                                                                    <th colSpan={data.mostrar_precios ? 4 : 2}>
+                                                                        {categoria}
+                                                                    </th>
+                                                                </tr>
+                                                            </thead>
+                                                            <tbody>
+                                                                {items.map((item, idx) => (
+                                                                    <tr key={idx}>
+                                                                        <td className="text-center">{Number(item.cantidad)}</td>
+                                                                        <td className="text-left">
+                                                                            <span className="item-name">{item.nombre}</span>
+                                                                            {item.notas && <span className="item-observation">{item.notas}</span>}
+                                                                        </td>
+                                                                        {data.mostrar_precios ? (
+                                                                            <>
+                                                                                <td className="price-cell">$ {formatCurrency(item.precio_u)}</td>
+                                                                                <td className="total-cell">$ {formatCurrency(item.subtotal)}</td>
+                                                                            </>
+                                                                        ) : null}
+                                                                    </tr>
+                                                                ))}
+                                                            </tbody>
+                                                        </table>
+                                                    ))}
+                                                </div>
+                                            );
+                                        })}
                                     </div>
 
                                     <div className="quotation-summary-area">
@@ -830,15 +845,15 @@ const QuotationView = ({ isPrintView = false }) => {
                             <div className="infoItem">
                                 <Phone />
                                 <div>
-                                    {config?.nombre_empresa === "ArchiPlanner AG" ? (
+                                    {config?.nombre_empresa?.includes("Anny Garrido") ? (
                                         <>
-                                            <p>{config?.telefono}</p>
-                                            <p>315 7071830</p>
+                                            <p>315 707 1830</p>
+                                            <p>300 476 0514</p>
                                         </>
                                     ) : (
                                         <>
-                                            <p>315 7071830</p>
-                                            <p>{config?.telefono}</p>
+                                            <p>300 476 0514</p>
+                                            <p>315 707 1830</p>
                                         </>
                                     )}
                                 </div>
@@ -886,3 +901,4 @@ const QuotationView = ({ isPrintView = false }) => {
 };
 
 export default QuotationView;
+

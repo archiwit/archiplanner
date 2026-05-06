@@ -965,7 +965,7 @@ const AdminEventPlanner = () => {
                                 <button className={activeTab === 'guests' ? 'active' : ''} onClick={() => setActiveTab('guests')}>
                                     <Users size={16} /> Lista de Invitados
                                 </button>
-                                {(selectedEvent.estado === 'aprobado' || selectedEvent.estado === 'contratado') && (
+                                {['aprobado', 'contratado', 'aprobada', 'contratada'].includes(selectedEvent.estado?.toLowerCase()) && (
                                     <>
                                         <button className={activeTab === 'planner_360' ? 'active' : ''} onClick={() => setActiveTab('planner_360')}>
                                             <Layout size={16} /> Diseño Plano 360
