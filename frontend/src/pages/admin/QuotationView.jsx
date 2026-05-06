@@ -312,6 +312,8 @@ const QuotationView = ({ isPrintView = false }) => {
                         min-height: 100vh !important;
                         height: auto !important;
                         page-break-after: always;
+                        page-break-inside: auto !important;
+                        break-inside: auto !important;
                         overflow: visible !important;
                         position: relative;
                         box-sizing: border-box !important;
