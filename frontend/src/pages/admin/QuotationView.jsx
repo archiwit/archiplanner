@@ -321,6 +321,29 @@ const QuotationView = ({ isPrintView = false }) => {
                         padding: 0 !important;
                         background-color: transparent !important;
                     }
+                    .quotation-page.cotizacion {
+                        height: auto !important;
+                        min-height: auto !important;
+                        overflow: visible !important;
+                        page-break-inside: auto !important;
+                        break-inside: auto !important;
+                    }
+                    .quotation-items-grid {
+                        display: flex !important;
+                        flex-direction: row !important;
+                        justify-content: space-between !important;
+                        align-items: flex-start !important;
+                        width: 100% !important;
+                        page-break-inside: auto !important;
+                        break-inside: auto !important;
+                        gap: 15px !important;
+                    }
+                    .quotation-column {
+                        width: 49% !important;
+                        display: block !important;
+                        page-break-inside: auto !important;
+                        break-inside: auto !important;
+                    }
                     .quotation-summary-area {
                         page-break-inside: avoid !important;
                     }
