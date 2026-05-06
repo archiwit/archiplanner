@@ -296,34 +296,28 @@ const QuotationView = ({ isPrintView = false }) => {
                     html, body { 
                         margin: 0 !important; 
                         padding: 0 !important; 
-                        width: 216mm !important;
-                        height: 279.4mm !important;
+                        width: 100% !important;
+                        height: 100% !important;
                         background: #fff !important; 
                     }
                     #root, .quotation-view { 
                         background: transparent !important; 
                         padding: 0 !important;
                         margin: 0 !important;
-                        width: 216mm !important;
+                        width: 100% !important;
                     }
                     .quotation-actions { display: none !important; }
                     .quotation-page {
-                        width: 216mm !important;
-                        height: 279.4mm !important;
-                        min-height: 279.4mm !important;
+                        width: 100% !important;
+                        min-height: 100vh !important;
+                        height: auto !important;
                         page-break-after: always;
-                        overflow: hidden !important;
+                        overflow: visible !important;
                         position: relative;
                         box-sizing: border-box !important;
                         margin: 0 !important;
                         padding: 0 !important;
                         background-color: transparent !important;
-                    }
-                    /* La página de cotización necesita altura auto para fluir entre hojas */
-                    .quotation-page.cotizacion {
-                        height: auto !important;
-                        min-height: 279.4mm !important;
-                        overflow: visible !important;
                     }
                     .quotation-summary-area {
                         page-break-inside: avoid !important;
@@ -333,7 +327,7 @@ const QuotationView = ({ isPrintView = false }) => {
                     }
                     .quotation-page:last-child { page-break-after: auto; }
                     
-                    /* Branding Adorno - Ubicar DETRÁS y fijar al borde */
+                    /* Branding Adorno - Ubicar DETRÁS y fijar al borde sin empujar */
                     .quotation-branding-adorno {
                         display: block !important;
                         position: absolute !important;
@@ -354,9 +348,6 @@ const QuotationView = ({ isPrintView = false }) => {
                         z-index: 10 !important;
                         background: transparent !important;
                         pointer-events: none !important;
-                    }
-                    .quotation-footer {
-                        pointer-events: auto !important;
                     }
                 }
                 `}
@@ -649,15 +640,6 @@ const QuotationView = ({ isPrintView = false }) => {
                                                         </g>
                                                     </svg>
 
-                                                </div>
-                                                <div className="redesItem">
-                                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#111" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-instagram"><rect width="20" height="20" x="2" y="2" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" x2="17.51" y1="6.5" y2="6.5"/></svg>
-                                                </div>
-                                                <div className="redesItem">
-                                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#111" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-phone"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l2.27-2.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
-                                                </div>
-                                                <div className="redesItem">
-                                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#111" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-globe"><circle cx="12" cy="12" r="10"/><line x1="2" x2="22" y1="12" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
                                                 </div>
                                             </div>
                                             <div>
