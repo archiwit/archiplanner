@@ -457,41 +457,41 @@ const QuotationView = ({ isPrintView = false }) => {
                                     <div className="quotation-client">
                                         <div className="contInfoCoti">
                                             <div className="contInfoCoti__grid">
-                                                <User className="lucide w-4 h-4 text-neutral-500" />
+                                                <User size={16} style={{ color: 'var(--color-text-medium)' }} />
                                                 <p><span>Cliente:</span> {cliente?.nombre} {cliente?.apellido}</p>
                                             </div>
                                             <div className="contInfoCoti__grid">
-                                                <Phone className="lucide w-4 h-4 text-neutral-500" />
+                                                <Phone size={16} style={{ color: 'var(--color-text-medium)' }} />
                                                 <p><span>Teléfono:</span> {cliente.telefono || "No proporcionado"}</p>
                                             </div>
                                             <div className="contInfoCoti__grid">
-                                                <Mail className="lucide w-4 h-4 text-neutral-500" />
+                                                <Mail size={16} style={{ color: 'var(--color-text-medium)' }} />
                                                 <p><span>Email:</span> {cliente.correo || cliente.email || "No proporcionado"}</p>
                                             </div>
                                             <div className="contInfoCoti__grid">
-                                                <Tag className="lucide w-4 h-4 text-neutral-500" />
+                                                <Tag size={16} style={{ color: 'var(--color-text-medium)' }} />
                                                 <p><span>Tipo:</span> {data.tipo_evento}</p>
                                             </div>
                                             <div className="contInfoCoti__grid">
-                                                <FileText className="lucide w-4 h-4 text-neutral-500" />
+                                                <FileText size={16} style={{ color: 'var(--color-text-medium)' }} />
                                                 <p><span>Creado:</span> {formatDate(new Date().toISOString())}</p>
                                             </div>
                                         </div>
 
                                         <div className="contInfoCoti">
                                             <div className="contInfoCoti__grid">
-                                                <Calendar className="lucide w-4 h-4 text-neutral-500" />
+                                                <Calendar size={16} style={{ color: 'var(--color-text-medium)' }} />
                                                 <p><span>Fecha:</span> {formatDate(data.fevent)}</p>
                                             </div>
                                             {!isArriendo && (
                                                 <div className="contInfoCoti__grid">
-                                                    <Clock className="lucide w-4 h-4 text-neutral-500" />
+                                                    <Clock size={16} style={{ color: 'var(--color-text-medium)' }} />
                                                     <p><span>Horario:</span> {formatTime(data.hora_inicio)} | {formatTime(data.hora_fin)}</p>
                                                 </div>
                                             )}
                                             {!isArriendo && (
                                                 <div className="contInfoCoti__grid">
-                                                    <Users className="lucide w-4 h-4 text-neutral-500" />
+                                                    <Users size={16} style={{ color: 'var(--color-text-medium)' }} />
                                                     <div className="fontInv">
                                                         <p><span>Invitados:</span></p>
                                                         <div className="contSpanNIn"><span className="spanNIn">A</span> {data.num_adultos || "0"}</div>
@@ -502,13 +502,13 @@ const QuotationView = ({ isPrintView = false }) => {
                                             )}
                                             {!isArriendo && (
                                                 <div className="contInfoCoti__grid">
-                                                    <Palette className="lucide w-4 h-4 text-neutral-500" />
+                                                    <Palette size={16} style={{ color: 'var(--color-text-medium)' }} />
                                                     <p><span>Tematica:</span> {data.tematica}</p>
                                                 </div>
                                             )}
                                             {!isArriendo && (
                                                 <div className="contInfoCoti__grid">
-                                                    <Droplet className="lucide w-4 h-4 text-neutral-500" />
+                                                    <Droplet size={16} style={{ color: 'var(--color-text-medium)' }} />
                                                     <p>
                                                         <span>Paleta:</span>
                                                         <div style={{ display: 'flex', gap: '6px', alignItems: 'center', marginTop: '4px' }}>
@@ -524,11 +524,11 @@ const QuotationView = ({ isPrintView = false }) => {
                                             {isArriendo && (
                                                 <>
                                                     <div className="contInfoCoti__grid">
-                                                        <Tag className="lucide w-4 h-4 text-neutral-500" />
+                                                        <Tag size={16} style={{ color: 'var(--color-text-medium)' }} />
                                                         <p><span>Ref Arriendo:</span> {data.num_arriendo || 'N/A'}</p>
                                                     </div>
                                                     <div className="contInfoCoti__grid">
-                                                        <History className="lucide w-4 h-4 text-neutral-500" />
+                                                        <History size={16} style={{ color: 'var(--color-text-medium)' }} />
                                                         <p><span>Vencimiento:</span> {formatDate(data.f_limite || data.fevent)}</p>
                                                     </div>
                                                 </>
