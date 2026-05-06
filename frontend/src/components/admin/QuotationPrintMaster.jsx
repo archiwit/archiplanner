@@ -78,25 +78,38 @@ const QuotationPrintMaster = ({ data, renderPages }) => {
             });
 
             // 3. Captura secuencial
+            const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+            const exportScale = isMobile ? 2 : 3;
+            
+            console.log(`Iniciando captura PDF - Modo ${isMobile ? 'Móvil' : 'Escritorio'} - Escala: ${exportScale}`);
+
             for (let i = 0; i < pages.length; i++) {
                 const page = pages[i];
                 setProgress(20 + Math.round((i / pages.length) * 60));
 
                 const canvas = await html2canvas(page, {
-                    scale: 3, // Alta resolución para impresión
+                    scale: exportScale, 
                     useCORS: true,
                     allowTaint: true,
-                    backgroundColor: '#050505', // Forzar fondo negro del diseño
+                    backgroundColor: '#050505',
                     logging: false,
-                    width: 816, // Ancho carta exacto a 96dpi
+                    width: 816, 
                     windowWidth: 816,
-                    imageTimeout: 15000
+                    imageTimeout: 30000, // Aumentado para móviles
+                    onclone: (clonedDoc) => {
+                        // Forzar visibilidad absoluta en el clon
+                        const clonedCanvas = clonedDoc.getElementById('virtual-pdf-canvas');
+                        if (clonedCanvas) clonedCanvas.style.left = '0';
+                    }
                 });
 
-                const imgData = canvas.toDataURL('image/jpeg', 0.95);
+                const imgData = canvas.toDataURL('image/jpeg', 0.90); // Ligeramente más comprimido para ahorrar memoria
                 
                 if (i > 0) pdf.addPage();
                 pdf.addImage(imgData, 'JPEG', 0, 0, 216, 279, undefined, 'FAST');
+                
+                // Pequeño respiro para el recolector de basura en móviles
+                if (isMobile) await new Promise(r => setTimeout(r, 100));
             }
 
             setProgress(90);

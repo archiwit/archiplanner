@@ -12,6 +12,23 @@ class ErrorBoundary extends React.Component {
 
     componentDidCatch(error, errorInfo) {
         console.error("ErrorBoundary caught an error:", error, errorInfo);
+        
+        // Auto-reload para errores de actualización de caché (Vite Chunk Load Errors)
+        const errorMessage = error?.message?.toLowerCase() || '';
+        const isChunkLoadError = errorMessage.includes('failed to fetch dynamically imported module') || 
+                                 errorMessage.includes('importing a module script failed') ||
+                                 errorMessage.includes('dynamically imported module');
+                                 
+        if (isChunkLoadError) {
+            const lastReload = parseInt(sessionStorage.getItem('viteChunkReload') || '0');
+            const now = Date.now();
+            // Prevenir bucle infinito: solo recargar si han pasado más de 5 segundos desde el último intento
+            if (now - lastReload > 5000) {
+                sessionStorage.setItem('viteChunkReload', now.toString());
+                console.log("Recargando la página automáticamente por actualización de versión...");
+                window.location.reload(true); // Recarga forzada
+            }
+        }
     }
 
     render() {

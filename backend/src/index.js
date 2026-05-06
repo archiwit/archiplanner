@@ -564,6 +564,16 @@ app.get('/api/configuraciones', async (req, res) => {
     }
 });
 
+app.get('/api/configuraciones/:id', async (req, res) => {
+    try {
+        const [rows] = await db.query('SELECT * FROM configuracion WHERE id = ?', [req.params.id]);
+        if (rows.length === 0) return res.status(404).json({ error: 'Configuración no encontrada' });
+        res.json(rows[0]);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 app.post('/api/configuraciones', upload.fields([{ name: 'logo_cuadrado', maxCount: 1 }, { name: 'logo_horizontal', maxCount: 1 }, { name: 'logo_black', maxCount: 1 }]), async (req, res) => {
     const { nombre_empresa, email_contacto, telefono, city, ig_url, fb_url, pn_url, pi_url, color_primario, color_secundario, color_terciario, color_fondo, intro_cotizacion, politicas_cotizacion, ceo, tt_url, li_url, x_url, web_url, cedula, ciudad_expedicion, nav_config, footer_config, ig_svg, fb_svg, tt_svg, li_svg, x_svg, ws_svg, pi_svg, icon_contact_svg, icon_footer_svg } = req.body;
     let lcp = null, lhp = null, lbp = null;
@@ -1692,100 +1702,6 @@ app.delete('/api/plantillas/:id', async (req, res) => {
     }
 });
 
-// ==========================================
-// CONFIGURACION Y BRANDING (Multi-Sede)
-// ==========================================
-
-// Get current active config
-app.get('/api/config', async (req, res) => {
-    try {
-        const [rows] = await db.query('SELECT * FROM configuracion WHERE es_activa = 1 LIMIT 1');
-        if (rows.length > 0) res.json(rows[0]);
-        else res.status(404).json({ error: 'No hay configuración activa.' });
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
-});
-
-// Get all configs
-app.get('/api/configuraciones', async (req, res) => {
-    try {
-        const [rows] = await db.query('SELECT * FROM configuracion ORDER BY id DESC');
-        res.json(rows);
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
-});
-
-// Get specific config
-app.get('/api/configuraciones/:id', async (req, res) => {
-    try {
-        const [rows] = await db.query('SELECT * FROM configuracion WHERE id = ?', [req.params.id]);
-        if (rows.length > 0) res.json(rows[0]);
-        else res.status(404).json({ error: 'Configuración no encontrada.' });
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
-});
-
-// Update specific config (ID-based)
-app.put('/api/configuraciones/:id', async (req, res) => {
-    const { 
-        nombre_empresa, email_contacto, telefono, city, politicas_cotizacion, 
-        ig_url, fb_url, tt_url, li_url, x_url, web_url, ceo,
-        color_primario, color_secundario, color_terciario, color_fondo,
-        novedades_intro 
-    } = req.body;
-    
-    try {
-        await db.query(`
-            UPDATE configuracion SET 
-            nombre_empresa=?, email_contacto=?, telefono=?, city=?, politicas_cotizacion=?, 
-            ig_url=?, fb_url=?, tt_url=?, li_url=?, x_url=?, web_url=?, ceo=?,
-            color_primario=?, color_secundario=?, color_terciario=?, color_fondo=?,
-            novedades_intro=?
-            WHERE id=?
-        `, [
-            nombre_empresa, email_contacto, telefono, city, politicas_cotizacion, 
-            ig_url, fb_url, tt_url, li_url, x_url, web_url, ceo,
-            color_primario, color_secundario, color_terciario, color_fondo,
-            novedades_intro, req.params.id
-        ]);
-        res.json({ success: true });
-    } catch (err) {
-        console.error(err);
-        res.status(500).json({ error: err.message });
-    }
-});
-
-// Update Active Config (Direct Shortcut)
-app.put('/api/config', async (req, res) => {
-    const { 
-        nombre_empresa, email_contacto, telefono, city, politicas_cotizacion, 
-        ig_url, fb_url, tt_url, li_url, x_url, web_url, ceo,
-        color_primario, color_secundario, color_terciario, color_fondo,
-        novedades_intro 
-    } = req.body;
-    
-    try {
-        await db.query(`
-            UPDATE configuracion SET 
-            nombre_empresa=?, email_contacto=?, telefono=?, city=?, politicas_cotizacion=?, 
-            ig_url=?, fb_url=?, tt_url=?, li_url=?, x_url=?, web_url=?, ceo=?,
-            color_primario=?, color_secundario=?, color_terciario=?, color_fondo=?,
-            novedades_intro=?
-            WHERE es_activa = 1
-        `, [
-            nombre_empresa, email_contacto, telefono, city, politicas_cotizacion, 
-            ig_url, fb_url, tt_url, li_url, x_url, web_url, ceo,
-            color_primario, color_secundario, color_terciario, color_fondo,
-            novedades_intro
-        ]);
-        res.json({ success: true });
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
-});
 
 // Handle Logo Uploads (Multipath)
 // Handle Logo Uploads (Multipath) - Updated to be consistent with main config route
@@ -1814,16 +1730,6 @@ app.put('/api/config/logo', upload.single('logo'), async (req, res) => {
     }
 });
 
-// Activate specific company
-app.put('/api/configuraciones/:id/activar', async (req, res) => {
-    try {
-        await db.query('UPDATE configuracion SET es_activa = 0');
-        await db.query('UPDATE configuracion SET es_activa = 1 WHERE id = ?', [req.params.id]);
-        res.json({ success: true });
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
-});
 
 // Unified Search (Articulos + Locaciones)
 app.get('/api/recursos-unificados', async (req, res) => {

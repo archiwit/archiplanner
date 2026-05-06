@@ -4,8 +4,10 @@ import { AuthProvider } from './context/AuthContext';
 import { BrandingProvider } from './context/BrandingContext';
 
 // Layouts (Static)
-import MainLayout from './components/layout/MainLayout';
-import AdminLayout from './components/admin/AdminLayout';
+// Layouts (Lazy)
+const MainLayout = React.lazy(() => import('./components/layout/MainLayout'));
+const AdminLayout = React.lazy(() => import('./components/admin/AdminLayout'));
+
 import ScrollToTop from './components/common/ScrollToTop';
 import ErrorBoundary from './components/common/ErrorBoundary';
 import ProtectedRoute from './components/auth/ProtectedRoute';
@@ -61,6 +63,13 @@ const ClientDashboard = React.lazy(() => import('./pages/client/ClientDashboard'
 
 function App() {
     console.log('App.jsx: Renderizando componente raíz...');
+    
+    // Remover el preloader en cuanto React esté listo, sin esperar otras descargas
+    React.useEffect(() => {
+        if (window.hideArchiLoader) {
+            window.hideArchiLoader();
+        }
+    }, []);
     
     // Roles permitidos para administración general (Eventos, Usuarios, Configuración)
     const STAFF = ['admin', 'coordinador', 'asesor'];

@@ -35,12 +35,13 @@ const QuotationView = ({ isPrintView = false }) => {
             const dateStr = `${yy}${mm}${dd}`;
 
             const shortTypes = {
-                'Quinceaños': 'XV', 'Boda': 'Boda', 'Baby shower': 'BabyShower',
-                'Aniversario': 'Aniversario', 'Corporativo': 'Corpo', 'Cumpleaños': 'Cumple'
+                'Quinceaños': 'XV', 'XV Años': 'XV', 'Boda': 'Boda', 'Baby shower': 'BabyShower',
+                'Aniversario': 'Aniv', 'Corporativo': 'Corpo', 'Cumpleaños': 'Cumple',
+                'Graduación': 'Grad', 'Evento Social': 'Soc'
             };
-            const tipoStr = isArriendo ? 'Arriendo' : (shortTypes[data.tipo_evento_nombre] || data.tipo_evento_nombre || 'Evento');
+            const tipoStr = isArriendo ? 'Arriendo' : (shortTypes[data.tipo_evento_nombre] || data.tipo_evento_nombre || shortTypes[data.tipo_evento] || data.tipo_evento || 'Evento');
             const numStr = isArriendo ? (data.num_arriendo || data.num) : data.num;
-            const clienteStr = cliente?.nombre || data.cliente_nombre || 'Cliente';
+            const clienteStr = cliente?.nombre ? `${cliente.nombre} ${cliente.apellido || ''}`.trim() : (data.cliente_nombre || 'Cliente');
             const fileName = `${dateStr} • ${tipoStr} • ${numStr} • ${clienteStr}`;
 
             const originalTitle = document.title;
@@ -465,7 +466,7 @@ const QuotationView = ({ isPrintView = false }) => {
                                             </div>
                                             <div className="contInfoCoti__grid">
                                                 <Mail className="lucide w-4 h-4 text-neutral-500" />
-                                                <p><span>Email:</span> {cliente.email || "No proporcionado"}</p>
+                                                <p><span>Email:</span> {cliente.correo || cliente.email || "No proporcionado"}</p>
                                             </div>
                                             <div className="contInfoCoti__grid">
                                                 <Tag className="lucide w-4 h-4 text-neutral-500" />

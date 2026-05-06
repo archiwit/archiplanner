@@ -67,8 +67,31 @@ const AdminContrato = () => {
             }
         };
         fetchData();
-
     }, [id]);
+
+    useEffect(() => {
+        if (data && !loading) {
+            const date = parseDateSafe(data.fevent);
+            if (!date) return;
+
+            const yy = date.getFullYear().toString().slice(-2);
+            const mm = (date.getMonth() + 1).toString().padStart(2, '0');
+            const dd = date.getDate().toString().padStart(2, '0');
+            const dateStr = `${yy}${mm}${dd}`;
+
+            const shortTypes = {
+                'Quinceaños': 'XV', 'XV Años': 'XV', 'Boda': 'Boda', 'Baby shower': 'BabyShower',
+                'Aniversario': 'Aniv', 'Corporativo': 'Corpo', 'Cumpleaños': 'Cumple',
+                'Graduación': 'Grad', 'Evento Social': 'Soc'
+            };
+            const tipoStr = (shortTypes[data.tipo_evento_nombre] || data.tipo_evento_nombre || shortTypes[data.tipo_evento] || data.tipo_evento || 'Evento');
+            const numStr = data.num || id;
+            const clienteStr = cliente?.nombre ? `${cliente.nombre} ${cliente.apellido || ''}`.trim() : 'Cliente';
+            const fileName = `${dateStr} • ${tipoStr} • ${numStr} • ${clienteStr} • contrato`;
+            
+            document.title = fileName;
+        }
+    }, [data, loading, id, cliente]);
 
     if (loading) return <div className="contract-loading">Generando Contrato Legal...</div>;
     if (!data || !config) return <div className="contract-empty">No se pudo cargar la información del contrato.</div>;
@@ -139,7 +162,7 @@ const AdminContrato = () => {
         printWindow.document.write(`
             <html>
                 <head>
-                    <title>Contrato Legal - ArchiPlanner</title>
+                    <title>${document.title}</title>
                     <link href="https://fonts.googleapis.com/css2?family=Mrs+Saint+Delafield&family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
                     <style>
                         body { margin: 0; padding: 0; background: #fff !important; font-family: 'Roboto', sans-serif; }

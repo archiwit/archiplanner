@@ -128,16 +128,38 @@
     z-index: -9999;
 }
 
+/* Optimization for Browser Printing (Native Save as PDF) */
+@media print {
+    body * {
+        visibility: hidden;
+    }
+    .virtual-pdf-canvas, .virtual-pdf-canvas * {
+        visibility: visible;
+    }
+    .virtual-pdf-canvas {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 216mm !important;
+        display: block !important;
+    }
+    .print-master-overlay {
+        display: none !important;
+    }
+}
+
 .virtual-pdf-canvas .quotation-page {
     width: 216mm !important;
-    min-height: 279.4mm !important;
+    height: 279.4mm !important; /* Fixed height for Letter */
     box-sizing: border-box;
     margin: 0 !important;
     padding: 15mm 20mm !important;
     page-break-after: always;
+    page-break-inside: avoid;
     position: relative;
     overflow: hidden;
     background: #050505 !important;
+    color: white;
 }
 
 /* Loader */
