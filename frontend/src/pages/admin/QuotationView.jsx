@@ -296,36 +296,68 @@ const QuotationView = ({ isPrintView = false }) => {
                     html, body { 
                         margin: 0 !important; 
                         padding: 0 !important; 
-                        width: 100% !important;
-                        height: 100% !important;
+                        width: 216mm !important;
+                        height: 279.4mm !important;
                         background: #fff !important; 
                     }
                     #root, .quotation-view { 
                         background: transparent !important; 
                         padding: 0 !important;
                         margin: 0 !important;
-                        width: 100% !important;
+                        width: 216mm !important;
                     }
                     .quotation-actions { display: none !important; }
                     .quotation-page {
-                        width: 100vw !important;
-                        min-height: 100vh !important; /* Altura flexible para evitar solapamientos */
-                        height: auto !important;
+                        width: 216mm !important;
+                        height: 279.4mm !important;
+                        min-height: 279.4mm !important;
                         page-break-after: always;
-                        overflow: visible !important;
+                        overflow: hidden !important;
                         position: relative;
                         box-sizing: border-box !important;
                         margin: 0 !important;
                         padding: 0 !important;
                         background-color: transparent !important;
                     }
+                    /* La página de cotización necesita altura auto para fluir entre hojas */
+                    .quotation-page.cotizacion {
+                        height: auto !important;
+                        min-height: 279.4mm !important;
+                        overflow: visible !important;
+                    }
                     .quotation-summary-area {
-                        page-break-inside: avoid !important; /* Evita que el mensaje de agradecimiento se separe de los totales */
+                        page-break-inside: avoid !important;
                     }
                     .quotation-page.contactPage {
-                        background-color: var(--color-bg-page, #242424) !important; /* Forza el fondo oscuro */
+                        background-color: var(--color-bg-page, #242424) !important;
                     }
                     .quotation-page:last-child { page-break-after: auto; }
+                    
+                    /* Branding Adorno - Ubicar DETRÁS y fijar al borde */
+                    .quotation-branding-adorno {
+                        display: block !important;
+                        position: absolute !important;
+                        bottom: 0 !important;
+                        left: 0 !important;
+                        width: 100% !important;
+                        height: auto !important;
+                        z-index: -1 !important;
+                        pointer-events: none !important;
+                        opacity: 1 !important;
+                    }
+                    .print-footer-container {
+                        position: absolute !important;
+                        bottom: 0 !important;
+                        left: 0 !important;
+                        width: 100% !important;
+                        height: 35mm !important;
+                        z-index: 10 !important;
+                        background: transparent !important;
+                        pointer-events: none !important;
+                    }
+                    .quotation-footer {
+                        pointer-events: auto !important;
+                    }
                 }
                 `}
             </style>
