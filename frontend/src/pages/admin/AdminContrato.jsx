@@ -86,17 +86,19 @@ const AdminContrato = () => {
             };
             const tipoStr = (shortTypes[data.tipo_evento_nombre] || data.tipo_evento_nombre || shortTypes[data.tipo_evento] || data.tipo_evento || 'Evento');
             const numStr = data.num || id;
-            const clienteStr = cliente?.nombre ? `${cliente.nombre} ${cliente.apellido || ''}`.trim() : 'Cliente';
+            const client = data.cliente;
+            const clienteStr = client?.nombre ? `${client.nombre} ${client.apellido || ''}`.trim() : 'Cliente';
             const fileName = `${dateStr} • ${tipoStr} • ${numStr} • ${clienteStr} • contrato`;
             
             document.title = fileName;
         }
-    }, [data, loading, id, cliente]);
+    }, [data, loading, id]);
 
     if (loading) return <div className="contract-loading">Generando Contrato Legal...</div>;
     if (!data || !config) return <div className="contract-empty">No se pudo cargar la información del contrato.</div>;
 
     const { cliente, detalles } = data;
+
     const formatCurrency = (val) => Number(val || 0).toLocaleString('es-CO');
 
     const formatTimeToAMPM = (timeStr) => {
